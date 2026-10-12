@@ -1,5 +1,14 @@
 # FiiO Echo Nano custom firmware
 
+This workspace starts from NaniteCFW revision
+`ea4e6dc2cb386483093c7b045b6e85f26939ce2e`. The project requirements are in
+[the imported specification](docs/specs/Echo-Nano-Agent-Specification.md),
+and current delivery status is in [MASTERPLAN.md](MASTERPLAN.md).
+See [baseline validation and recovery](docs/baseline.md) before using a build.
+Local builds disable upstream's experimental power patches by default
+(`POWER_SAVE=0`). The upstream description below includes those optional patches.
+Music separation, M3U playback and per-book resume are not implemented yet.
+
 Not affiliated with or endorsed by FiiO. FiiO and Echo Nano are trademarks of their owners.
 
 Patches for the official FiiO Echo Nano firmware **V1.7.0** that add media-library

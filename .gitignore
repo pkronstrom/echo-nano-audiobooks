@@ -1,5 +1,6 @@
 # build output
 out/
+builds/
 # firmware images: never commit FiiO's firmware
 *.IMG
 *.img

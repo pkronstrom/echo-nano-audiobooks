@@ -10,10 +10,16 @@
 FW      ?= NANOV170.IMG
 OUT     ?= out/NANOV170.IMG
 DATE    ?= 20260825
+POWER_SAVE ?= 0
 PY      := python3
 FWTOOL  := $(PY) tools/rknano_fw.py
 
 PATCHES := $(sort $(wildcard patches/*.patch))
+ifeq ($(POWER_SAVE),0)
+PATCHES := $(filter-out patches/power_idle.patch patches/power_clocks.patch,$(PATCHES))
+else ifneq ($(POWER_SAVE),1)
+$(error POWER_SAVE must be 0 or 1)
+endif
 ASM     := $(sort $(wildcard patches/*.S))
 GEN     := $(ASM:patches/%.S=out/gen/%.patch)
 SRC     := $(wildcard src/*.c src/*.S src/*.h src/*.ld)
