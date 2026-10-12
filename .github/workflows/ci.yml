@@ -1,0 +1,37 @@
+name: Host checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  host:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.10', '3.13']
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Check portable host logic without proprietary firmware
+        env:
+          PYTHONPATH: tests
+        run: python -m unittest -v test_music_filter test_m3u test_media_path test_playlist_queue test_prepare_book test_prepare_remux test_release_bundle
+  windows-tools:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Check end-user Python tools
+        env:
+          PYTHONPATH: tests
+        run: python -m unittest -v test_prepare_book test_prepare_remux test_release_bundle

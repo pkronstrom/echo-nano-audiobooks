@@ -65,24 +65,42 @@ Hold previous/next for stock rewind/fast-forward, as described in
 [FiiO's Echo Nano controls](https://support.fiio.jp/hc/ja/articles/60876814334617-Snowsky-ECHO-NANO%E3%81%AE%E3%82%88%E3%81%8F%E3%81%82%E3%82%8B%E8%A8%AD%E5%AE%9A%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6).
 There is no new ±30-second mapping in this build.
 
-## Optional conversion to MP3
+## M4B: try audio-preserving M4A first
+
+The native extension list recognizes M4A/MP4 but omits M4B. This does not prove
+its decoder cannot play the audio inside. For an unprotected AAC/ALAC M4B, the
+preparation tool can copy the audio into M4A without re-encoding. It requires
+installed `ffmpeg` and `ffprobe`, and an empty destination outside the source
+book directory:
+
+```sh
+python3 tools/prepare_book.py '/path/to/Book.m4b' --remux-to m4a --output '/path/to/Prepared Book'
+python3 tools/prepare_book.py '/path/to/Book.m4b' --remux-to m4a --output '/path/to/Prepared Book' --write
+```
+
+The first command previews and checks the codec; the second writes a prepared
+book. Tests verify identical AAC and ALAC audio packet hashes before/after.
+**Nano decoding, long-file seeking and resume still require the device test.**
+Embedded chapter tables are omitted; a long M4B remains one long audio file.
+Sources stay untouched. [FFmpeg stream-copy documentation](https://ffmpeg.org/ffmpeg.html#Streamcopy)
+explains the mechanism.
+
+## Optional MP3 fallback
+
+If the original codec is incompatible or M4A fails on the device, use explicit
+MP3 conversion. This re-encodes audio, unlike the M4A option:
+
+```sh
+python3 tools/prepare_book.py '/path/to/Book.m4b' --convert-to mp3 --output '/path/to/MP3 Book' --write
+```
 
 Chapter MP3 folders and long M4B files are common distribution shapes; see
 [LibriVox help](https://librivox.org/pages/help/) and
 [Audiobookshelf directory conventions](https://audiobookshelf.org/docs/documentation/libraries/book-library/directory-structure/).
-The optional conversion path keeps format handling on the computer. It requires
-an installed `ffmpeg` and an empty destination outside the source folder:
-
-```sh
-python3 tools/prepare_book.py '/path/to/Book.m4b' --convert-to mp3 --output '/path/to/Prepared Book'
-python3 tools/prepare_book.py '/path/to/Book.m4b' --convert-to mp3 --output '/path/to/Prepared Book' --write
-```
-
-Copy the resulting directory to the player. A source directory converts each
-recognized audio file separately; one M4B becomes one long MP3. Original files
-remain untouched. Embedded M4B chapters are not extracted. Conversion cannot
-remove DRM. A failed conversion can leave completed output files; use a fresh
-empty destination for a retry. Existing native MP3 files need no conversion.
+Existing native MP3 files need no conversion. A folder is processed one file at
+a time. Copy the complete output directory to the player. Processing stages the
+whole result before publishing it; an FFmpeg failure leaves no partial prepared
+book in the destination. Neither path removes DRM or modifies originals.
 
 ## Device acceptance checklist
 

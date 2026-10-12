@@ -1,0 +1,96 @@
+name: Build draft patch release
+on:
+  workflow_dispatch:
+    inputs:
+      stock_url:
+        description: HTTPS URL to raw official V1.7.0 NANOV170.IMG (exact hash is checked)
+        required: true
+        type: string
+      build_date:
+        description: Custom image date YYYYMMDD; recovery will be one day later
+        required: true
+        default: '20261012'
+        type: string
+      release_tag:
+        description: New candidate tag, for example v0.1.0-rc1
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: draft-patch-release
+  cancel-in-progress: false
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      STOCK_URL: ${{ inputs.stock_url }}
+      BUILD_DATE: ${{ inputs.build_date }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Validate release inputs
+        run: |
+          python - <<'PY'
+          import datetime, os, re
+          from urllib.parse import urlsplit
+          date = os.environ['BUILD_DATE']
+          if not re.fullmatch(r'[0-9]{8}', date):
+              raise SystemExit('build_date must be YYYYMMDD')
+          datetime.datetime.strptime(date, '%Y%m%d') + datetime.timedelta(days=1)
+          if not re.fullmatch(r'v[0-9][A-Za-z0-9._-]{0,63}', os.environ['RELEASE_TAG']):
+              raise SystemExit('release_tag must start with v and a digit, then use letters, digits, dots, underscores or hyphens')
+          if urlsplit(os.environ['STOCK_URL']).scheme != 'https':
+              raise SystemExit('stock_url must be HTTPS')
+          PY
+      - name: Install build and test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi ffmpeg
+          python -m pip install unicorn==2.1.4
+      - name: Obtain and verify user-specified stock image
+        run: |
+          curl --fail --location --proto '=https' --proto-redir '=https' --max-filesize 12000000 --output NANOV170.IMG "$STOCK_URL"
+          python tools/rknano_fw.py check NANOV170.IMG
+      - name: Build and run all host and ARM checks
+        run: |
+          make test PY=python AUDIOBOOK_DATE="$BUILD_DATE"
+          mkdir -p builds/release
+          cp out/audiobook/NANOV170.IMG builds/release/first-custom.IMG
+          cp out/audiobook/recovery/NANOV170.IMG builds/release/first-recovery.IMG
+          make clean
+          make audiobook PY=python AUDIOBOOK_DATE="$BUILD_DATE"
+          cmp builds/release/first-custom.IMG out/audiobook/NANOV170.IMG
+          cmp builds/release/first-recovery.IMG out/audiobook/recovery/NANOV170.IMG
+      - name: Build patch-only archive
+        run: python tools/build_release.py --output builds/release/echo-nano-patch.zip --icons docs/icon-review.html
+      - name: Prepare release notes and checksum
+        run: |
+          cd builds/release
+          sha256sum echo-nano-patch.zip > SHA256SUMS
+          cat > RELEASE-NOTES.md <<'NOTES'
+          Candidate patch-only release for FiiO Echo Nano V1.7.0.
+
+          Download echo-nano-patch.zip, extract it, and follow README.md. You supply
+          the original official firmware. Python creates a custom image and a
+          later-dated stock recovery image locally; no compiler is needed.
+
+          Ordered M3U playback, per-book resume, .nomusic exclusion and folder
+          containment are included. Stock power settings are retained. Host/ARM
+          checks and reproducibility passed; record actual device acceptance
+          before publishing this draft. It is not a device-tested release yet.
+          NOTES
+      - name: Create draft only, with patch assets only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Create the exact source tag atomically; an existing tag is an error.
+          gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/tags/$RELEASE_TAG" -f "sha=$GITHUB_SHA" > /dev/null
+          gh release create "$RELEASE_TAG" builds/release/echo-nano-patch.zip builds/release/SHA256SUMS --verify-tag --draft --prerelease --title "Echo Nano $RELEASE_TAG" --notes-file builds/release/RELEASE-NOTES.md

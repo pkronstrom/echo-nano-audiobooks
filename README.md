@@ -14,6 +14,13 @@ and File Browser folder containment. See [audiobook setup, images and device
 checklist](docs/audiobooks.md). Build it with `make audiobook`; the default
 `make` retains P1b. These local changes are host/ARM-verified, pending device tests.
 
+For the next device session, use [Tomorrow's quick start](docs/TEST-TOMORROW.md).
+The [patch-only release format](docs/releases.md) lets users supply the official
+image and generate custom/recovery images with Python alone. Public release is
+pending device validation. Review proposed icons in the [offline feedback page](docs/icon-review.html).
+The [community patch review](docs/community-patches.md) records performance
+improvements and why experimental power changes stay disabled.
+
 Not affiliated with or endorsed by FiiO. FiiO and Echo Nano are trademarks of their owners.
 
 Patches for the official FiiO Echo Nano firmware **V1.7.0** that add media-library
