@@ -45,15 +45,25 @@ class BaselineChecks(unittest.TestCase):
                 count += 1
         self.assertGreater(count, 0)
 
-    def test_shuffle_scope_patches_are_present(self):
+    def test_library_shuffle_scope_patches_are_present(self):
         for line in (ROOT / "patches/shuffle_scope.patch").read_text().splitlines():
             line = line.split("#", 1)[0].strip()
             if not line:
                 continue
             mod, addr, value = line.split(":", 2)
+            if int(addr, 16) in (0x03083026, 0x03083042, 0x03083060):
+                continue  # P1b replaces raw File Browser settings with folder containment
             offset, _ = self.custom.region(int(mod), int(addr, 16))
             value = bytes.fromhex(value)
             self.assertEqual(self.custom.d[offset:offset + len(value)], value, line)
+
+    def test_raw_scope_patch_stays_within_reclaimed_code(self):
+        line = (ROOT / "out/gen/music_scope_10_raw_settings.patch").read_text().splitlines()[-1]
+        mod, addr, data = line.split(":")
+        self.assertEqual((int(mod), int(addr, 16), len(bytes.fromhex(data))),
+                         (33, 0x0308301e, 0x030830dc - 0x0308301e))
+        offset, _ = self.custom.region(33, 0x030830dc)
+        self.assertEqual(self.custom.d[offset:offset+8], self.stock.d[offset:offset+8])
 
     def test_recovery_changes_only_dates_and_crc(self):
         self.assertGreater(self.recovery.date, self.custom.date)

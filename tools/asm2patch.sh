@@ -11,6 +11,16 @@ read -r mod addr < <(sed -nE 's/^@[[:space:]]*patch[[:space:]]+([0-9]+)[[:space:
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 arm-none-eabi-gcc -c -mthumb -mcpu=cortex-m3 -x assembler-with-cpp -I"$(dirname "$src")" -Ipatches -Iout/gen -DPATCH_BASE=0x$addr "$src" -o "$tmp/p.o"
 arm-none-eabi-ld -Ttext=0x$addr -e 0x$addr -o "$tmp/p.elf" "$tmp/p.o"
+# A literal pool can raise section alignment and silently move a halfword-
+# aligned patch. Branch macros assume _patch_start is exactly PATCH_BASE.
+python3 - "$tmp/p.elf" "$addr" <<'CHECK'
+import subprocess, sys
+symbols = subprocess.check_output(["arm-none-eabi-nm", sys.argv[1]], text=True)
+actual = next(int(line.split()[0], 16) for line in symbols.splitlines()
+              if line.split()[-1] == "_patch_start")
+if actual != int(sys.argv[2], 16):
+    raise SystemExit("Patch start shifted by alignment: %08x != %s" % (actual, sys.argv[2]))
+CHECK
 arm-none-eabi-objcopy -O binary -j .text "$tmp/p.elf" "$tmp/p.bin"
 mkdir -p "$(dirname "$out")"
 hex=$(python3 -c 'import sys;print(open(sys.argv[1],"rb").read().hex())' "$tmp/p.bin")

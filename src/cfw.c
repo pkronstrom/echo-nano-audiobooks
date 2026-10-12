@@ -665,7 +665,7 @@ void cfw_scan(volatile u16 *lib, u32 base)
     st.base = base;
     buf.w.ksec = buf.w.hsec = -1;
     st.t_start = fw_ticks();
-    log_printf("echo P1a media library refresh, db base %x, fs %u\r\n", base, FS_TYPE);
+    log_printf("echo P1b media library refresh, db base %x, fs %u\r\n", base, FS_TYPE);
 
     fw_load_module(MOD39_ID, 7);
     music_filter_reset();

@@ -1,5 +1,7 @@
 # Music separation: P1a
 
+Historical checkpoint. [P1b](playback-containment.md) adds File Browser containment.
+
 P1a adds recursive `.nomusic` exclusion to media-library refresh. Place an empty
 file named `.nomusic` inside each audiobook or meditation root, then run **Media
 Library → Media Library Refresh**. The whole subtree is omitted from library

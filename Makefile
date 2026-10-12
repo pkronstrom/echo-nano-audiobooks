@@ -2,14 +2,14 @@
 #
 #   make                 build out/NANOV170.IMG from NANOV170.IMG (stock) + patches/ + src/
 #   make FW=path/to/NANOV170.IMG   stock image somewhere else
-#   make DATE=20260901   build date (default 20260827, one day after stock V1.7.0)
-#   make recovery        unmodified stock code dated 20260828 -> out/recovery/NANOV170.IMG
+#   make DATE=20260901   build date (default 20260829, one day after stock V1.7.0)
+#   make recovery        unmodified stock code dated 20260830 -> out/recovery/NANOV170.IMG
 #   make check           is the input the expected stock image?
 #   make info / verify / diff / clean
 
 FW      ?= NANOV170.IMG
 OUT     ?= out/NANOV170.IMG
-DATE    ?= 20260827
+DATE    ?= 20260829
 POWER_SAVE ?= 0
 PY      := python3
 FWTOOL  := $(PY) tools/rknano_fw.py
@@ -54,7 +54,7 @@ $(BLOB) out/gen/syms.inc &: $(SRC) src/hooks.txt tools/build_blob.sh tools/hooks
 # stock code, new date: the loader boots the newest valid copy, so the original
 # image would not replace a newer custom build
 ifeq ($(origin DATE),file)
-recovery: DATE := 20260828
+recovery: DATE := 20260830
 endif
 recovery: check
 	@mkdir -p out/recovery
