@@ -7,7 +7,9 @@ and current delivery status is in [MASTERPLAN.md](MASTERPLAN.md).
 See [baseline validation and recovery](docs/baseline.md) before using a build.
 Local builds disable upstream's experimental power patches by default
 (`POWER_SAVE=0`). The upstream description below includes those optional patches.
-Music separation, M3U playback and per-book resume are not implemented yet.
+The first custom increment, **P1a**, adds recursive `.nomusic` exclusion from
+the library and main-menu Shuffle. See [usage, artifacts and limitations](docs/music-separation.md).
+M3U playback and per-book resume are not implemented yet.
 
 Not affiliated with or endorsed by FiiO. FiiO and Echo Nano are trademarks of their owners.
 
@@ -35,7 +37,8 @@ on your computer.
 | `CFWLOG.TXT` in the card's root after each refresh: timings and counters | tested on device |
 | **Power saving**: lower CPU clocks during playback (decode core 144-288 MHz instead of 350-450 MHz for MP3, AAC, WMA, WAV, OGG, FLAC and ALAC), the CPU sleeps between events with the screen on, and the scroll wheel is polled every 1 ms instead of every 0.4 ms | new in 6.0.5; battery gain not measured |
 
-About shows the custom version (6.0.x) instead of the stock version.
+About shows `P1a` for this local feature build. The feature table above describes
+upstream testing; local changes have not yet been tested on a device.
 
 After flashing, run **Media Library → Media Library Refresh** once: Recent Albums
 and Artists need data the stock refresh doesn't write.

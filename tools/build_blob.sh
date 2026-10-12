@@ -10,6 +10,19 @@ set -euo pipefail
 out=$1 fw=$2
 mkdir -p "$out/obj"
 
+# Trampolines reproduce precisely these stock instructions.
+python3 - "$fw" <<'CHECK'
+import sys
+sys.path.insert(0, "tools")
+from rknano_fw import Image
+image = Image(open(sys.argv[1], "rb").read())
+for address, expected in ((0x0305b3ea, bytes.fromhex("2de9f05f")),
+                          (0x0305b2a2, bytes.fromhex("2de9f74f"))):
+    offset, _ = image.region(0, address)
+    if image.d[offset:offset + 4] != expected:
+        raise SystemExit("Unexpected directory-reader prologue at %08x" % address)
+CHECK
+
 python3 tools/hooks.py wraps src/hooks.txt "$fw" > "$out/wraps.h"
 
 CFLAGS=(-mthumb -mcpu=cortex-m3 -Os -std=gnu11 -ffreestanding -fno-builtin-printf

@@ -76,3 +76,18 @@ prof_thunk:
     ldr     lr, [ip, #16]
     bx      lr
     .ltorg
+
+@ Stock raw-directory reader prologues displaced by refresh-only hooks.
+    .global music_fat_original
+    .type music_fat_original, %function
+music_fat_original:
+    push.w {r4-r11, ip, lr}
+    ldr ip, =0x0305b3ef
+    bx ip
+    .global music_exfat_original
+    .type music_exfat_original, %function
+music_exfat_original:
+    push.w {r0-r2, r4-r11, lr}
+    ldr ip, =0x0305b2a7
+    bx ip
+    .ltorg

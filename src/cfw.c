@@ -29,6 +29,7 @@
  */
 #include <stdarg.h>
 #include "fw.h"
+#include "music_filter.h"
 #include "prof.h"
 
 #define FOLDER_TAB ((struct folder *)0x03092400)  /* only mod40 maps here; free during the walk */
@@ -64,7 +65,7 @@ static struct {
 } st;
 
 #define KWIN_SEC 4      /* key window: 4 sectors = 256 songs of one field */
-#define KWINS 2
+#define KWINS 1
 #define HWINS 8         /* hash windows: 1 sector = 128 songs of one field */
 
 static union {
@@ -391,6 +392,31 @@ static void fread_hook(int on)
     win.len = 0;
 }
 
+/* Hooks are resident only during refresh, including the separate RECORD pass. */
+void music_watchdog(void) { fw_wdt(); }
+static void music_hook(u32 address, u32 target, u16 *saved, int on)
+{
+    volatile u16 *p = (volatile u16 *)address;
+    u16 a = saved[0], b = saved[1];
+    if (on) {
+        saved[0] = p[0]; saved[1] = p[1];
+        u32 off = (target & ~1u) - (address + 4), s = off >> 24 & 1;
+        a = 0xf000 | s << 10 | (off >> 12 & 0x3ff);
+        b = 0x9000 | (~(off >> 23 ^ s) & 1) << 13 |
+            (~(off >> 22 ^ s) & 1) << 11 | (off >> 1 & 0x7ff);
+    }
+    u32 mask;
+    __asm volatile("mrs %0, primask\n cpsid i" : "=r"(mask));
+    p[0] = a; p[1] = b;
+    __asm volatile("dsb\n isb\n msr primask, %0" : : "r"(mask) : "memory");
+}
+void music_hooks(int on)
+{
+    static u16 fat[2], exfat[2];
+    music_hook(0x0305b3ea, (u32)music_fat_entry, fat, on);
+    music_hook(0x0305b2a2, (u32)music_exfat_entry, exfat, on);
+}
+
 /* per-format tag parse times */
 static const char tag_ext[][4] = { "FLA", "MP3", "M4A", "WAV", "oth" };
 #define TAG_KINDS 5                     /* last = anything else */
@@ -639,15 +665,19 @@ void cfw_scan(volatile u16 *lib, u32 base)
     st.base = base;
     buf.w.ksec = buf.w.hsec = -1;
     st.t_start = fw_ticks();
-    log_printf("cfw 6.0.4 media library refresh, db base %x, fs %u\r\n", base, FS_TYPE);
+    log_printf("echo P1a media library refresh, db base %x, fs %u\r\n", base, FS_TYPE);
 
     fw_load_module(MOD39_ID, 7);
+    music_filter_reset();
+    music_hooks(1);
     fread_hook(1);
     mod39_walk();
     fread_hook(0);
     compact_flush();
     st.t_walk = fw_ticks();
     mod39_record();
+    music_hooks(0);
+    log_printf("nomusic probe errors: %u\r\n", music_filter_errors);
     st.t_record = fw_ticks();
     mod05_progress(1);
 

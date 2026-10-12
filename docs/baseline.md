@@ -4,8 +4,9 @@
 
 Upstream: [NaniteCFW](https://github.com/maaraneasi/nanitecfw), pinned revision
 `ea4e6dc2cb386483093c7b045b6e85f26939ce2e` (12 October 2026).
-The Git history is imported locally, with an `upstream` remote; no commits or
-remote writes were made for this project work.
+The Git history is imported locally, with an `upstream` remote; no project commits or
+remote writes were made for this project work at the initial baseline import.
+Local source checkpoints have since been committed and tagged.
 
 Stock image downloaded from the v1.7.0 link on
 [FiiO's official firmware page](https://forum.fiio.com/note/showNoteContent.do?id=202605161533005115232):
