@@ -61,6 +61,7 @@ For local builds, the restored toolchain is in ignored `builds/tools/`:
 export PATH="$PWD/builds/tools/arm-gnu-toolchain-13.2.Rel1-darwin-arm64-arm-none-eabi/bin:$PATH"
 builds/tools/local/bin/make
 builds/tools/local/bin/make recovery
+builds/tools/local/bin/make playback-core
 builds/tools/test-env/bin/python -m unittest discover -s tests -v
 ```
 

@@ -44,6 +44,7 @@ def exfat_entry(name, cluster=20, directory=False, flags=3, length=4096):
     primary[0], primary[1] = 0x85, 1 + len(names)
     primary[4] = 0x10 if directory else 0x20
     stream[0], stream[1], stream[3] = 0xc0, flags, len(encoded) // 2
+    struct.pack_into("<Q", stream, 8, length)
     struct.pack_into("<I", stream, 20, cluster)
     struct.pack_into("<Q", stream, 24, length)
     return [bytes(primary), bytes(stream), *names]

@@ -10,7 +10,9 @@ Local builds disable upstream's experimental power patches by default
 The current custom build, **P1b**, adds recursive `.nomusic` exclusion from
 the library and main-menu Shuffle, plus File Browser playback confined to its
 selected folder. See [usage, test images and validation](docs/playback-containment.md).
-M3U playback and per-book resume are not implemented yet.
+The [playlist core](docs/playlists.md) is implemented and host-tested; File Browser
+integration and per-book resume remain in progress. M3U playback is not yet in
+the test image.
 
 Not affiliated with or endorsed by FiiO. FiiO and Echo Nano are trademarks of their owners.
 
@@ -88,7 +90,7 @@ To go back to the official firmware, build the stock code with a newer date and
 flash it the same way:
 
 ```sh
-make recovery                        # dated 20260826
+make recovery                        # dated 20260830
 ```
 
 The default date is one day after the default build. If you flashed custom

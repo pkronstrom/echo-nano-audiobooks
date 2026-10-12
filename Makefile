@@ -4,6 +4,8 @@
 #   make FW=path/to/NANOV170.IMG   stock image somewhere else
 #   make DATE=20260901   build date (default 20260829, one day after stock V1.7.0)
 #   make recovery        unmodified stock code dated 20260830 -> out/recovery/NANOV170.IMG
+#   make playback-core    build experimental playlist core (not included in image)
+#   make test             build both images and playlist core, then run host/ARM checks
 #   make check           is the input the expected stock image?
 #   make info / verify / diff / clean
 
@@ -32,7 +34,7 @@ ifeq ($(shell command -v arm-none-eabi-gcc),)
 $(warning arm-none-eabi-gcc not found - see README "Requirements")
 endif
 
-.PHONY: all build recovery check verify info diff help clean
+.PHONY: all build recovery check verify info diff help clean playback-core test
 
 all: build
 
@@ -63,6 +65,12 @@ recovery: check
 
 out/gen/%.patch: patches/%.S patches/fw.inc out/gen/syms.inc tools/asm2patch.sh
 	tools/asm2patch.sh $< $@
+
+playback-core:
+	tools/build_playback.sh
+
+test: build recovery playback-core
+	$(PY) -m unittest discover -s tests -v
 
 verify:
 	$(FWTOOL) crc $(OUT)
