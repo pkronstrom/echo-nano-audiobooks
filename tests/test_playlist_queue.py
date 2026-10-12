@@ -63,8 +63,8 @@ class QueueTests(unittest.TestCase):
         self.assertEqual(self.lib.playlist_count(),0)
     def test_capacity_and_out_of_range(self):
         result,stats=self.build('one.mp3\n'*600)
-        self.assertEqual(result,512);self.assertEqual(stats.limited,1)
-        ref=Ref();self.assertEqual(self.lib.playlist_ref(512,C.byref(ref)),0)
+        self.assertEqual(result,256);self.assertEqual(stats.limited,1)
+        ref=Ref();self.assertEqual(self.lib.playlist_ref(256,C.byref(ref)),0)
     def test_exfat_native_open_limit_is_applied_before_queuing(self):
         text='日'*123+'.mp3\n'+'日'*124+'.mp3'
         result,stats=self.build(text,exfat=True)

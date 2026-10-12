@@ -1,7 +1,7 @@
 # Music separation: P1b test build
 
 P1b combines recursive `.nomusic` library exclusion with **File Browser folder
-containment**. This is the current custom feature build.
+containment**. This checkpoint is preserved; [P3a](audiobooks.md) now includes these features.
 
 Put an empty `.nomusic` file in each audiobook/meditation root and refresh the
 media library. Main-menu Shuffle and library views omit each marked tree.
@@ -13,7 +13,7 @@ rewritten: containment applies to the active File Browser playback context.
 
 This means playing one meditation phase folder will not automatically advance
 to a sibling phase folder. Choose another folder deliberately. M3U playback and
-independent per-book resume are still pending.
+independent per-book resume are available in P3a.
 
 ## Ready-to-test artifacts
 

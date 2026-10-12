@@ -183,6 +183,22 @@ class PlaybackRuntimeTests(unittest.TestCase):
                 self.assertEqual(self.call('playback_playlist_step',state,1),19)
                 self.assertEqual(bytes(self.cpu.mem_read(state,256)),before)
 
+    def test_sequential_end_does_not_wrap_when_tail_disappears(self):
+        self.dirs={0:[fat_entry(b'LIST    M3U',90),fat_entry(b'ONE     MP3',100),
+                      fat_entry(b'TWO     MP3',101),fat_entry(b'THREE   MP3',102),END]}
+        self.files={90:b'one.mp3\ntwo.mp3\nthree.mp3\n'}
+        self.cpu.mem_write(0x20001000,'/list.m3u'.encode('utf-16le')+b'\0\0')
+        self.assertEqual(self.call('playback_load_playlist',0x20001000,0x20002000),3)
+        state=0x20003000
+        self.assertEqual(self.call('playback_playlist_step',state,0),0)
+        self.dirs[0][2:]=[END]
+        before=bytes(self.cpu.mem_read(state,96))
+        self.assertEqual(self.call('playback_playlist_move',state,1,0),19)
+        self.assertEqual(bytes(self.cpu.mem_read(state,96)),before)
+        self.assertEqual(self.call('playback_playlist_move',state,1,1),0)
+        self.assertEqual(bytes(self.cpu.mem_read(state,96)),before)
+        self.assertEqual(self.call('playback_playlist_move',state,0xffffffff,0),19)
+
     def install_loader(self):
         line=next(l for l in (ROOT/'out/playback/loader.patch').read_text().splitlines() if not l.startswith('#'))
         mod,address,data=line.split(':');code=bytes.fromhex(data)

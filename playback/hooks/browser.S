@@ -1,0 +1,19 @@
+@ patch 31 0307acb6
+#include "fw.inc"
+#include "playback_syms.inc"
+    push {r4-r11,lr}
+    sub sp,#84
+    fbl 0x03072e28
+    cmp r0,#0
+    fbne 0x0307af40
+    add r0,sp,#4
+    fbl playback_browser_select
+    cmp r0,#0
+    fbeq 0x0307af40
+    mov r4,r0
+    movw r7,#0x5f6c
+    movt r7,#0x0300
+    tst r0,#1
+    fbne playback_launch_bridge
+    fb 0x0307acf8
+    .org 0x0307acf8-PATCH_BASE

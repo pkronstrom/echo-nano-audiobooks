@@ -2,6 +2,7 @@
 #define ECHO_PLAYLIST_QUEUE_H
 #include "m3u.h"
 #include "path.h"
+#define PLAYLIST_CAPACITY 256
 typedef int (*playlist_lookup_fn)(void *, const u16 *, struct media_ref *);
 /* Replaces queue. Returns accepted count, or negative error with empty queue. */
 int playlist_build(m3u_read_fn, playlist_lookup_fn, void *, const u16 *, struct m3u_stats *);

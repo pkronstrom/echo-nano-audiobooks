@@ -2,7 +2,7 @@
 /* Only geometry and identity survive parsing; live metadata is read at play time. */
 struct queued_file { u32 parent, length, cluster; u16 index; u8 flags, reserved; };
 _Static_assert(sizeof(struct queued_file) == 16, "queue RAM budget");
-static struct queued_file tracks[M3U_MAX_ENTRIES];
+static struct queued_file tracks[PLAYLIST_CAPACITY];
 static u32 count;
 struct build_context { m3u_read_fn read; playlist_lookup_fn lookup; void *ctx; };
 int playlist_audio_path(const u16 *path)
@@ -43,7 +43,7 @@ static int append(void *ctx, const u16 *path, u32 offset)
     if (r <= 0) return r;
     if ((ref.filesystem == 3 && ref.name_units > 127) ||
         (ref.attrs & 16) || ref.cluster < 2 || ref.index >= 65536 ||
-        ref.parent.flags > 255 || count >= M3U_MAX_ENTRIES) return 0;
+        ref.parent.flags > 255 || count >= PLAYLIST_CAPACITY) return 0;
     tracks[count++] = (struct queued_file){ref.parent.cluster, ref.parent.length,
                                           ref.cluster, ref.index, ref.parent.flags, 0};
     return 1;
@@ -55,6 +55,7 @@ int playlist_build(m3u_read_fn read, playlist_lookup_fn lookup, void *ctx,
     count = 0;
     int r = m3u_scan(read_chunk, append, &b, base, stats);
     if (r) { count = 0; return r; }
+    if (count == PLAYLIST_CAPACITY && stats->skipped) stats->limited = 1;
     return (int)count;
 }
 void playlist_clear(void) { count = 0; }

@@ -95,3 +95,12 @@ and draws a sixth entry separately. Larger icons therefore affect layout/code-ca
 budget, not just bitmap substitution. Stock icon decoding and the display's exact
 layout still need inspection before showing alternatives. No visual direction,
 additional menu layout or icon replacement is approved.
+
+## P3a update (12 October 2026)
+
+The earlier audiobook unknowns above are historical. The user confirmed numbered
+chapter folders and single long files. Native stop/resume/seek and existing-file
+RW were mapped; P3a integrates per-book journal persistence and optional host MP3
+conversion. See [current evidence](playlist-integration-evidence.md) for exact
+addresses and limits, and [device instructions](audiobooks.md) for the remaining
+hardware checks.

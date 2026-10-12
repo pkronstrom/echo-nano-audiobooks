@@ -1,5 +1,6 @@
 #include "runtime.h"
 #include "queue.h"
+#include "browser.h"
 #define native_fat_entry FW(0x0305b3ea, int, u8 *, u32, u32)
 #define native_fat_open FW(0x0305be12, int, u8 *, u32, u32, u32, const char *)
 #define native_exfat_open FW(0x0305c102, int, u8 *, const void *, u32, u32, const char *)
@@ -41,7 +42,7 @@ static int safe_entry(const struct media_ref *ref, struct media_dir *parent)
     return raw[0] && raw[0] != 0xe5 && !(raw[11] & 24) &&
            ((u32)raw[20] << 16 | (u32)raw[21] << 24 | raw[26] | (u32)raw[27] << 8) == ref->cluster;
 }
-int playback_open(const struct media_ref *ref)
+static int open_mode(const struct media_ref *ref, const char *mode)
 {
     if (ref->attrs & 16) return -1;
     u8 name[12];
@@ -51,10 +52,20 @@ int playback_open(const struct media_ref *ref)
      * The native exFAT indexed-open wrapper only forwards cluster and flags. */
     int valid = safe_entry(ref, &parent);
     int h = -1;
-    if (valid) h = FS_TYPE == 3 ? native_exfat_open(name, &parent, ref->index, 3, "R") :
-                              native_fat_open(name, parent.cluster, ref->index, 3, "R");
+    if (valid) h = FS_TYPE == 3 ? native_exfat_open(name, &parent, ref->index, 3, mode) :
+                              native_fat_open(name, parent.cluster, ref->index, 3, mode);
     fw_unlock();
     return h >= 0 && h < NFILES ? h : -1;
+}
+int playback_open(const struct media_ref *ref) { return open_mode(ref, "R"); }
+int playback_open_update(const struct media_ref *ref)
+{
+    if (ref->size != 1024 || (ref->attrs & 1)) return -1;
+    int handle = open_mode(ref, "RW");
+    if (handle >= 0 && word(FILES+handle*FILE_SIZE+16) != 1024) {
+        fw_file_close(handle); return -1;
+    }
+    return handle;
 }
 int playback_read(int handle, u32 offset, u8 *out, u32 length)
 {
@@ -134,7 +145,7 @@ int playback_load_playlist(const u16 *path, struct m3u_stats *stats)
 }
 /* Selection is separate from load so a failed/empty playlist cannot replace
  * the decoder state. Missing/stale entries are skipped, at most one full lap. */
-int playback_playlist_step(u8 *state, int direction)
+int playback_playlist_move(u8 *state, int direction, int wrap)
 {
     u32 count = playlist_count();
     if (!count) return 19;
@@ -142,6 +153,7 @@ int playback_playlist_step(u8 *state, int direction)
     if (!position || position > count) position = direction < 0 ? 1 : count;
     if (!direction) position = count; /* start at first listed track */
     for (u32 tried = 0; tried < count; tried++) {
+        if (!wrap && direction && (direction < 0 ? position == 1 : position == count)) return 19;
         position = direction < 0 ? (position == 1 ? count : position-1) :
                                   (position == count ? 1 : position+1);
         struct media_ref ref;
@@ -149,4 +161,19 @@ int playback_playlist_step(u8 *state, int direction)
         if (!playback_select_ref(&ref, state, position, count)) return 0;
     }
     return 19;
+}
+
+int playback_playlist_step(u8 *state, int direction)
+{
+    return playback_playlist_move(state, direction, 1);
+}
+
+int playback_browser_path(const u8 *node, u16 *out)
+{
+    fw_lock();
+    u32 root = word((const u8 *)0x03076b30+13);
+    int result = media_browser_path(directory_read, 0, FS_TYPE == 3,
+                        (const u8 *)0x03005f6c, node, root, out);
+    fw_unlock();
+    return result;
 }

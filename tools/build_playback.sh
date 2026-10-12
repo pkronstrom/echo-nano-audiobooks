@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Experimental playback payload. Not included in delivery image until UI/queue integration.
+# Playback payload and native hooks, included by the separate audiobook target.
 set -euo pipefail
 out=${1:-out/playback}
 mkdir -p "$out/obj"

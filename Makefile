@@ -5,7 +5,8 @@
 #   make DATE=20260901   build date (default 20260829, one day after stock V1.7.0)
 #   make recovery        unmodified stock code dated 20260830 -> out/recovery/NANOV170.IMG
 #   make playback-core    build experimental playlist core (not included in image)
-#   make test             build both images and playlist core, then run host/ARM checks
+#   make audiobook        build P3a audiobook test image and recovery
+#   make test             build all images and run host/ARM checks
 #   make check           is the input the expected stock image?
 #   make info / verify / diff / clean
 
@@ -13,6 +14,7 @@ FW      ?= NANOV170.IMG
 OUT     ?= out/NANOV170.IMG
 DATE    ?= 20260829
 POWER_SAVE ?= 0
+AUDIOBOOK_DATE ?= 20261012
 PY      := python3
 FWTOOL  := $(PY) tools/rknano_fw.py
 
@@ -34,7 +36,7 @@ ifeq ($(shell command -v arm-none-eabi-gcc),)
 $(warning arm-none-eabi-gcc not found - see README "Requirements")
 endif
 
-.PHONY: all build recovery check verify info diff help clean playback-core test
+.PHONY: all build recovery check verify info diff help clean playback-core audiobook test
 
 all: build
 
@@ -69,7 +71,10 @@ out/gen/%.patch: patches/%.S patches/fw.inc out/gen/syms.inc tools/asm2patch.sh
 playback-core:
 	tools/build_playback.sh
 
-test: build recovery playback-core
+audiobook: build playback-core
+	$(PY) tools/build_audiobook.py --stock $(FW) --base $(OUT) --date $(AUDIOBOOK_DATE)
+
+test: audiobook recovery
 	$(PY) -m unittest discover -s tests -v
 
 verify:

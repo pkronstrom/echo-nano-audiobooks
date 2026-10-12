@@ -7,12 +7,12 @@ and current delivery status is in [MASTERPLAN.md](MASTERPLAN.md).
 See [baseline validation and recovery](docs/baseline.md) before using a build.
 Local builds disable upstream's experimental power patches by default
 (`POWER_SAVE=0`). The upstream description below includes those optional patches.
-The current custom build, **P1b**, adds recursive `.nomusic` exclusion from
-the library and main-menu Shuffle, plus File Browser playback confined to its
-selected folder. See [usage, test images and validation](docs/playback-containment.md).
-The [playlist core](docs/playlists.md) is implemented and host-tested; File Browser
-integration and per-book resume remain in progress. M3U playback is not yet in
-the test image.
+The newest test build, **P3a**, adds ordered M3U playback and independent
+per-book resume, with a preparation tool for chapter folders or single long
+files and optional MP3 conversion. It includes recursive `.nomusic` exclusion
+and File Browser folder containment. See [audiobook setup, images and device
+checklist](docs/audiobooks.md). Build it with `make audiobook`; the default
+`make` retains P1b. These local changes are host/ARM-verified, pending device tests.
 
 Not affiliated with or endorsed by FiiO. FiiO and Echo Nano are trademarks of their owners.
 
@@ -40,7 +40,7 @@ on your computer.
 | `CFWLOG.TXT` in the card's root after each refresh: timings and counters | tested on device |
 | **Power saving**: lower CPU clocks during playback (decode core 144-288 MHz instead of 350-450 MHz for MP3, AAC, WMA, WAV, OGG, FLAC and ALAC), the CPU sleeps between events with the screen on, and the scroll wheel is polled every 1 ms instead of every 0.4 ms | new in 6.0.5; battery gain not measured |
 
-About shows `P1b` for this local feature build. The feature table above describes
+About shows `P3a` for the audiobook build (`P1b` for the default build). The feature table above describes
 upstream testing; local changes have not yet been tested on a device.
 
 After flashing, run **Media Library → Media Library Refresh** once: Recent Albums
@@ -71,17 +71,17 @@ make                                 # writes out/NANOV170.IMG
 `DATE` is the build date stored in the image. The device boots whichever
 firmware copy has the **newest** date, so every image you flash must have a
 newer date than the one before it. The stock V1.7.0 image is dated 2026-08-24
-and the build defaults to one day later, `DATE=20260825`. Keep the date as
+and the build defaults to 2026-08-29, `DATE=20260829`. Keep the date as
 close to stock as possible: a future official FiiO update with an older date
 than your custom build would be ignored. If you flash another custom build
-over this one, raise the date by a day each time (`make DATE=20260826`, ...).
+over this one, raise the date by a day each time (`make DATE=20260831`, ...).
 
 ## Install
 
 1. Connect the Echo Nano by USB and copy `out/NANOV170.IMG` to the root of its
    internal storage.
 2. Eject it and restart the player; it installs the update while it boots.
-3. Check **About**: it should show `6.0.x`.
+3. Check **About**: P1b for this default build, P3a for the audiobook image.
 4. Run **Media Library Refresh** once.
 
 ## Recovery
