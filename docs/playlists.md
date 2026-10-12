@@ -27,7 +27,7 @@ Implemented behavior:
   entries are skipped during next/previous; an all-unavailable queue fails after
   one lap without replacing the last valid playback state.
 
-The full suite has 64 tests. ARM tests execute the compiled parser, resolver,
+The full suite has 75 tests. ARM tests execute the compiled parser, resolver,
 queue adapter, stock indexed file-open and stock metadata enumerator. Fixtures
 cover FAT and exFAT, Unicode, cross-folder listed order, duplicate entries, wrap,
 and replacement/removal after loading. Raw directory reads, sector I/O, locks
@@ -41,7 +41,7 @@ make playback-core
 make test PY=path/to/python-with-unicorn
 ```
 
-The experimental payload currently uses 3772 bytes of code and 10244 bytes of
+The experimental payload currently uses 4660 bytes of code and 10756 bytes of
 BSS, below the 18780-byte RAM window. The queue stores compact physical references;
 parser scratch uses BSS to avoid adding approximately 3.4 KiB of nested stack
 use. The parser/queue have one player-service owner and are not reentrant.
@@ -55,7 +55,13 @@ A launch hook must capture the selected node and reconstruct ancestry before UI
 state is reused. The browser has up to seven directory levels, each with physical
 cluster/exFAT descriptor information. See the implementation plan for sequencing.
 
-Code loading also needs an explicit lifecycle: playback and refresh share the
+The experimental loader now has ARM coverage for first load, cached queue
+preservation, reload after refresh, and failed/invalid flash reads. Image staging
+checks preserve resources, module layout, header copy and CRC; it is still a
+test-only operation. Browser-path fixtures cover root/nested FAT and exFAT
+selections, Unicode ancestry, stale identities and invalid names/depth.
+
+Code loading needs an explicit lifecycle in the final hooks: playback and refresh share the
 high RAM window. The proposed flash staging region is verified zero padding
 `0xa55200..0xa58000`, beyond declared resources and before the header copy. The
 module table must remain unchanged; bytes after its entries are occupied.
@@ -63,3 +69,6 @@ module table must remain unchanged; bytes after its entries are occupied.
 Do not enable playback hooks until their loader, browser selection, queue modes,
 resume behavior and refresh transitions have compiled ARM coverage. This is an
 implementation checkpoint, not a flashable playlist release.
+
+See the [integration evidence ledger](playlist-integration-evidence.md) for
+verified addresses, test limits and the remaining handoff questions.

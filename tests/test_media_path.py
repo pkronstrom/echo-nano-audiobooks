@@ -44,7 +44,7 @@ class PathTests(unittest.TestCase):
 
     def setUp(self): self.dirs, self.calls, self.errors = {}, [], {}
 
-    def resolve(self, path, exfat=False):
+    def reader(self):
         @self.read_fn
         def read(ctx, fs, parent, index, out):
             cluster = parent.contents.cluster
@@ -57,9 +57,41 @@ class PathTests(unittest.TestCase):
             if index >= len(entries): return 9
             C.memmove(out, entries[index], 32)
             return 0
+        return read
+
+    def resolve(self, path, exfat=False):
         ref = Ref()
-        result = self.lib.media_resolve(read,None,exfat,wide(path),C.byref(ref))
+        result = self.lib.media_resolve(self.reader(),None,exfat,wide(path),C.byref(ref))
         return result, ref
+
+    def directory_name(self, cluster, exfat=False, parent_cluster=0):
+        self.lib.media_directory_name.argtypes=[self.read_fn,C.c_void_p,C.c_int,C.POINTER(Dir),C.c_uint,C.c_void_p,C.POINTER(Ref)]
+        parent=Dir(parent_cluster,4096,0,3);name=(C.c_uint16*256)();ref=Ref()
+        result=self.lib.media_directory_name(self.reader(),None,exfat,C.byref(parent),cluster,name,C.byref(ref))
+        n=0
+        while name[n]:n+=1
+        return result,C.string_at(name,n*2).decode('utf-16le'),ref
+
+    def test_directory_identity_recovers_unicode_name_and_geometry(self):
+        for exfat in (False,True):
+            with self.subTest(exfat=exfat):
+                if exfat:
+                    self.dirs={2:[*exfat_entry('Wrong',29,True),*exfat_entry('Kirjat 日本語',30,True),END]}
+                else:self.dirs={0:[fat_entry(b'WRONG      ',29,True),*lfn('Kirjat 日本語',b'KIRJAT~1   ',30,True),END]}
+                result,name,ref=self.directory_name(30,exfat)
+                self.assertEqual((result,name,ref.cluster),(1,'Kirjat 日本語',30))
+                self.assertEqual(ref.attrs & 16,16)
+                self.assertEqual(self.directory_name(99,exfat)[0],0)
+
+    def test_directory_identity_never_accepts_file_or_dot_entry(self):
+        self.dirs={0:[fat_entry(b'NOTADIR FLA',30),fat_entry(b'..         ',30,True),END]}
+        self.assertEqual(self.directory_name(30)[0],0)
+
+    def test_directory_identity_falls_back_to_checked_short_alias(self):
+        entries=lfn('Wrong long name',b'SAFE       ',30,True)
+        corrupt=bytearray(entries[0]);corrupt[13]^=1;entries[0]=bytes(corrupt)
+        self.dirs={0:[*entries,END]}
+        self.assertEqual(self.directory_name(30)[:2],(1,'SAFE'))
 
     def test_nested_fat_unicode_and_long_names(self):
         self.dirs = {0:[*lfn('Kirjat 日本語', b'KIRJAT~1   ',30,True),END],

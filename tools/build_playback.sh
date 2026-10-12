@@ -17,3 +17,20 @@ arm-none-eabi-gcc -mthumb -mcpu=cortex-m3 -nostdlib -T playback/link.ld \
 arm-none-eabi-objcopy -O binary "$out/playback.elf" "$out/playback.bin"
 arm-none-eabi-nm -g "$out/playback.elf" > "$out/playback.nm"
 arm-none-eabi-size "$out/playback.elf"
+
+python3 - "$out" <<'SYMS'
+from pathlib import Path
+import sys
+out = Path(sys.argv[1])
+lines = [f".equ PLAYBACK_BYTES, {len((out/'playback.bin').read_bytes())}"]
+for line in (out/'playback.nm').read_text().splitlines():
+    value, kind, name = line.split()
+    if kind.upper() in ('T','B','D','R'):
+        lines.append(f".equ {name}, 0x{value}")
+(out/'playback_syms.inc').write_text('\n'.join(lines)+'\n')
+SYMS
+
+for source in playback/hooks/*.S; do
+  name=$(basename "${source%.S}")
+  tools/asm2patch.sh "$source" "$out/$name.patch" "$out" > "$out/$name.disassembly"
+done

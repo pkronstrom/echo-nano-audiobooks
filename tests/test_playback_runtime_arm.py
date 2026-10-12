@@ -28,6 +28,8 @@ class PlaybackRuntimeTests(unittest.TestCase):
         self.entries=[]
         self.files={}
         self.closed=[]
+        self.flash_mode=None
+        self.flash_reads=0
         self.assertEqual(self.call('playback_init'),0x32504e45)
 
     def intercept(self,cpu,address,size,user):
@@ -43,6 +45,14 @@ class PlaybackRuntimeTests(unittest.TestCase):
             entries=self.dirs.get(parent,[END])
             result=9 if index>=len(entries) else 0
             if not result: cpu.mem_write(out,entries[index])
+        elif address==0x0306b36c and self.flash_mode is not None:
+            dev,source,length,out=[cpu.reg_read(r) for r in (UC_ARM_REG_R0,UC_ARM_REG_R1,UC_ARM_REG_R2,UC_ARM_REG_R3)]
+            self.assertEqual(dev,0x30000);self.assertEqual(source,self.slot+0xa55000)
+            payload=(ROOT/'out/playback/playback.bin').read_bytes()
+            self.assertEqual((length,out),(len(payload),0x0309b694));self.flash_reads+=1
+            if self.flash_mode=='bad-magic':payload=b'BAD!'+payload[4:]
+            cpu.mem_write(out,payload)
+            result=1 if self.flash_mode=='error' else 0
         elif address==0x0305c8f2 and self.files:
             offset,whence,handle=[cpu.reg_read(r) for r in (UC_ARM_REG_R0,UC_ARM_REG_R1,UC_ARM_REG_R2)]
             self.assertEqual(whence,0)
@@ -75,7 +85,7 @@ class PlaybackRuntimeTests(unittest.TestCase):
         self.cpu.reg_write(UC_ARM_REG_SP,0x2000f000)
         if len(args)>4:self.cpu.mem_write(0x2000f000,struct.pack('<I',args[4]))
         self.cpu.reg_write(UC_ARM_REG_LR,0x20000001)
-        self.cpu.emu_start(self.syms[name]|1,0x20000000,count=2000000)
+        self.cpu.emu_start((self.syms[name] if isinstance(name,str) else name)|1,0x20000000,count=2000000)
         self.assertEqual(self.cpu.reg_read(UC_ARM_REG_PC),0x20000000)
         self.assertEqual(self.cpu.reg_read(UC_ARM_REG_SP),0x2000f000)
         return self.cpu.reg_read(UC_ARM_REG_R0)
@@ -172,6 +182,36 @@ class PlaybackRuntimeTests(unittest.TestCase):
                 before=bytes(self.cpu.mem_read(state,256));self.dirs[30]=[END]
                 self.assertEqual(self.call('playback_playlist_step',state,1),19)
                 self.assertEqual(bytes(self.cpu.mem_read(state,256)),before)
+
+    def install_loader(self):
+        line=next(l for l in (ROOT/'out/playback/loader.patch').read_text().splitlines() if not l.startswith('#'))
+        mod,address,data=line.split(':');code=bytes.fromhex(data)
+        self.assertEqual((mod,int(address,16),len(code)),('0',0x03072e28,84))
+        self.cpu.mem_write(int(address,16),code)
+        self.slot=0x10000200;self.cpu.mem_write(0x0300d454,struct.pack('<I',self.slot))
+        return int(address,16)
+
+    def test_loader_reuses_live_queue_and_reinitializes_after_refresh(self):
+        loader=self.install_loader();self.flash_mode='ok'
+        start,end=self.syms['__play_bss_start'],self.syms['__play_bss_end']
+        self.cpu.mem_write(0x0309b694,b'CFW!');self.cpu.mem_write(start,b'\xa5'*(end-start))
+        self.assertEqual(self.call(loader),0);self.assertEqual(self.flash_reads,1)
+        self.assertEqual(bytes(self.cpu.mem_read(start,end-start)),bytes(end-start))
+        self.cpu.mem_write(start,b'LIVE')
+        self.assertEqual(self.call(loader),0);self.assertEqual(self.flash_reads,1)
+        self.assertEqual(bytes(self.cpu.mem_read(start,4)),b'LIVE')
+        self.cpu.mem_write(0x0309b694,b'CFW!')
+        self.assertEqual(self.call(loader),0);self.assertEqual(self.flash_reads,2)
+        self.assertEqual(bytes(self.cpu.mem_read(start,4)),bytes(4))
+
+    def test_loader_failure_never_leaves_a_ready_signature(self):
+        loader=self.install_loader()
+        for mode in ('error','bad-magic'):
+            with self.subTest(mode=mode):
+                self.flash_mode=mode;self.cpu.mem_write(0x0309b694,b'CFW!')
+                self.assertEqual(self.call(loader),1)
+                self.assertEqual(bytes(self.cpu.mem_read(0x0309b694,4)),bytes(4))
+                self.flash_mode='ok';self.assertEqual(self.call(loader),0)
 
     def test_compiled_parser_streams_unicode_in_order(self):
         self.playlist='\ufeff#EXTM3U\r\n../Kirjat/02 ä.flac\n../Kirjat/01 日本語.flac'.encode()
