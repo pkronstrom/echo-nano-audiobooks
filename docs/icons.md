@@ -103,3 +103,23 @@ and in exported feedback, and does not treat a preference as artwork approval.
 `icon-review.html` also points to the current revision. The existing firmware
 and release ZIP are unchanged. The source generator uses `icon_proposals.py`
 and `icon_review_template.html`; the generated review still works as one file.
+
+## Round 3 — variants for all eight activities
+
+The user requested further alternatives for every activity, sharper play tips,
+crisper music controls and settings symbols that do not suggest clipped tools,
+stars or crossed bones. Their v2 feedback is preserved in
+`reviews/icon-feedback-v2.json`, including the earlier v1 review.
+
+[Review v3](icon-review-v3.html) contains four variants for each of eight
+activities. Shuffle shortens/removes left-hand rails; books remain open spreads;
+meditation offers four candles. Prior v2 D Shuffle, B Open Book and D Candle
+remain selectable as explicitly identified references, alongside round-1 Crisp
+Music Settings. New variants start pending, with a separate v3 browser-storage
+key. Nothing has been installed in firmware.
+
+Every new bitmap has a blank one-pixel perimeter. Play tips are explicitly
+rasterized to a point. Checks cover all 32 dimensions/perimeters and uniqueness,
+plus browser selection, mixed new/prior identities, exact comments, nested
+feedback history, storage, inverse mode and desktop layout. The generator now
+uses `icon_proposals_v3.py`; v2 drawings remain available for the references.

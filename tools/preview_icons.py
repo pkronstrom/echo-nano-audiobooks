@@ -11,7 +11,8 @@ import struct
 from pathlib import Path
 
 from rknano_fw import load, stock_name
-from icon_proposals import variants
+from icon_proposals import variants as variants_v2
+from icon_proposals_v3 import variants
 
 ROOT = Path(__file__).resolve().parents[1]
 ADDRESSES = [0x03072DFF, 0x03072DAF, 0x03072D5F, 0x03072D87, 0x03072DD7]
@@ -84,12 +85,17 @@ def generate(stock, output):
     icons.append(dict(label='Shuffle',address='mod21 0x0307951c (patch)',sid='0x82',pixels=decode(raw)))
     kinds=['files','library','play','musicsettings','settings','shuffle','books','meditation']
     labels=[i['label'] for i in icons]+['Audiobooks · proposed entry','Meditation · proposed entry']
-    data=dict(stock=icons,outline=[dict(label=l,pixels=proposal(k)) for l,k in zip(labels,kinds)],
-              bold=[dict(label=l,pixels=proposal(k,True)) for l,k in zip(labels,kinds)],
-              sets=variants(),previous=json.loads((ROOT/'docs/reviews/icon-feedback-v1.json').read_text()))
+    references={}
+    for key,letter in [('shuffle','D'),('books','B'),('meditation','D')]:
+        old=next(s for s in variants_v2() if s['id']==letter)
+        icon=next(i for i in old['icons'] if i['kind']==key)
+        references[key]=dict(id='v2-'+letter,label='Preferred v2 '+letter+' · '+icon['symbol'],pixels=icon['pixels'])
+    references['musicsettings']=dict(id='v1-crisp',label='Round 1 Crisp · preferred direction',pixels=proposal('musicsettings'))
+    data=dict(stock=icons,groups=[dict(g,label=labels[kinds.index(g['id'])],reference=references.get(g['id'])) for g in variants()],
+              previous=json.loads((ROOT/'docs/reviews/icon-feedback-v2.json').read_text()))
     page=TEMPLATE.replace('DATA_JSON',json.dumps(data)).replace('HASH_VALUE',hashlib.sha256(Path(stock).read_bytes()).hexdigest())
     output.write_text(page)
-    print(f'Wrote {output}; 5 decoded stock + 1 existing patch + 16 revised icons + retained round-1 alternatives')
+    print(f'Wrote {output}; 5 decoded stock + 1 existing patch + 32 revised icons + preferred references')
 
 
 TEMPLATE=(ROOT/'tools/icon_review_template.html').read_text(encoding='utf-8')

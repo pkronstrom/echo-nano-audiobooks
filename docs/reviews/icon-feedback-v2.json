@@ -1,0 +1,112 @@
+{
+  "review": "Echo Nano icon artwork v2",
+  "scope": "Icons only. No navigation or firmware changes approved.",
+  "decision": "mixed",
+  "icons": [
+    {
+      "id": "files",
+      "label": "File Browser",
+      "choice": "pending",
+      "symbol": null,
+      "comment": "more variants pls"
+    },
+    {
+      "id": "library",
+      "label": "Media Library",
+      "choice": "pending",
+      "symbol": null,
+      "comment": "give me more variants "
+    },
+    {
+      "id": "play",
+      "label": "Music Playback",
+      "choice": "pending",
+      "symbol": null,
+      "comment": "more variants, shaprer triangle, this sort of cuts off"
+    },
+    {
+      "id": "musicsettings",
+      "label": "Music Settings",
+      "choice": "pending",
+      "symbol": null,
+      "comment": "crips is better, give me vriants"
+    },
+    {
+      "id": "settings",
+      "label": "System Settings",
+      "choice": "pending",
+      "symbol": null,
+      "comment": "A cuts off, b is like a star, c is like crossed bones, d is like a fishing hook"
+    },
+    {
+      "id": "shuffle",
+      "label": "Shuffle",
+      "choice": "approve-D",
+      "symbol": "Tight crossed arrows",
+      "comment": "D is closest, but that left part with long parallel lines is a bit off I think"
+    },
+    {
+      "id": "books",
+      "label": "Audiobooks · proposed entry",
+      "choice": "approve-B",
+      "symbol": "Open book",
+      "comment": "B-ish, give me variants"
+    },
+    {
+      "id": "meditation",
+      "label": "Meditation · proposed entry",
+      "choice": "approve-D",
+      "symbol": "Candle",
+      "comment": "I like candle, give me more variants of this"
+    }
+  ],
+  "general": "",
+  "previous_feedback": {
+    "review": "Echo Nano icon artwork v1",
+    "scope": "Icons only. No navigation or firmware changes approved.",
+    "decision": "pending",
+    "icons": [
+      {
+        "label": "File Browser",
+        "choice": "pending",
+        "comment": ""
+      },
+      {
+        "label": "Media Library",
+        "choice": "pending",
+        "comment": ""
+      },
+      {
+        "label": "Music Playback",
+        "choice": "pending",
+        "comment": ""
+      },
+      {
+        "label": "Music Settings",
+        "choice": "pending",
+        "comment": ""
+      },
+      {
+        "label": "System Settings",
+        "choice": "pending",
+        "comment": "the cog icons looks like a tikkataulu. needs more coggines, or just a plain wrench"
+      },
+      {
+        "label": "Shuffle",
+        "choice": "pending",
+        "comment": "shuffle could be thicker, a bit different"
+      },
+      {
+        "label": "Audiobooks · proposed entry",
+        "choice": "pending",
+        "comment": "should look more booky"
+      },
+      {
+        "label": "Meditation · proposed entry",
+        "choice": "pending",
+        "comment": "I have no idea what that meditation icon is about"
+      }
+    ],
+    "general": "give me 4 different suggestion sets for these"
+  }
+}
