@@ -40,10 +40,10 @@ class AudiobookImageTests(unittest.TestCase):
         for section in self.book.sections:
             a=section['offset'];b=a+section['length'];self.assertEqual(self.book.d[a:b],expected.d[a:b])
     def test_navigation_rejects_each_mismatched_runtime_base(self):
-        from playback_layout import NAVIGATION_BASE,validate_navigation_base
+        from playback_layout import NAVIGATION_BASE,NAVIGATION_BROWSER_BASE,validate_navigation_base
         validate_navigation_base(self.base)
-        for address in NAVIGATION_BASE:
-            broken=Image(bytes(self.base.d));offset,_=broken.region(21,address)
+        for module,address in [(21,a) for a in NAVIGATION_BASE]+[(31,a) for a in NAVIGATION_BROWSER_BASE]:
+            broken=Image(bytes(self.base.d));offset,_=broken.region(module,address)
             broken.d[offset]^=1
             with self.subTest(address=hex(address)),self.assertRaisesRegex(ValueError,'navigation base changed'):
                 validate_navigation_base(broken)

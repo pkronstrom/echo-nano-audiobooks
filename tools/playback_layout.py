@@ -106,11 +106,13 @@ NAVIGATION_BASE={
     0x030795b4:bytes.fromhex('7fb5094c'),
     0x03079b1e:bytes.fromhex('30b5b049'),
 }
+NAVIGATION_BROWSER_BASE={0x0307b31a:bytes.fromhex('0898dff8eca0')}
 def validate_navigation_base(image):
-    for address,expected in NAVIGATION_BASE.items():
-        offset,_=image.region(21,address)
-        if image.d[offset:offset+len(expected)]!=expected:
-            raise ValueError(f'navigation base changed at {address:08x}')
+    for module,sites in ((21,NAVIGATION_BASE),(31,NAVIGATION_BROWSER_BASE)):
+        for address,expected in sites.items():
+            offset,_=image.region(module,address)
+            if image.d[offset:offset+len(expected)]!=expected:
+                raise ValueError(f'navigation base changed at {module}:{address:08x}')
 
 def integrate(stock_data,input_data,directory,date):
     """Build the audiobook test image; reject mismatched base or hook layout."""

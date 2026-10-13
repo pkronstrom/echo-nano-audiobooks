@@ -134,9 +134,9 @@ class NavigationTests(unittest.TestCase):
         self.assertEqual(self.call('navigation_event',0x40000040),0)
     def test_custom_route_initializes_native_flags_and_full_arguments(self):
         self.tree(False);self.call('navigation_menu_init')
-        self.cpu.mem_write(0x030057f0,b'\xa5');self.cpu.mem_write(0x0300d695,b'\0')
+        self.cpu.mem_write(0x030057f0,b'\xa5'*4);self.cpu.mem_write(0x0300d695,b'\0')
         self.select()
-        self.assertEqual(bytes(self.cpu.mem_read(0x030057f0,1)),b'\0')
+        self.assertEqual(bytes(self.cpu.mem_read(0x030057f0,4)),b'\0'+b'\xa5'*3)
         self.assertEqual(bytes(self.cpu.mem_read(0x0300d695,1)),b'\x01')
         self.assertEqual(self.window_args[-1],b'\x06'+b'\0'*31)
     def test_chooser_passes_volume_services_and_blocks_all_context_routes(self):
