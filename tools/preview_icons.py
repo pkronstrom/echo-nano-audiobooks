@@ -101,7 +101,7 @@ TEMPLATE=(ROOT/'tools/icon_review_template.html').read_text(encoding='utf-8')
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--stock',type=Path,default=ROOT/'NANOV170.IMG')
-    parser.add_argument('--output',type=Path,default=ROOT/'docs/icon-review.html')
+    parser.add_argument('--output',type=Path,default=ROOT/'docs/icon-review-v6.html')
     args=parser.parse_args()
     generate(args.stock,args.output)
 

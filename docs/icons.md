@@ -182,3 +182,37 @@ isolated Chrome checks of carried approvals, selection, feedback export,
 persistence and inversion. Contact sheet visually inspected. Reordered groups
 use current-icon availability (not list position) for the keep-current option.
 No firmware or navigation changes.
+
+### Existing libraries — round 1
+
+Following the request to use existing artwork, `icon-library-review.html`
+(and the current `icon-review.html`) compares six libraries with eight icons
+per library: Bootstrap, Lucide, Tabler, Remix Icon, Pixelarticons and Phosphor.
+The six settings cogs appear first, followed by complete sets. Whole-set and
+individual selections can be mixed and exported as JSON. All eight approvals
+from round six remain the default until replaced. That review is saved in
+`docs/reviews/icon-feedback-v6.json`.
+
+The original SVG files and full licences are in `docs/icon-library-assets/`.
+Its manifest records exact repository revisions and source paths. The review
+embeds all SVGs and licence texts, and works offline. Links open the pinned
+upstream source. `python3 tools/build_icon_library_review.py` rebuilds the page.
+Source geometry is unchanged; only the display colour is white. This is an
+existing-artwork comparison, not another custom-drawn icon round.
+
+Each source viewBox is scaled to 16 × 16, centred in a 20 × 16 canvas, and
+thresholded at alpha 128 for the automatic monochrome preview. These browser
+rasters are illustrative, not final firmware resources. Feedback records the
+source SHA-256 and preview pixels. Original vectors are also displayed enlarged
+so rasterisation losses remain visible.
+
+Tabler and Remix include candles; Lucide uses the existing Lab candlestick-lit.
+Bootstrap, Pixelarticons and Phosphor use explicitly labelled fire substitutes.
+Remix uses its own License v1.0; other notices are MIT and Lucide ISC plus its
+inherited MIT notices. All original notices are retained. No assets have been
+installed in firmware or added to a release bundle.
+
+Validation: all SVGs parse and use only permitted static drawing elements;
+48 nonempty 20 × 16 rasters rendered in isolated Chrome. Whole-set selection,
+individual mixing, keeping prior approvals, source identity, feedback comments,
+local persistence and export were checked. Desktop comparison inspected.

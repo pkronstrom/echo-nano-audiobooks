@@ -1,0 +1,350 @@
+[
+  {
+    "id": "bootstrap",
+    "name": "Bootstrap",
+    "repo": "twbs/icons",
+    "commit": "e568465481c0c541f63a78f6452d09387711d489",
+    "license": "MIT",
+    "note": "Fire substitute: this set has no candle.",
+    "icons": [
+      {
+        "id": "files",
+        "name": "folder",
+        "path": "icons/folder.svg",
+        "source": "https://github.com/twbs/icons/blob/e568465481c0c541f63a78f6452d09387711d489/icons/folder.svg"
+      },
+      {
+        "id": "library",
+        "name": "list-ul",
+        "path": "icons/list-ul.svg",
+        "source": "https://github.com/twbs/icons/blob/e568465481c0c541f63a78f6452d09387711d489/icons/list-ul.svg"
+      },
+      {
+        "id": "play",
+        "name": "play-fill",
+        "path": "icons/play-fill.svg",
+        "source": "https://github.com/twbs/icons/blob/e568465481c0c541f63a78f6452d09387711d489/icons/play-fill.svg"
+      },
+      {
+        "id": "musicsettings",
+        "name": "sliders",
+        "path": "icons/sliders.svg",
+        "source": "https://github.com/twbs/icons/blob/e568465481c0c541f63a78f6452d09387711d489/icons/sliders.svg"
+      },
+      {
+        "id": "settings",
+        "name": "gear-fill",
+        "path": "icons/gear-fill.svg",
+        "source": "https://github.com/twbs/icons/blob/e568465481c0c541f63a78f6452d09387711d489/icons/gear-fill.svg"
+      },
+      {
+        "id": "shuffle",
+        "name": "shuffle",
+        "path": "icons/shuffle.svg",
+        "source": "https://github.com/twbs/icons/blob/e568465481c0c541f63a78f6452d09387711d489/icons/shuffle.svg"
+      },
+      {
+        "id": "books",
+        "name": "book",
+        "path": "icons/book.svg",
+        "source": "https://github.com/twbs/icons/blob/e568465481c0c541f63a78f6452d09387711d489/icons/book.svg"
+      },
+      {
+        "id": "meditation",
+        "name": "fire",
+        "path": "icons/fire.svg",
+        "source": "https://github.com/twbs/icons/blob/e568465481c0c541f63a78f6452d09387711d489/icons/fire.svg"
+      }
+    ]
+  },
+  {
+    "id": "lucide",
+    "name": "Lucide",
+    "repo": "lucide-icons/lucide",
+    "commit": "da2f29d9fa6f0d6324deefdc19e408d5fc02c607",
+    "license": "ISC + inherited MIT notices",
+    "note": "Candle is an existing Lucide Lab icon, outside the main collection.",
+    "icons": [
+      {
+        "id": "files",
+        "name": "folder",
+        "path": "icons/folder.svg",
+        "source": "https://github.com/lucide-icons/lucide/blob/da2f29d9fa6f0d6324deefdc19e408d5fc02c607/icons/folder.svg"
+      },
+      {
+        "id": "library",
+        "name": "list-music",
+        "path": "icons/list-music.svg",
+        "source": "https://github.com/lucide-icons/lucide/blob/da2f29d9fa6f0d6324deefdc19e408d5fc02c607/icons/list-music.svg"
+      },
+      {
+        "id": "play",
+        "name": "play",
+        "path": "icons/play.svg",
+        "source": "https://github.com/lucide-icons/lucide/blob/da2f29d9fa6f0d6324deefdc19e408d5fc02c607/icons/play.svg"
+      },
+      {
+        "id": "musicsettings",
+        "name": "sliders-vertical",
+        "path": "icons/sliders-vertical.svg",
+        "source": "https://github.com/lucide-icons/lucide/blob/da2f29d9fa6f0d6324deefdc19e408d5fc02c607/icons/sliders-vertical.svg"
+      },
+      {
+        "id": "settings",
+        "name": "settings",
+        "path": "icons/settings.svg",
+        "source": "https://github.com/lucide-icons/lucide/blob/da2f29d9fa6f0d6324deefdc19e408d5fc02c607/icons/settings.svg"
+      },
+      {
+        "id": "shuffle",
+        "name": "shuffle",
+        "path": "icons/shuffle.svg",
+        "source": "https://github.com/lucide-icons/lucide/blob/da2f29d9fa6f0d6324deefdc19e408d5fc02c607/icons/shuffle.svg"
+      },
+      {
+        "id": "books",
+        "name": "book-open",
+        "path": "icons/book-open.svg",
+        "source": "https://github.com/lucide-icons/lucide/blob/da2f29d9fa6f0d6324deefdc19e408d5fc02c607/icons/book-open.svg"
+      },
+      {
+        "id": "meditation",
+        "name": "candlestick-lit",
+        "path": "lab/candlestick-lit.svg",
+        "source": "https://github.com/lucide-icons/lucide/blob/da2f29d9fa6f0d6324deefdc19e408d5fc02c607/lab/candlestick-lit.svg"
+      }
+    ]
+  },
+  {
+    "id": "tabler",
+    "name": "Tabler",
+    "repo": "tabler/tabler-icons",
+    "commit": "a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d",
+    "license": "MIT",
+    "note": "All eight symbols are from the outline collection.",
+    "icons": [
+      {
+        "id": "files",
+        "name": "folder",
+        "path": "icons/outline/folder.svg",
+        "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/folder.svg"
+      },
+      {
+        "id": "library",
+        "name": "list",
+        "path": "icons/outline/list.svg",
+        "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/list.svg"
+      },
+      {
+        "id": "play",
+        "name": "player-play",
+        "path": "icons/outline/player-play.svg",
+        "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/player-play.svg"
+      },
+      {
+        "id": "musicsettings",
+        "name": "adjustments",
+        "path": "icons/outline/adjustments.svg",
+        "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/adjustments.svg"
+      },
+      {
+        "id": "settings",
+        "name": "settings",
+        "path": "icons/outline/settings.svg",
+        "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/settings.svg"
+      },
+      {
+        "id": "shuffle",
+        "name": "arrows-shuffle",
+        "path": "icons/outline/arrows-shuffle.svg",
+        "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/arrows-shuffle.svg"
+      },
+      {
+        "id": "books",
+        "name": "book",
+        "path": "icons/outline/book.svg",
+        "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/book.svg"
+      },
+      {
+        "id": "meditation",
+        "name": "candle",
+        "path": "icons/outline/candle.svg",
+        "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/candle.svg"
+      }
+    ]
+  },
+  {
+    "id": "remix",
+    "name": "Remix Icon",
+    "repo": "Remix-Design/RemixIcon",
+    "commit": "9fb7967c0a4c09910161192bde99efd3df09f5eb",
+    "license": "Remix Icon License v1.0",
+    "note": "Mostly line icons, with a filled play triangle.",
+    "icons": [
+      {
+        "id": "files",
+        "name": "folder-line",
+        "path": "icons/Document/folder-line.svg",
+        "source": "https://github.com/Remix-Design/RemixIcon/blob/9fb7967c0a4c09910161192bde99efd3df09f5eb/icons/Document/folder-line.svg"
+      },
+      {
+        "id": "library",
+        "name": "list-unordered",
+        "path": "icons/Editor/list-unordered.svg",
+        "source": "https://github.com/Remix-Design/RemixIcon/blob/9fb7967c0a4c09910161192bde99efd3df09f5eb/icons/Editor/list-unordered.svg"
+      },
+      {
+        "id": "play",
+        "name": "play-fill",
+        "path": "icons/Media/play-fill.svg",
+        "source": "https://github.com/Remix-Design/RemixIcon/blob/9fb7967c0a4c09910161192bde99efd3df09f5eb/icons/Media/play-fill.svg"
+      },
+      {
+        "id": "musicsettings",
+        "name": "equalizer-line",
+        "path": "icons/Media/equalizer-line.svg",
+        "source": "https://github.com/Remix-Design/RemixIcon/blob/9fb7967c0a4c09910161192bde99efd3df09f5eb/icons/Media/equalizer-line.svg"
+      },
+      {
+        "id": "settings",
+        "name": "settings-3-line",
+        "path": "icons/System/settings-3-line.svg",
+        "source": "https://github.com/Remix-Design/RemixIcon/blob/9fb7967c0a4c09910161192bde99efd3df09f5eb/icons/System/settings-3-line.svg"
+      },
+      {
+        "id": "shuffle",
+        "name": "shuffle-line",
+        "path": "icons/Media/shuffle-line.svg",
+        "source": "https://github.com/Remix-Design/RemixIcon/blob/9fb7967c0a4c09910161192bde99efd3df09f5eb/icons/Media/shuffle-line.svg"
+      },
+      {
+        "id": "books",
+        "name": "book-open-line",
+        "path": "icons/Document/book-open-line.svg",
+        "source": "https://github.com/Remix-Design/RemixIcon/blob/9fb7967c0a4c09910161192bde99efd3df09f5eb/icons/Document/book-open-line.svg"
+      },
+      {
+        "id": "meditation",
+        "name": "candle-line",
+        "path": "icons/Others/candle-line.svg",
+        "source": "https://github.com/Remix-Design/RemixIcon/blob/9fb7967c0a4c09910161192bde99efd3df09f5eb/icons/Others/candle-line.svg"
+      }
+    ]
+  },
+  {
+    "id": "pixelarticons",
+    "name": "Pixelarticons",
+    "repo": "halfmage/pixelarticons",
+    "commit": "c9ecc2da61afde85dbe539025e3d931c6152ad75",
+    "license": "MIT",
+    "note": "Fire substitute: no candle in this free repository. Designed on a 24px grid.",
+    "icons": [
+      {
+        "id": "files",
+        "name": "folder",
+        "path": "svg/folder.svg",
+        "source": "https://github.com/halfmage/pixelarticons/blob/c9ecc2da61afde85dbe539025e3d931c6152ad75/svg/folder.svg"
+      },
+      {
+        "id": "library",
+        "name": "library",
+        "path": "svg/library.svg",
+        "source": "https://github.com/halfmage/pixelarticons/blob/c9ecc2da61afde85dbe539025e3d931c6152ad75/svg/library.svg"
+      },
+      {
+        "id": "play",
+        "name": "play",
+        "path": "svg/play.svg",
+        "source": "https://github.com/halfmage/pixelarticons/blob/c9ecc2da61afde85dbe539025e3d931c6152ad75/svg/play.svg"
+      },
+      {
+        "id": "musicsettings",
+        "name": "sliders",
+        "path": "svg/sliders.svg",
+        "source": "https://github.com/halfmage/pixelarticons/blob/c9ecc2da61afde85dbe539025e3d931c6152ad75/svg/sliders.svg"
+      },
+      {
+        "id": "settings",
+        "name": "gear",
+        "path": "svg/gear.svg",
+        "source": "https://github.com/halfmage/pixelarticons/blob/c9ecc2da61afde85dbe539025e3d931c6152ad75/svg/gear.svg"
+      },
+      {
+        "id": "shuffle",
+        "name": "shuffle",
+        "path": "svg/shuffle.svg",
+        "source": "https://github.com/halfmage/pixelarticons/blob/c9ecc2da61afde85dbe539025e3d931c6152ad75/svg/shuffle.svg"
+      },
+      {
+        "id": "books",
+        "name": "book-open",
+        "path": "svg/book-open.svg",
+        "source": "https://github.com/halfmage/pixelarticons/blob/c9ecc2da61afde85dbe539025e3d931c6152ad75/svg/book-open.svg"
+      },
+      {
+        "id": "meditation",
+        "name": "fire",
+        "path": "svg/fire.svg",
+        "source": "https://github.com/halfmage/pixelarticons/blob/c9ecc2da61afde85dbe539025e3d931c6152ad75/svg/fire.svg"
+      }
+    ]
+  },
+  {
+    "id": "phosphor",
+    "name": "Phosphor",
+    "repo": "phosphor-icons/core",
+    "commit": "2b75f3ad12b420c9504ef05df8d2564a28f8500e",
+    "license": "MIT",
+    "note": "Fire substitute: no candle in this repository. Regular weight throughout.",
+    "icons": [
+      {
+        "id": "files",
+        "name": "folder",
+        "path": "assets/regular/folder.svg",
+        "source": "https://github.com/phosphor-icons/core/blob/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/regular/folder.svg"
+      },
+      {
+        "id": "library",
+        "name": "list-bullets",
+        "path": "assets/regular/list-bullets.svg",
+        "source": "https://github.com/phosphor-icons/core/blob/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/regular/list-bullets.svg"
+      },
+      {
+        "id": "play",
+        "name": "play",
+        "path": "assets/regular/play.svg",
+        "source": "https://github.com/phosphor-icons/core/blob/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/regular/play.svg"
+      },
+      {
+        "id": "musicsettings",
+        "name": "sliders",
+        "path": "assets/regular/sliders.svg",
+        "source": "https://github.com/phosphor-icons/core/blob/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/regular/sliders.svg"
+      },
+      {
+        "id": "settings",
+        "name": "gear",
+        "path": "assets/regular/gear.svg",
+        "source": "https://github.com/phosphor-icons/core/blob/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/regular/gear.svg"
+      },
+      {
+        "id": "shuffle",
+        "name": "shuffle",
+        "path": "assets/regular/shuffle.svg",
+        "source": "https://github.com/phosphor-icons/core/blob/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/regular/shuffle.svg"
+      },
+      {
+        "id": "books",
+        "name": "book-open",
+        "path": "assets/regular/book-open.svg",
+        "source": "https://github.com/phosphor-icons/core/blob/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/regular/book-open.svg"
+      },
+      {
+        "id": "meditation",
+        "name": "fire",
+        "path": "assets/regular/fire.svg",
+        "source": "https://github.com/phosphor-icons/core/blob/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/regular/fire.svg"
+      }
+    ]
+  }
+]
