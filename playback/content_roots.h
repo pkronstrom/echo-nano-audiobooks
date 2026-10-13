@@ -1,0 +1,20 @@
+#ifndef ECHO_CONTENT_ROOTS_H
+#define ECHO_CONTENT_ROOTS_H
+#include "path.h"
+#define CONTENT_ROOT_MAX 8
+#define CONTENT_DEPTH_MAX 7
+#define CONTENT_AUDIOBOOK 1
+#define CONTENT_MEDITATION 2
+struct content_root {
+    u32 index[CONTENT_DEPTH_MAX], cluster[CONTENT_DEPTH_MAX];
+    u8 depth, kind;
+    u16 pad;
+};
+/* Physical DFS; root depth zero denotes the card root. Returns count, -1 on
+ * capacity/work limit, -2 on I/O. Discard all output on error. */
+int content_scan(media_read_fn, void *, int exfat, struct content_root *, u32 capacity);
+/* Revalidate each ancestor by physical entry index and cluster. Returns 1 or
+ * zero for stale/invalid ancestry, -2 on I/O. Caller rescans markers separately. */
+int content_root_chain(media_read_fn, void *, int exfat,
+                       const struct content_root *, struct media_ref out[7]);
+#endif
