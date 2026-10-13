@@ -62,7 +62,8 @@ u32 navigation_menu_dispatch(void)
     u32 kind=kind_at[selected];
     if(!(scan()&kind)){navigation_menu_init();post(51);return 1;}
     pending_kind=kind;
-    const u8 args[4]={6,0,0,0};window(9,args);return 1;
+    *(u8 *)0x030057f0=0;*(u8 *)0x0300d695=1;
+    const u8 args[32]={6};window(9,args);return 1;
 }
 /* Build native ancestry from raw identities. Each parent cursor uses its
  * visible directory ordinal, so native Back selects the child just left. */
@@ -131,7 +132,8 @@ void navigation_browser_init(void)
     for(u32 i=0;i<root_count;i++)if(roots[i].kind&kind)matches[match_count++]=i;
     if(match_count==1&&install_root(roots+matches[0])){post(333);post(335);return;}
     if(match_count>1){chooser=1;choice=0;chooser_draw();return;}
-    chooser=0;window(0,0);
+    /* Window teardown belongs to the event callback, not its initializer. */
+    chooser=2;post(333);
 }
 static int same_root(const struct content_root *a,const struct content_root *b)
 {
@@ -141,6 +143,7 @@ static int same_root(const struct content_root *a,const struct content_root *b)
 u32 navigation_event(u32 message)
 {
     if(!chooser)return 0;
+    if(chooser==2){chooser=0;window(0,0);return 2;}
     /* Synthetic nodes never reach stock context/delete/menu actions. */
     if(message==0x20000040||message==0x40001000){chooser=0;window(0,0);return 2;}
     if(message==0x40000040){
@@ -152,7 +155,9 @@ u32 navigation_event(u32 message)
         }
         chooser=0;window(0,0);return 2;
     }
-    if(message==0x40000004||message==0x30000004){choice=(choice+1)%match_count;chooser_draw();}
-    if(message==0x40000008||message==0x30000008){choice=choice?choice-1:match_count-1;chooser_draw();}
-    return 1;
+    if(message==0x40000004||message==0x30000004){choice=(choice+1)%match_count;chooser_draw();return 1;}
+    if(message==0x40000008||message==0x30000008){choice=choice?choice-1:match_count-1;chooser_draw();return 1;}
+    /* These four native routes open a context/menu using the selected node.
+     * Volume and service messages retain their ordinary handlers. */
+    return message==0x20000080||message==0x40000002||message==0x40010000||message==0x50010000;
 }

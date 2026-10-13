@@ -16,7 +16,7 @@ C=0x0300ec1c
 class NavigationTests(unittest.TestCase):
     call=runtime.PlaybackRuntimeTests.call
     def setUp(self):
-        self.events=[];self.windows=[];self.counts=[];self.enumerations=[]
+        self.events=[];self.windows=[];self.window_args=[];self.counts=[];self.enumerations=[]
         runtime.PlaybackRuntimeTests.setUp(self)
         self.image=Image((ROOT/'out/audiobook/NANOV170.IMG').read_bytes())
         self.module(21)
@@ -36,6 +36,7 @@ class NavigationTests(unittest.TestCase):
         if address==0x0306b040:self.events.append(cpu.reg_read(UC_ARM_REG_R0))
         elif address==0x0306b26a:
             p=cpu.reg_read(UC_ARM_REG_R1)
+            self.window_args.append(bytes(cpu.mem_read(p,32)) if p else None)
             self.windows.append((cpu.reg_read(UC_ARM_REG_R0),bytes(cpu.mem_read(p,4)) if p else None))
         elif address==0x0307974e:
             p=cpu.reg_read(UC_ARM_REG_R1);self.counts.append(p)
@@ -86,6 +87,7 @@ class NavigationTests(unittest.TestCase):
             table=self.word(0x0307a24c)
             self.assertEqual([self.h(table+8*i+6) for i in (6,7)],[0x83,0x84])
             self.assertEqual(bytes(self.cpu.mem_read(0x03079f70,1)),b'\x07')
+            self.assertEqual(bytes(self.cpu.mem_read(0x03079f5e,2)),b'\x07\x20')
             self.dirs={2 if fs else 0:[END]}
             self.select();self.assertFalse(self.windows)
             self.assertEqual(self.word(self.syms['navigation_count']),6)
@@ -101,6 +103,25 @@ class NavigationTests(unittest.TestCase):
             self.assertEqual(self.h(B+0x1cc),1)
             self.assertEqual(self.h(B+0x1ee),1)
             self.assertEqual(self.call('navigation_event',0x40000040),0)
+    def test_back_ordinal_matches_native_hidden_and_system_visibility(self):
+        for fs in (False,True):
+            self.module(21);self.tree(fs)
+            def flagged(name,cluster,flag):
+                entries=self.entry_set(fs,name,cluster,True)
+                index,offset=(0,4) if fs else (-1,11)
+                raw=bytearray(entries[index]);raw[offset]|=flag;entries[index]=bytes(raw)
+                return checksum(entries) if fs else entries
+            self.dirs[10]=[*flagged('Hidden',12,2),*flagged('System',13,4),
+                           *self.entry_set(fs,'Before',11,True),*self.entry_set(fs,'Books',20,True),END]
+            self.dirs[12]=self.dirs[13]=[END]
+            self.call('navigation_menu_init');self.select();self.browser()
+            # Stock enumeration hides bit 2 but retains system-only folders.
+            self.assertEqual(self.h(B+0x1ce+2),2)
+            self.assertEqual(self.h(B+0x1de+2),0)
+            self.call(0x03079c8e)
+            self.assertEqual(self.h(B+0x1cc),1);self.assertEqual(self.h(B+0x1ee),0)
+            self.assertEqual(self.h(B+0x1ce+2),2)
+
     def test_multi_root_chooser_blocks_context_and_enters_selection(self):
         self.tree(False,multiple=True);self.call('navigation_menu_init');self.select();self.browser()
         self.assertEqual(self.h(B+12),2)
@@ -111,6 +132,20 @@ class NavigationTests(unittest.TestCase):
         self.assertEqual(self.call('navigation_event',0x40000040),1)
         self.assertEqual(self.h(B+0x1cc),1);self.assertEqual(self.word(B+56+20),30)
         self.assertEqual(self.call('navigation_event',0x40000040),0)
+    def test_custom_route_initializes_native_flags_and_full_arguments(self):
+        self.tree(False);self.call('navigation_menu_init')
+        self.cpu.mem_write(0x030057f0,b'\xa5');self.cpu.mem_write(0x0300d695,b'\0')
+        self.select()
+        self.assertEqual(bytes(self.cpu.mem_read(0x030057f0,1)),b'\0')
+        self.assertEqual(bytes(self.cpu.mem_read(0x0300d695,1)),b'\x01')
+        self.assertEqual(self.window_args[-1],b'\x06'+b'\0'*31)
+    def test_chooser_passes_volume_services_and_blocks_all_context_routes(self):
+        self.tree(False,multiple=True);self.call('navigation_menu_init');self.select();self.browser()
+        for message in (0x40004000,0x40008000,0x41000000,0x42000000,0):
+            self.assertEqual(self.call('navigation_event',message),0)
+        for message in (0x20000080,0x40000002,0x40010000,0x50010000):
+            self.assertEqual(self.call('navigation_event',message),1)
+
     def test_chooser_rechecks_the_selected_category(self):
         self.tree(False,multiple=True)
         self.dirs[20]=[*self.entry_set(False,'.audiobook',90),*self.entry_set(False,'.meditation',91),END]
@@ -125,6 +160,9 @@ class NavigationTests(unittest.TestCase):
         self.assertEqual(self.call('navigation_event',0x40000040),2)
         self.assertEqual(self.windows[-1],(0,None))
         self.module(21);self.tree(False);self.call('navigation_menu_init');self.select()
-        self.dirs[20]=[END];self.browser();self.assertEqual(self.windows[-1],(0,None))
+        self.dirs[20]=[END];self.browser()
+        self.assertEqual(self.windows[-1][0],9)
+        self.assertEqual(self.call('navigation_event',0),2)
+        self.assertEqual(self.windows[-1],(0,None))
 
 if __name__=='__main__':unittest.main()

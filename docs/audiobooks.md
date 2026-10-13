@@ -129,6 +129,7 @@ book in the destination. Neither path removes DRM or modifies originals.
 
 ## Device acceptance checklist
 
+- [ ] Check main-menu/shortcut scan latency with a realistically full card.
 - [ ] With no category markers, both optional menu entries are absent.
 - [ ] Add each marker, reopen the main menu, and verify the corresponding shortcut.
 - [ ] Try two roots, select either, and check Back returns through real parents.

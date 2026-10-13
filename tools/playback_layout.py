@@ -96,6 +96,22 @@ def read_patch(path):
     mod,address,data=lines[0].split(':')
     return int(mod),int(address,16),bytes.fromhex(data)
 
+# Runtime branches/count/table pointers rely on this exact P1b shuffle base.
+NAVIGATION_BASE={
+    0x03079f5e:bytes.fromhex('052000bf'),
+    0x03079f70:bytes.fromhex('0528'),
+    0x0307a4d8:bytes.fromhex('04950703'),
+    0x0307a24c:bytes.fromhex('d8e60003'),
+    0x03079504:struct.pack('<6I',0x03072dff,0x03072daf,0x03072d5f,0x03072d87,0x03072dd7,0x0307951c),
+    0x030795b4:bytes.fromhex('7fb5094c'),
+    0x03079b1e:bytes.fromhex('30b5b049'),
+}
+def validate_navigation_base(image):
+    for address,expected in NAVIGATION_BASE.items():
+        offset,_=image.region(21,address)
+        if image.d[offset:offset+len(expected)]!=expected:
+            raise ValueError(f'navigation base changed at {address:08x}')
+
 def integrate(stock_data,input_data,directory,date):
     """Build the audiobook test image; reject mismatched base or hook layout."""
     from datetime import datetime
@@ -104,6 +120,7 @@ def integrate(stock_data,input_data,directory,date):
     if loader[:2]!=(0,LOADER_ADDRESS):raise ValueError('loader location changed')
     image=Image(stage(stock_data,input_data,(directory/'playback.bin').read_bytes(),loader[2]))
     stock=Image(stock_data)
+    validate_navigation_base(image)
     discovery(image)
     for name,(module,address,length,callee) in HOOKS.items():
         mod,addr,data=read_patch(directory/(name+'.patch'))

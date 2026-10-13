@@ -94,6 +94,11 @@ class SessionTests(unittest.TestCase):
         self.assertEqual(self.f.call(0x0305d4d8,0x20001000,0x03005a5e,32),1)
         self.assertEqual(self.f.call(0x0305d4d8,0x20001000,0x03005ab4,32),0)
 
+    def test_browser_extension_copy_uses_resident_audio_list(self):
+        self.f.call('playback_browser_select',0x20003000)
+        self.assertEqual(bytes(self.cpu.mem_read(0x20003000,43)),
+                         b'MP1MP2MP3WMAWAVAPEFLAAACM4AOGGMP43GPDFFDSF\0')
+
     def test_shuffle_setting_cannot_reorder_active_playlist(self):
         self.launch()
         self.cpu.mem_write(0x0300d164+0x6f,b'\x01')

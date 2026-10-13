@@ -39,6 +39,16 @@ class AudiobookImageTests(unittest.TestCase):
             expected.patch_lang(language,0x84,'Meditation\0'.encode('utf-16le'))
         for section in self.book.sections:
             a=section['offset'];b=a+section['length'];self.assertEqual(self.book.d[a:b],expected.d[a:b])
+    def test_navigation_rejects_each_mismatched_runtime_base(self):
+        from playback_layout import NAVIGATION_BASE,validate_navigation_base
+        validate_navigation_base(self.base)
+        for address in NAVIGATION_BASE:
+            broken=Image(bytes(self.base.d));offset,_=broken.region(21,address)
+            broken.d[offset]^=1
+            with self.subTest(address=hex(address)),self.assertRaisesRegex(ValueError,'navigation base changed'):
+                validate_navigation_base(broken)
+        with self.assertRaises(ValueError):validate_navigation_base(self.stock)
+
     def test_recovery_is_later_dated_stock_code(self):
         recovery=Image((ROOT/'out/audiobook/recovery/NANOV170.IMG').read_bytes())
         expected=Image(bytes(self.stock.d));expected.set_date(recovery.date);expected.finalize()

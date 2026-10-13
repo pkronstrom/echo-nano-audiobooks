@@ -19,10 +19,11 @@ static int m3u_name(const u8 *node)
            (half(node+0x70+(n-1)*2)|32)=='u';
 }
 /* Return selected node; low bit marks a captured playlist launch. No queue is
- * replaced while browsing folders. Copy the stock local audio whitelist too. */
+ * replaced while browsing folders. Copy the resident audio whitelist (the old local copy is now a loader). */
 u32 playback_browser_select(u8 *extensions)
 {
-    __builtin_memcpy(extensions,(const void *)0x0307afa0,44);
+    __builtin_memcpy(extensions,(const void *)0x03005ab4,43);
+    extensions[43]=0;
     const u8 *browser=(const u8 *)0x03005f6c;
     u32 selected=half(browser+0x1ee), address=word(browser);
     if (selected>1) return 0;
