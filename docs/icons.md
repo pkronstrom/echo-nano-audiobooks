@@ -164,3 +164,21 @@ outer margins, blank perimeters, distinct alternatives, Python and JavaScript
 syntax, and isolated Chrome checks of carried approvals, original selection,
 comments, export, persistence and inverse preview. Contact sheet inspected.
 No firmware or navigation changes.
+
+### Round 6 — settings only
+
+`icon-review-v6.html` puts System Settings first. Two circular hubs with eight
+short rectangular teeth offer different weights. The upright wrench has exact
+left/right symmetry; the horizontal wrench has exact top/bottom symmetry and
+an open mouth facing away from its shaft. Both use two-pixel shafts.
+
+The other seven choices from round five are preserved pixel-for-pixel and
+carried forward as approved. Settings remains pending. User feedback is saved
+in `docs/reviews/icon-feedback-v5.json`, including the earlier review history.
+
+Validation: bitmap equality for all retained icons, symmetry assertions,
+perimeter checks, distinct settings alternatives, JavaScript syntax and
+isolated Chrome checks of carried approvals, selection, feedback export,
+persistence and inversion. Contact sheet visually inspected. Reordered groups
+use current-icon availability (not list position) for the keep-current option.
+No firmware or navigation changes.

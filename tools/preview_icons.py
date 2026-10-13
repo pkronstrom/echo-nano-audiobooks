@@ -11,8 +11,8 @@ import struct
 from pathlib import Path
 
 from rknano_fw import load, stock_name
-from icon_proposals_v4 import draw as draw_v4
-from icon_proposals_v5 import variants, KEPT
+from icon_proposals_v5 import draw as draw_v5
+from icon_proposals_v6 import variants, KEPT
 
 ROOT = Path(__file__).resolve().parents[1]
 ADDRESSES = [0x03072DFF, 0x03072DAF, 0x03072D5F, 0x03072D87, 0x03072DD7]
@@ -85,16 +85,14 @@ def generate(stock, output):
     icons.append(dict(label='Shuffle',address='mod21 0x0307951c (patch)',sid='0x82',pixels=decode(raw)))
     kinds=['files','library','play','musicsettings','settings','shuffle','books','meditation']
     labels=[i['label'] for i in icons]+['Audiobooks · proposed entry','Meditation · proposed entry']
-    references={}
-    for kind,letter in [('musicsettings','D'),('books','C')]:
-        references[kind]=dict(id='v4-'+letter,label='Round 4 '+letter+' · before correction',pixels=draw_v4(kind,letter))
+    references={'settings':dict(id='v5-A',label='Round 5 A · closest previous cog',pixels=draw_v5('settings','A'))}
     data=dict(stock=icons,groups=[dict(g,label=labels[kinds.index(g['id'])],reference=references.get(g['id']),
               current=icons[kinds.index(g['id'])] if kinds.index(g['id'])<6 else None,
               carried='approve-'+KEPT[g['id']][0] if g['id'] in KEPT else None) for g in variants()],
-              previous=json.loads((ROOT/'docs/reviews/icon-feedback-v4.json').read_text()))
+              previous=json.loads((ROOT/'docs/reviews/icon-feedback-v5.json').read_text()))
     page=TEMPLATE.replace('DATA_JSON',json.dumps(data)).replace('HASH_VALUE',hashlib.sha256(Path(stock).read_bytes()).hexdigest())
     output.write_text(page)
-    print(f'Wrote {output}; 5 decoded stock + 1 existing patch + 10 revisions + 4 approved icons + previous references')
+    print(f'Wrote {output}; 5 decoded stock + 1 existing patch + 4 settings alternatives + 7 approved icons + previous references')
 
 
 TEMPLATE=(ROOT/'tools/icon_review_template.html').read_text(encoding='utf-8')
