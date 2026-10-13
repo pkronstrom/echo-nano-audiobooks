@@ -1,0 +1,514 @@
+{
+  "review": "Echo Nano icon selection — Lucide music note",
+  "scope": "Icons only. No navigation or firmware changes approved.",
+  "decision": "mixed",
+  "evidence": "User: second note option; second note after the retained play triangle",
+  "icons": [
+    {
+      "id": "settings",
+      "label": "System Settings",
+      "choice": "tabler",
+      "symbol": "settings",
+      "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/settings.svg",
+      "comment": ""
+    },
+    {
+      "id": "files",
+      "label": "File Browser",
+      "choice": "tabler",
+      "symbol": "folder",
+      "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/folder.svg",
+      "comment": ""
+    },
+    {
+      "id": "library",
+      "label": "Media Library",
+      "choice": "tabler",
+      "symbol": "list",
+      "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/list.svg",
+      "comment": ""
+    },
+    {
+      "id": "play",
+      "label": "Music Playback",
+      "choice": "lucide",
+      "symbol": "music",
+      "source": "https://github.com/lucide-icons/lucide/blob/da2f29d9fa6f0d6324deefdc19e408d5fc02c607/icons/music.svg",
+      "comment": ""
+    },
+    {
+      "id": "musicsettings",
+      "label": "Music Settings",
+      "choice": "bootstrap",
+      "symbol": "sliders",
+      "source": "https://github.com/twbs/icons/blob/e568465481c0c541f63a78f6452d09387711d489/icons/sliders.svg",
+      "comment": ""
+    },
+    {
+      "id": "shuffle",
+      "label": "Shuffle",
+      "choice": "lucide",
+      "symbol": "shuffle",
+      "source": "https://github.com/lucide-icons/lucide/blob/da2f29d9fa6f0d6324deefdc19e408d5fc02c607/icons/shuffle.svg",
+      "comment": ""
+    },
+    {
+      "id": "books",
+      "label": "Audiobooks · proposed entry",
+      "choice": "keep-v6",
+      "symbol": "Rounded spread · mirrored pages · approved",
+      "source": null,
+      "comment": ""
+    },
+    {
+      "id": "meditation",
+      "label": "Meditation · proposed entry",
+      "choice": "keep-v6",
+      "symbol": "Body one pixel slimmer · approved",
+      "source": null,
+      "comment": ""
+    }
+  ],
+  "general": "Music uses the second note option (Lucide).",
+  "previous_feedback": {
+    "review": "Echo Nano icon grid — screenshot selection",
+    "scope": "Icons only. No navigation or firmware changes approved.",
+    "decision": "mixed",
+    "evidence": "User screenshot 2026-10-13 at 10.58.03",
+    "icons": [
+      {
+        "id": "settings",
+        "label": "System Settings",
+        "choice": "tabler",
+        "symbol": "settings",
+        "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/settings.svg",
+        "comment": ""
+      },
+      {
+        "id": "files",
+        "label": "File Browser",
+        "choice": "tabler",
+        "symbol": "folder",
+        "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/folder.svg",
+        "comment": ""
+      },
+      {
+        "id": "library",
+        "label": "Media Library",
+        "choice": "tabler",
+        "symbol": "list",
+        "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/list.svg",
+        "comment": ""
+      },
+      {
+        "id": "play",
+        "label": "Music Playback",
+        "choice": "tabler",
+        "symbol": "player-play",
+        "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/player-play.svg",
+        "comment": ""
+      },
+      {
+        "id": "musicsettings",
+        "label": "Music Settings",
+        "choice": "bootstrap",
+        "symbol": "sliders",
+        "source": "https://github.com/twbs/icons/blob/e568465481c0c541f63a78f6452d09387711d489/icons/sliders.svg",
+        "comment": ""
+      },
+      {
+        "id": "shuffle",
+        "label": "Shuffle",
+        "choice": "lucide",
+        "symbol": "shuffle",
+        "source": "https://github.com/lucide-icons/lucide/blob/da2f29d9fa6f0d6324deefdc19e408d5fc02c607/icons/shuffle.svg",
+        "comment": ""
+      },
+      {
+        "id": "books",
+        "label": "Audiobooks · proposed entry",
+        "choice": "keep-v6",
+        "symbol": "Rounded spread · mirrored pages · approved",
+        "source": null,
+        "comment": ""
+      },
+      {
+        "id": "meditation",
+        "label": "Meditation · proposed entry",
+        "choice": "keep-v6",
+        "symbol": "Body one pixel slimmer · approved",
+        "source": null,
+        "comment": ""
+      }
+    ],
+    "general": "Show existing music-note alternatives; hide optional content menus when roots are absent.",
+    "previous_feedback": {
+      "review": "Echo Nano icon artwork v6",
+      "scope": "Icons only. No navigation or firmware changes approved.",
+      "decision": "mixed",
+      "icons": [
+        {
+          "id": "settings",
+          "label": "System Settings",
+          "choice": "approve-B",
+          "symbol": "Fine eight-tooth cog",
+          "comment": "do research web what small cog icons look like"
+        },
+        {
+          "id": "files",
+          "label": "File Browser",
+          "choice": "approve-B",
+          "symbol": "Rounded outline with seam · approved",
+          "comment": ""
+        },
+        {
+          "id": "library",
+          "label": "Media Library",
+          "choice": "approve-C",
+          "symbol": "Alternating lengths · approved",
+          "comment": ""
+        },
+        {
+          "id": "play",
+          "label": "Music Playback",
+          "choice": "approve-B",
+          "symbol": "Compact soft play · approved",
+          "comment": ""
+        },
+        {
+          "id": "musicsettings",
+          "label": "Music Settings",
+          "choice": "approve-A",
+          "symbol": "Fine knobs · equal outer padding · approved",
+          "comment": ""
+        },
+        {
+          "id": "shuffle",
+          "label": "Shuffle",
+          "choice": "approve-D",
+          "symbol": "Open arrowheads · approved",
+          "comment": ""
+        },
+        {
+          "id": "books",
+          "label": "Audiobooks · proposed entry",
+          "choice": "approve-A",
+          "symbol": "Rounded spread · mirrored pages · approved",
+          "comment": ""
+        },
+        {
+          "id": "meditation",
+          "label": "Meditation · proposed entry",
+          "choice": "approve-A",
+          "symbol": "Body one pixel slimmer · approved",
+          "comment": ""
+        }
+      ],
+      "general": "",
+      "previous_feedback": {
+        "review": "Echo Nano icon artwork v5",
+        "scope": "Icons only. No navigation or firmware changes approved.",
+        "decision": "mixed",
+        "icons": [
+          {
+            "id": "files",
+            "label": "File Browser",
+            "choice": "approve-B",
+            "symbol": "Rounded outline with seam",
+            "comment": ""
+          },
+          {
+            "id": "library",
+            "label": "Media Library",
+            "choice": "approve-C",
+            "symbol": "Alternating lengths · approved v4",
+            "comment": ""
+          },
+          {
+            "id": "play",
+            "label": "Music Playback",
+            "choice": "approve-B",
+            "symbol": "Compact soft play · approved v4",
+            "comment": ""
+          },
+          {
+            "id": "musicsettings",
+            "label": "Music Settings",
+            "choice": "approve-A",
+            "symbol": "Fine knobs · equal outer padding",
+            "comment": ""
+          },
+          {
+            "id": "settings",
+            "label": "System Settings",
+            "choice": "pending",
+            "symbol": null,
+            "comment": "no no no , try harder. wrench is not symmetrical and is thick, the cogs are not cogs, perhaps the A is closest, but still not right.. horiz wrench is like a fishing hook"
+          },
+          {
+            "id": "shuffle",
+            "label": "Shuffle",
+            "choice": "approve-D",
+            "symbol": "Open arrowheads · approved v4",
+            "comment": ""
+          },
+          {
+            "id": "books",
+            "label": "Audiobooks · proposed entry",
+            "choice": "approve-A",
+            "symbol": "Rounded spread · mirrored pages",
+            "comment": ""
+          },
+          {
+            "id": "meditation",
+            "label": "Meditation · proposed entry",
+            "choice": "approve-A",
+            "symbol": "Body one pixel slimmer · approved v4",
+            "comment": ""
+          }
+        ],
+        "general": "",
+        "previous_feedback": {
+          "review": "Echo Nano icon artwork v4",
+          "scope": "Icons only. No navigation or firmware changes approved.",
+          "decision": "mixed",
+          "icons": [
+            {
+              "id": "files",
+              "label": "File Browser",
+              "choice": "pending",
+              "symbol": null,
+              "comment": "I still dont know; the original looks the best here. rounded (un)solid is interesting."
+            },
+            {
+              "id": "library",
+              "label": "Media Library",
+              "choice": "approve-C",
+              "symbol": "Alternating lengths",
+              "comment": ""
+            },
+            {
+              "id": "play",
+              "label": "Music Playback",
+              "choice": "approve-B",
+              "symbol": "Compact soft play",
+              "comment": ""
+            },
+            {
+              "id": "musicsettings",
+              "label": "Music Settings",
+              "choice": "approve-D",
+              "symbol": "Fine three-pixel knobs",
+              "comment": "not even padding bothers me, 2px left 1 px right"
+            },
+            {
+              "id": "settings",
+              "label": "System Settings",
+              "choice": "pending",
+              "symbol": null,
+              "comment": "still no. cog variants, or a simple wrench is what I want. these are bad thou"
+            },
+            {
+              "id": "shuffle",
+              "label": "Shuffle",
+              "choice": "approve-D",
+              "symbol": "Open arrowheads · approved v3 D",
+              "comment": ""
+            },
+            {
+              "id": "books",
+              "label": "Audiobooks · proposed entry",
+              "choice": "approve-C",
+              "symbol": "Rounded spread",
+              "comment": "rounded spread, but the book should be symmetrical on left and. right"
+            },
+            {
+              "id": "meditation",
+              "label": "Meditation · proposed entry",
+              "choice": "approve-A",
+              "symbol": "Body one pixel slimmer",
+              "comment": ""
+            }
+          ],
+          "general": "",
+          "previous_feedback": {
+            "review": "Echo Nano icon artwork v3",
+            "scope": "Icons only. No navigation or firmware changes approved.",
+            "decision": "mixed",
+            "icons": [
+              {
+                "id": "files",
+                "label": "File Browser",
+                "choice": "approve-A",
+                "symbol": "Tabbed folder",
+                "comment": "Still does not look better than the original; give me alternatives of the solid one"
+              },
+              {
+                "id": "library",
+                "label": "Media Library",
+                "choice": "pending",
+                "symbol": null,
+                "comment": "More variabts of the same list style. I liked the list, but want to see more options"
+              },
+              {
+                "id": "play",
+                "label": "Music Playback",
+                "choice": "pending",
+                "symbol": null,
+                "comment": "Looks really weird to me still, all these are quite sharp; D is the best looking so far, but still not quite"
+              },
+              {
+                "id": "musicsettings",
+                "label": "Music Settings",
+                "choice": "pending",
+                "symbol": null,
+                "comment": "The round 1 crips was good, but Id like to see a 1px thinner slider knobs I think."
+              },
+              {
+                "id": "settings",
+                "label": "System Settings",
+                "choice": "pending",
+                "symbol": null,
+                "comment": "no no no"
+              },
+              {
+                "id": "shuffle",
+                "label": "Shuffle",
+                "choice": "approve-D",
+                "symbol": "Open arrowheads",
+                "comment": ""
+              },
+              {
+                "id": "books",
+                "label": "Audiobooks · proposed entry",
+                "choice": "approve-C",
+                "symbol": "Curved pages",
+                "comment": "curved is the best so far; give me a few other options of this style;"
+              },
+              {
+                "id": "meditation",
+                "label": "Meditation · proposed entry",
+                "choice": "approve-D",
+                "symbol": "Candle with wax drip",
+                "comment": "D, but 1 px slimmer I think"
+              }
+            ],
+            "general": "",
+            "previous_feedback": {
+              "review": "Echo Nano icon artwork v2",
+              "scope": "Icons only. No navigation or firmware changes approved.",
+              "decision": "mixed",
+              "icons": [
+                {
+                  "id": "files",
+                  "label": "File Browser",
+                  "choice": "pending",
+                  "symbol": null,
+                  "comment": "more variants pls"
+                },
+                {
+                  "id": "library",
+                  "label": "Media Library",
+                  "choice": "pending",
+                  "symbol": null,
+                  "comment": "give me more variants "
+                },
+                {
+                  "id": "play",
+                  "label": "Music Playback",
+                  "choice": "pending",
+                  "symbol": null,
+                  "comment": "more variants, shaprer triangle, this sort of cuts off"
+                },
+                {
+                  "id": "musicsettings",
+                  "label": "Music Settings",
+                  "choice": "pending",
+                  "symbol": null,
+                  "comment": "crips is better, give me vriants"
+                },
+                {
+                  "id": "settings",
+                  "label": "System Settings",
+                  "choice": "pending",
+                  "symbol": null,
+                  "comment": "A cuts off, b is like a star, c is like crossed bones, d is like a fishing hook"
+                },
+                {
+                  "id": "shuffle",
+                  "label": "Shuffle",
+                  "choice": "approve-D",
+                  "symbol": "Tight crossed arrows",
+                  "comment": "D is closest, but that left part with long parallel lines is a bit off I think"
+                },
+                {
+                  "id": "books",
+                  "label": "Audiobooks · proposed entry",
+                  "choice": "approve-B",
+                  "symbol": "Open book",
+                  "comment": "B-ish, give me variants"
+                },
+                {
+                  "id": "meditation",
+                  "label": "Meditation · proposed entry",
+                  "choice": "approve-D",
+                  "symbol": "Candle",
+                  "comment": "I like candle, give me more variants of this"
+                }
+              ],
+              "general": "",
+              "previous_feedback": {
+                "review": "Echo Nano icon artwork v1",
+                "scope": "Icons only. No navigation or firmware changes approved.",
+                "decision": "pending",
+                "icons": [
+                  {
+                    "label": "File Browser",
+                    "choice": "pending",
+                    "comment": ""
+                  },
+                  {
+                    "label": "Media Library",
+                    "choice": "pending",
+                    "comment": ""
+                  },
+                  {
+                    "label": "Music Playback",
+                    "choice": "pending",
+                    "comment": ""
+                  },
+                  {
+                    "label": "Music Settings",
+                    "choice": "pending",
+                    "comment": ""
+                  },
+                  {
+                    "label": "System Settings",
+                    "choice": "pending",
+                    "comment": "the cog icons looks like a tikkataulu. needs more coggines, or just a plain wrench"
+                  },
+                  {
+                    "label": "Shuffle",
+                    "choice": "pending",
+                    "comment": "shuffle could be thicker, a bit different"
+                  },
+                  {
+                    "label": "Audiobooks · proposed entry",
+                    "choice": "pending",
+                    "comment": "should look more booky"
+                  },
+                  {
+                    "label": "Meditation · proposed entry",
+                    "choice": "pending",
+                    "comment": "I have no idea what that meditation icon is about"
+                  }
+                ],
+                "general": "give me 4 different suggestion sets for these"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

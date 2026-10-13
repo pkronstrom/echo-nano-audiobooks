@@ -5,7 +5,7 @@
 <main><div id="grid" aria-label="Choose one icon per row"></div><footer><button id="copy" aria-label="Copy feedback" title="Copy feedback" disabled><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><rect x="5" y="5" width="8" height="9" rx="1"/><path d="M10 3V2H2v9h1"/></svg></button><button id="download" aria-label="Download feedback" title="Download feedback" disabled><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor"><path d="M8 1v9m-4-4 4 4 4-4M2 11v3h12v-3"/></svg></button></footer><textarea id="export" readonly aria-label="Feedback JSON"></textarea></main>
 <script>
 const data=DATA_JSON;
-const $=id=>document.getElementById(id),key='echo-nano-existing-libraries-v2';let saved={};try{saved=JSON.parse(localStorage.getItem(key)||'{}')||{}}catch(e){}
+const $=id=>document.getElementById(id),key='echo-nano-existing-libraries-v3';let saved={};try{saved=JSON.parse(localStorage.getItem(key)||'{}')||{}}catch(e){}
 const order=['settings','files','library','play','musicsettings','shuffle','books','meditation'],rowsByIcon={},choices={};
 for(const id of order){const old=Array.isArray(saved.icons)?saved.icons.find(i=>i.id===id):null;choices[id]=old&&(old.choice==='keep-v6'||data.sets.some(s=>s.id===old.choice))?old.choice:data.defaults[id]}
 function pixels(rows){let out='<svg class="pixel" width="20" height="16" viewBox="0 0 20 16" shape-rendering="crispEdges" aria-hidden="true"><rect width="20" height="16" fill="black"/>';rows.forEach((row,y)=>[...row].forEach((v,x)=>{if(v==='1')out+=`<rect x="${x}" y="${y}" width="1" height="1" fill="white"/>`}));return out+'</svg>'}

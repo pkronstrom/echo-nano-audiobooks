@@ -28,10 +28,10 @@ def build():
             icon['uri']='data:image/svg+xml;base64,'+base64.b64encode(rendered.encode()).decode()
     retained_play=next(i.copy() for s in sets if s['id']=='tabler' for i in s['icons'] if i['id']=='play')
     for s in sets:s['icons']=[s['music_note'] if i['id']=='play' else i for i in s['icons']]
-    prior=json.loads((ROOT/'docs/reviews/icon-feedback-grid-screenshot.json').read_text())
+    prior=json.loads((ROOT/'docs/reviews/icon-feedback-music-note.json').read_text())
     original=json.loads((ROOT/'docs/reviews/icon-feedback-v6.json').read_text())
     current=[dict(id=k,label=label,symbol=retained_play['name'] if k=='play' else next(i['symbol'] for i in original['icons'] if i['id']==k),pixels=draw(k,'B' if k=='settings' else KEPT[k][0])) for k,label in labels.items()]
-    defaults={i['id']:i['choice'] for i in prior['icons']};defaults['play']='keep-v6'
+    defaults={i['id']:i['choice'] for i in prior['icons']}
     payload=dict(sets=sets,labels=labels,current=current,previous=prior,defaults=defaults,retainedPlay=retained_play)
     page=(ROOT/'tools/icon_library_review_template.html').read_text().replace('DATA_JSON',json.dumps(payload).replace('</','<\\/'))
     (ROOT/'docs/icon-library-review.html').write_text(page)
