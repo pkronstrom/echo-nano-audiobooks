@@ -216,3 +216,17 @@ Validation: all SVGs parse and use only permitted static drawing elements;
 48 nonempty 20 × 16 rasters rendered in isolated Chrome. Whole-set selection,
 individual mixing, keeping prior approvals, source identity, feedback comments,
 local persistence and export were checked. Desktop comparison inspected.
+
+### Compact grid revision
+
+The existing-library review now shows only eight rows of native 20 × 16 icons,
+with System Settings first and File Browser second. Each row has the previous
+approval followed by the six libraries in manifest order. Click selects one
+icon per row. Existing selections and comments survive through the same local
+storage key. Icon-only copy and download controls export the feedback; labels
+remain available to assistive technology and on hover. Original SVGs, source
+metadata and full licence notices remain embedded, without visible panels.
+
+Checked in isolated Chrome: eight rows, 56 options, exact 20 × 16 CSS-pixel
+artwork, one selection per row, click updates, persistence and export. Grid
+screenshot inspected. No firmware changes.
