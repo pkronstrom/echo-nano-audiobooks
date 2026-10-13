@@ -11,8 +11,8 @@ import struct
 from pathlib import Path
 
 from rknano_fw import load, stock_name
-from icon_proposals import variants as variants_v2
-from icon_proposals_v3 import variants
+from icon_proposals_v3 import draw as draw_v3
+from icon_proposals_v4 import variants
 
 ROOT = Path(__file__).resolve().parents[1]
 ADDRESSES = [0x03072DFF, 0x03072DAF, 0x03072D5F, 0x03072D87, 0x03072DD7]
@@ -86,16 +86,16 @@ def generate(stock, output):
     kinds=['files','library','play','musicsettings','settings','shuffle','books','meditation']
     labels=[i['label'] for i in icons]+['Audiobooks · proposed entry','Meditation · proposed entry']
     references={}
-    for key,letter in [('shuffle','D'),('books','B'),('meditation','D')]:
-        old=next(s for s in variants_v2() if s['id']==letter)
-        icon=next(i for i in old['icons'] if i['kind']==key)
-        references[key]=dict(id='v2-'+letter,label='Preferred v2 '+letter+' · '+icon['symbol'],pixels=icon['pixels'])
+    for key,letter in [('files','D'),('library','C'),('play','D'),('books','C'),('meditation','D')]:
+        references[key]=dict(id='v3-'+letter,label='Round 3 '+letter+' · previous direction',pixels=draw_v3(key,letter))
     references['musicsettings']=dict(id='v1-crisp',label='Round 1 Crisp · preferred direction',pixels=proposal('musicsettings'))
-    data=dict(stock=icons,groups=[dict(g,label=labels[kinds.index(g['id'])],reference=references.get(g['id'])) for g in variants()],
-              previous=json.loads((ROOT/'docs/reviews/icon-feedback-v2.json').read_text()))
+    data=dict(stock=icons,groups=[dict(g,label=labels[kinds.index(g['id'])],reference=references.get(g['id']),
+              current=icons[kinds.index(g['id'])] if kinds.index(g['id'])<6 else None,
+              carried='approve-D' if g['id']=='shuffle' else None) for g in variants()],
+              previous=json.loads((ROOT/'docs/reviews/icon-feedback-v3.json').read_text()))
     page=TEMPLATE.replace('DATA_JSON',json.dumps(data)).replace('HASH_VALUE',hashlib.sha256(Path(stock).read_bytes()).hexdigest())
     output.write_text(page)
-    print(f'Wrote {output}; 5 decoded stock + 1 existing patch + 32 revised icons + preferred references')
+    print(f'Wrote {output}; 5 decoded stock + 1 existing patch + 28 revised icons + approved shuffle + previous references')
 
 
 TEMPLATE=(ROOT/'tools/icon_review_template.html').read_text(encoding='utf-8')

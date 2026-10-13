@@ -123,3 +123,24 @@ rasterized to a point. Checks cover all 32 dimensions/perimeters and uniqueness,
 plus browser selection, mixed new/prior identities, exact comments, nested
 feedback history, storage, inverse mode and desktop layout. The generator now
 uses `icon_proposals_v3.py`; v2 drawings remain available for the references.
+
+### Round 4 — focused refinements
+
+Review: `icon-review-v4.html` (also the current `icon-review.html`). Artwork source:
+`tools/icon_proposals_v4.py`. User feedback is preserved verbatim in
+`docs/reviews/icon-feedback-v3.json`, including earlier rounds.
+
+There are four alternatives each for solid folders, list-style libraries,
+softer play wedges, thinner slider knobs, settings, curved books and slimmer
+candles. Slider alternatives distinguish one-pixel reductions in height and
+width. Candle A reduces the previous body's width from eight to seven pixels.
+The approved round-three shuffle D is retained exactly and carried forward as
+approved; all other new artwork starts pending. Original firmware icons and
+previous directions are visible beside each applicable comparison.
+
+Validation: 29 bitmap dimensions and blank perimeters checked, alternatives
+within each activity distinct, retained shuffle compared pixel-for-pixel.
+JavaScript syntax and isolated Chrome checks passed for initial approval state,
+selection, comment export, full feedback history, local persistence, inverse
+preview and desktop overflow. Contact sheet visually inspected. No firmware
+resources or navigation were modified.
