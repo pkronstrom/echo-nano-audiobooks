@@ -26,12 +26,23 @@ The existing M3U file resolver does not do that.
 
 ## Proposed next implementation
 
-Use two configurable paths on the card, then append Audiobooks and Meditations
-to the Media Library text menu. Open window 9 and traverse the configured folders
-using the native descent machinery. Missing paths fall back to the normal root
-browser. This preserves the user's folder names and meditation phase hierarchy.
-The configuration format and placement remain a proposal, not a requirement to
-reorganize existing content.
+Use empty `.audiobook` and `.meditation` marker files in collection roots,
+following the user's 2026-10-13 proposal. Folder names and nested structure can
+remain arbitrary. A marker classifies the root and its descendants; individual
+books or meditation sessions do not each need another marker. Treat marked
+content as excluded from Music, extending the existing `.nomusic` behaviour.
+
+Only show a content shortcut when the mounted card contains a matching marked
+root. Recompute availability on a library rescan/card change. If a root vanishes
+between discovery and activation, cancel activation safely and refresh the
+menu; do not silently send the user to the storage root. Zero matching roots
+means no corresponding menu item; one opens that root; multiple roots should
+open a chooser of those roots. Discover roots once during scanning rather than
+walking the card on every menu redraw.
+
+This is the intended design, not implemented firmware behaviour. Marker
+classification, discovery/cache invalidation and dynamic menu routing require
+implementation and tests together with the native folder-descent work below.
 
 Main-screen growth is a larger change: the current six-entry table ends directly
 before cursor state at `0x0300e708`. More entries require relocating it and
@@ -40,7 +51,7 @@ Media Library route needs coordinated table/restore-cave placement (current
 table `0x0300e708`, restore code `0x0300e744`).
 
 Before enabling a shortcut, add native ARM tests for initialization, nested
-FAT/exFAT descent, Back through each ancestor, missing-path fallback and book
+FAT/exFAT descent, Back through each ancestor, missing-root hiding, multiple-root selection and book
 launch after traversal. These ABIs have been mapped but that implementation and
 its tests are outstanding. Tomorrow's P3a image retains the existing verified
 entry path so the core playback/resume device test can proceed independently.

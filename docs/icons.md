@@ -230,3 +230,15 @@ metadata and full licence notices remain embedded, without visible panels.
 Checked in isolated Chrome: eight rows, 56 options, exact 20 × 16 CSS-pixel
 artwork, one selection per row, click updates, persistence and export. Grid
 screenshot inspected. No firmware changes.
+
+### Music-note alternatives
+
+The screenshot selection from 2026-10-13 at 10.58.03 is recorded in
+`docs/reviews/icon-feedback-grid-screenshot.json`: Tabler settings, folder, list
+and play; Bootstrap sliders; Lucide shuffle; previous book and candle.
+The Music row now offers six existing note icons from the same pinned sources.
+The first option retains the selected Tabler play triangle. New notes are not
+implicitly approved. A fresh storage key preserves the preceding review, and
+new-page defaults reflect the screenshot. Source geometry and licences remain
+unchanged. Browser checks cover defaults, retained play identity, note selection,
+source identity, nonempty bitmap and saved feedback. Grid visually inspected.

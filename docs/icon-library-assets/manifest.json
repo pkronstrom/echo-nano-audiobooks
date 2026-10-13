@@ -55,7 +55,14 @@
         "path": "icons/fire.svg",
         "source": "https://github.com/twbs/icons/blob/e568465481c0c541f63a78f6452d09387711d489/icons/fire.svg"
       }
-    ]
+    ],
+    "music_note": {
+      "id": "play",
+      "file": "music-note.svg",
+      "name": "music-note-beamed",
+      "path": "icons/music-note-beamed.svg",
+      "source": "https://github.com/twbs/icons/blob/e568465481c0c541f63a78f6452d09387711d489/icons/music-note-beamed.svg"
+    }
   },
   {
     "id": "lucide",
@@ -113,7 +120,14 @@
         "path": "lab/candlestick-lit.svg",
         "source": "https://github.com/lucide-icons/lucide/blob/da2f29d9fa6f0d6324deefdc19e408d5fc02c607/lab/candlestick-lit.svg"
       }
-    ]
+    ],
+    "music_note": {
+      "id": "play",
+      "file": "music-note.svg",
+      "name": "music",
+      "path": "icons/music.svg",
+      "source": "https://github.com/lucide-icons/lucide/blob/da2f29d9fa6f0d6324deefdc19e408d5fc02c607/icons/music.svg"
+    }
   },
   {
     "id": "tabler",
@@ -171,7 +185,14 @@
         "path": "icons/outline/candle.svg",
         "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/candle.svg"
       }
-    ]
+    ],
+    "music_note": {
+      "id": "play",
+      "file": "music-note.svg",
+      "name": "music",
+      "path": "icons/outline/music.svg",
+      "source": "https://github.com/tabler/tabler-icons/blob/a4ce1404bc6d24d3c365afe7b258d6bf6f48d62d/icons/outline/music.svg"
+    }
   },
   {
     "id": "remix",
@@ -229,7 +250,14 @@
         "path": "icons/Others/candle-line.svg",
         "source": "https://github.com/Remix-Design/RemixIcon/blob/9fb7967c0a4c09910161192bde99efd3df09f5eb/icons/Others/candle-line.svg"
       }
-    ]
+    ],
+    "music_note": {
+      "id": "play",
+      "file": "music-note.svg",
+      "name": "music-2-line",
+      "path": "icons/Media/music-2-line.svg",
+      "source": "https://github.com/Remix-Design/RemixIcon/blob/9fb7967c0a4c09910161192bde99efd3df09f5eb/icons/Media/music-2-line.svg"
+    }
   },
   {
     "id": "pixelarticons",
@@ -287,7 +315,14 @@
         "path": "svg/fire.svg",
         "source": "https://github.com/halfmage/pixelarticons/blob/c9ecc2da61afde85dbe539025e3d931c6152ad75/svg/fire.svg"
       }
-    ]
+    ],
+    "music_note": {
+      "id": "play",
+      "file": "music-note.svg",
+      "name": "music",
+      "path": "svg/music.svg",
+      "source": "https://github.com/halfmage/pixelarticons/blob/c9ecc2da61afde85dbe539025e3d931c6152ad75/svg/music.svg"
+    }
   },
   {
     "id": "phosphor",
@@ -345,6 +380,13 @@
         "path": "assets/regular/fire.svg",
         "source": "https://github.com/phosphor-icons/core/blob/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/regular/fire.svg"
       }
-    ]
+    ],
+    "music_note": {
+      "id": "play",
+      "file": "music-note.svg",
+      "name": "music-notes",
+      "path": "assets/regular/music-notes.svg",
+      "source": "https://github.com/phosphor-icons/core/blob/2b75f3ad12b420c9504ef05df8d2564a28f8500e/assets/regular/music-notes.svg"
+    }
   }
 ]
