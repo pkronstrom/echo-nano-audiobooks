@@ -75,6 +75,10 @@ def discovery(image):
     return image
 
 HOOKS={
+    'nav_menu_loader':(21,0x03079600,24,None),
+    'nav_browser_loader':(31,0x0307afa0,24,None),
+    'nav_menu_init':(21,0x030794ac,4,None),
+    'nav_browser_init':(31,0x03079afc,4,None),
     'browser':(31,0x0307acb6,66,None),
     'settings':(33,0x0308301e,190,None),
     'music_enter':(33,0x030827ba,4,None),
@@ -120,6 +124,12 @@ def integrate(stock_data,input_data,directory,date):
         offset,_=image.region(33,address)
         if image.d[offset:offset+4]!=encode_t32_branch(address,target,False):
             raise ValueError('P1b scope branch changed')
-    image.patch(32,0x0307cf14,'P3a\0'.encode('utf-16le'))
+    from approved_icons import apply_icons
+    from rknano_fw import LANGS
+    apply_icons(image,stock)
+    for language in range(len(LANGS)):
+        image.patch_lang(language,0x83,'Audiobooks\0'.encode('utf-16le'))
+        image.patch_lang(language,0x84,'Meditation\0'.encode('utf-16le'))
+    image.patch(32,0x0307cf14,'P4a\0'.encode('utf-16le'))
     image.set_date(date);image.finalize()
     return bytes(image.d)

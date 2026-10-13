@@ -104,3 +104,52 @@ entry playback_order_bridge
     it ne
     movne r0,#0
     jump 0x030831be
+
+@ Only installed into an overlay after its guarded loader succeeds.
+entry navigation_dispatch_bridge
+    push {r0-r3,r12,lr}
+    bl navigation_menu_dispatch
+    cbz r0, 1f
+    add sp,#20
+    pop {pc}
+1:  pop {r0-r3,r12,lr}
+    push {r4,r5,lr}
+    ldr r1,=0x0300e708
+    jump 0x03079b22
+entry navigation_strip_bridge
+    push {r0-r6,lr}
+    ldr r4,=0x03005a00
+    ldrb r5,[r4,#10]
+    adds r5,#3
+1:  ldr r6,=navigation_count
+    ldr r6,[r6]
+    cmp r5,r6
+    bhs 2f
+    ldrb r0,[r4,#10]
+    subs r0,r5,r0
+    movs r1,#25
+    muls r0,r1,r0
+    ldrsh.w r1,[r4,#2]
+    adds r0,r1
+    ldrsh.w r1,[r4]
+    mov r2,r5
+    ldr r3,=navigation_icons
+    ldr ip,=0x03050869
+    blx ip
+    adds r5,#1
+    b 1b
+2:  pop {r0-r6,lr}
+    jump 0x03050642
+entry navigation_event_bridge
+    push {r0-r3,r12,lr}
+    ldr r0,[sp,#56]
+    bl navigation_event
+    cmp r0,#0
+    beq 1f
+    subs r4,r0,#1
+    pop {r0-r3,r12,lr}
+    jump 0x0307b758
+1:  pop {r0-r3,r12,lr}
+    ldr r0,[sp,#32]
+    ldr r10,=0x0300d164
+    jump 0x0307b320

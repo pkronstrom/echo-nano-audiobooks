@@ -1,7 +1,8 @@
 #include "browser.h"
 static u16 half(const u8 *p) { return p[0] | (u16)p[1] << 8; }
 static u32 word(const u8 *p) { return half(p) | (u32)half(p+2) << 16; }
-static u16 component[256];
+u16 playback_path_scratch[256];
+#define component playback_path_scratch
 static int append(u16 *out, u32 *used, const u16 *name)
 {
     u32 n = 0;

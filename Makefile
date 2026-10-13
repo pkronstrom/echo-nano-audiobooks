@@ -14,7 +14,7 @@ FW      ?= NANOV170.IMG
 OUT     ?= out/NANOV170.IMG
 DATE    ?= 20260829
 POWER_SAVE ?= 0
-AUDIOBOOK_DATE ?= 20261012
+AUDIOBOOK_DATE ?= 20261013
 PY      := python3
 FWTOOL  := $(PY) tools/rknano_fw.py
 

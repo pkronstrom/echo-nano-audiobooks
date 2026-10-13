@@ -22,7 +22,7 @@ class AudiobookImageTests(unittest.TestCase):
             self.assertEqual(self.book.d[off:off+length],read_patch(ROOT/f'out/playback/{name}.patch')[2])
         payload=(ROOT/'out/playback/playback.bin').read_bytes()
         self.assertEqual(self.book.d[FLASH_START:FLASH_START+len(payload)],payload)
-        off,_=self.book.region(32,0x0307cf14);self.assertEqual(self.book.d[off:off+8],'P3a\0'.encode('utf-16le'))
+        off,_=self.book.region(32,0x0307cf14);self.assertEqual(self.book.d[off:off+8],'P4a\0'.encode('utf-16le'))
     def test_music_exclusion_and_resources_are_preserved(self):
         # Refresh patch regions are byte-identical to the already tested P1b image.
         for name in ('cfw_blob','cfw_hooks'):
@@ -32,8 +32,13 @@ class AudiobookImageTests(unittest.TestCase):
                 mod,address,data=line.split(':');expected=bytes.fromhex(data)
                 offset,_=self.book.region(int(mod),int(address,16))
                 self.assertEqual(self.book.d[offset:offset+len(expected)],self.base.d[offset:offset+len(expected)])
+        expected=Image(bytes(self.base.d))
+        from rknano_fw import LANGS
+        for language in range(len(LANGS)):
+            expected.patch_lang(language,0x83,'Audiobooks\0'.encode('utf-16le'))
+            expected.patch_lang(language,0x84,'Meditation\0'.encode('utf-16le'))
         for section in self.book.sections:
-            a=section['offset'];b=a+section['length'];self.assertEqual(self.book.d[a:b],self.base.d[a:b])
+            a=section['offset'];b=a+section['length'];self.assertEqual(self.book.d[a:b],expected.d[a:b])
     def test_recovery_is_later_dated_stock_code(self):
         recovery=Image((ROOT/'out/audiobook/recovery/NANOV170.IMG').read_bytes())
         expected=Image(bytes(self.stock.d));expected.set_date(recovery.date);expected.finalize()

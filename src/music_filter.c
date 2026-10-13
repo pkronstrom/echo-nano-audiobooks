@@ -12,14 +12,23 @@ static int letter(u16 c, u8 expected)
     if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
     return c == expected;
 }
+static int marker_name(const u16 *name, u32 length)
+{
+    static const char *const markers[] = {".nomusic", ".audiobook", ".meditation"};
+    for (u32 m = 0; m < 3; m++) {
+        u32 i = 0;
+        while (i < length && markers[m][i] && letter(name[i], markers[m][i])) i++;
+        if (i == length && !markers[m][i]) return 1;
+    }
+    return 0;
+}
 static int fat_name(const u8 *e)
 {
-    static const u8 offsets[] = {1,3,5,7,9,14,16,18};
-    const char *name = ".nomusic";
+    static const u8 offsets[] = {1,3,5,7,9,14,16,18,20,22,24,28,30};
     if (e[0] != 0x41 || e[11] != 15 || e[12] || le16(e + 26)) return 0;
-    for (u32 i = 0; i < 8; i++)
-        if (!letter(le16(e + offsets[i]), name[i])) return 0;
-    return le16(e + 20) == 0;
+    u16 name[13]; u32 n = 0;
+    while (n < 13 && (name[n] = le16(e + offsets[n]))) n++;
+    return n < 13 && marker_name(name, n);
 }
 static int normal_fat(const u8 *e)
 {
@@ -54,14 +63,13 @@ static int marked(u32 cluster, u32 *desc)
             pending = fat_name(e);
             checksum = e[13];
         } else {
-            if (pending == 2 && e[0] == 0xc1) {
-                const char *name = ".nomusic";
-                u32 j;
-                for (j = 0; j < 8 && letter(le16(e + 2 + 2*j), name[j]); j++) {}
-                if (j == 8) { hidden = 1; break; }
+            if (pending >= 8 && e[0] == 0xc1) {
+                u16 name[11];
+                for (u32 j = 0; j < (u32)pending; j++) name[j] = le16(e + 2 + 2*j);
+                if (marker_name(name, pending)) { hidden = 1; break; }
             }
-            if (pending == 1 && e[0] == 0xc0 && e[3] == 8) pending = 2;
-            else pending = e[0] == 0x85 && e[1] >= 2 && !(e[4] & 16);
+            if (pending == 1 && e[0] == 0xc0 && (e[3] == 8 || e[3] == 10 || e[3] == 11)) pending = e[3];
+            else pending = e[0] == 0x85 && e[1] >= 2 && !(e[4] & 24);
         }
     }
     if (i == 65536) { hidden = 1; music_filter_errors++; }

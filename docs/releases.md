@@ -2,7 +2,7 @@
 
 This package produces custom firmware from your own official FiiO Echo Nano
 V1.7.0 firmware. It contains changed bytes and Python scripts, not a complete
-FiiO firmware image. The current P3a build is a device-test candidate; successful
+FiiO firmware image. The current P4a build is a device-test candidate; successful
 host tests do not establish device compatibility. Public release publication
 remains pending recorded device acceptance.
 

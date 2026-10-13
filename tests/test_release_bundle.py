@@ -138,7 +138,9 @@ class ReleaseTests(unittest.TestCase):
             # Freeze bundle inputs while other contributors may edit the workspace.
             snapshot = root / 'source'
             for name in ('tools/apply_release.py', 'tools/rknano_fw.py', 'tools/prepare_book.py',
-                         'LICENSE', 'docs/releases.md', 'docs/audiobooks.md'):
+                         'LICENSE', 'docs/releases.md', 'docs/audiobooks.md', 'docs/approved-icons.json',
+                         'docs/icon-library-assets/tabler/LICENSE', 'docs/icon-library-assets/lucide/LICENSE',
+                         'docs/icon-library-assets/bootstrap/LICENSE'):
                 dest = snapshot / name
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(ROOT / name, dest)
@@ -148,6 +150,9 @@ class ReleaseTests(unittest.TestCase):
             self.assertEqual(first.read_bytes(), second.read_bytes())
             with zipfile.ZipFile(first) as archive:
                 self.assertFalse(any(name.endswith('.IMG') for name in archive.namelist()))
+                for library in ('tabler','lucide','bootstrap'):
+                    self.assertTrue(archive.read(f'licenses/{library}.txt'))
+                self.assertTrue(archive.read('approved-icons.json'))
                 guide = archive.read('audiobooks.md').decode()
                 self.assertIn('python3 prepare_book.py', guide)
                 self.assertNotIn('builds/phase3a', guide)

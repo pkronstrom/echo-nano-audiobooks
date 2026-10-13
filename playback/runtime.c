@@ -124,7 +124,7 @@ int playback_load_playlist(const u16 *path, struct m3u_stats *stats)
 {
     playlist_clear();
     __builtin_memset(stats, 0, sizeof(*stats));
-    static u16 base[M3U_PATH_UNITS];
+    u16 *base = playback_path_scratch;
     u32 length = 0, slash = 0;
     while (path[length]) {
         if (length >= M3U_PATH_UNITS-1) return -1;

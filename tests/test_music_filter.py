@@ -113,6 +113,36 @@ class MusicFilterTests(unittest.TestCase):
         result = self.lib.music_exfat_entry(out, desc, index)
         return result, bytes(out)
 
+    def test_activity_markers_exclude_roots_and_subtrees(self):
+        for name in (".audiobook", ".meditation", ".AuDiObOoK", ".Meditation"):
+            with self.subTest(name=name):
+                self.fat = {0: [fat_entry(b"ROOT       ", 30, True), END],
+                            30: [fat_entry(), *fat_marker(name), END]}
+                self.lib.music_filter_reset()
+                self.assertTrue(self.fat_get(0)[1][11] & 2)
+                self.assertTrue(self.fat_get(30)[1][11] & 2)
+                self.exfat = {2: [*exfat_entry("Root", 30, True), END],
+                              30: [*exfat_entry("track.mp3"), *exfat_entry(name, 0, length=0), END]}
+                self.lib.music_filter_reset()
+                self.assertTrue(self.exfat_get()[1][4] & 2)
+                self.assertTrue(self.exfat_get(30)[1][4] & 2)
+
+    def test_activity_marker_exact_names_and_regular_files_only(self):
+        for name in (".audiobooks", ".meditations", ".audiobookx", "audiobook", ".meditationx"):
+            self.fat = {0: [fat_entry(), *fat_marker(name), END]}
+            self.exfat = {2: [*exfat_entry("track.mp3"), *exfat_entry(name, 0, length=0), END]}
+            self.lib.music_filter_reset()
+            self.assertFalse(self.fat_get(0)[1][11] & 2, name)
+            self.assertFalse(self.exfat_get()[1][4] & 2, name)
+        for name in (".audiobook", ".meditation"):
+            marker = fat_marker(name)
+            e = bytearray(marker[1]); e[11] = 16; marker[1] = bytes(e)
+            self.fat = {0: [fat_entry(), *marker, END]}
+            self.exfat = {2: [*exfat_entry("track.mp3"), *exfat_entry(name, 30, True), END], 30: [END]}
+            self.lib.music_filter_reset()
+            self.assertFalse(self.fat_get(0)[1][11] & 2)
+            self.assertFalse(self.exfat_get()[1][4] & 2)
+
     def test_unmarked_fat_entries_unchanged(self):
         self.fat[0] = [fat_entry(), fat_entry(b"MUSIC      ", 30, True), END]
         for i in range(3):

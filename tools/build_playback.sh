@@ -3,8 +3,17 @@
 set -euo pipefail
 out=${1:-out/playback}
 mkdir -p "$out/obj"
+python3 - "$out" <<'ICONS'
+from pathlib import Path
+import sys
+sys.path.insert(0, 'tools')
+from approved_icons import icon_bytes
+Path(sys.argv[1], 'navigation_icons.inc').write_text('\n'.join(
+    'static const u8 navigation_%s_icon[40]={%s};' % (name, ','.join(map(str, icon_bytes(kind))))
+    for name,kind in [('book','books'),('meditation','meditation')]))
+ICONS
 flags=(-mthumb -mcpu=cortex-m3 -Os -std=gnu11 -ffreestanding -fno-common
-       -fno-strict-aliasing -fstack-usage -Wall -Wextra -Werror -Isrc -Iplayback)
+       -fno-strict-aliasing -fstack-usage -Wall -Wextra -Werror -Isrc -Iplayback -I"$out")
 objs=()
 for source in playback/*.c playback/*.S src/libc.c; do
   object="$out/obj/$(basename "${source%.*}").o"

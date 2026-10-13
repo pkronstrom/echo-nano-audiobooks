@@ -1,6 +1,6 @@
-# P3a audiobook device test
+# P4a audiobook device test
 
-P3a adds File Browser M3U playback in listed order and a separate saved chapter
+P4a adds the approved icons and conditional marked-root shortcuts, retaining File Browser M3U playback in listed order and a separate saved chapter
 and time for each prepared book. It includes P1b music exclusion and folder
 containment. Host/ARM checks pass; boot, decoding and storage durability still
 need device validation. Nothing has been flashed automatically.
@@ -9,16 +9,16 @@ need device validation. Nothing has been flashed automatically.
 
 Local artifacts (excluded from Git):
 
-- Custom: `builds/phase3a/custom/NANOV170.IMG`, About **P3a**, date **20261012**.
-- Stock recovery: `builds/phase3a/recovery/NANOV170.IMG`, date **20261013**.
-- Source checkpoint: `phase3a-audiobook-test`.
-- Checksums, source revision and test results: `builds/phase3a/manifest.json`.
+- Custom: `builds/phase4a/custom/NANOV170.IMG`, About **P4a**, date **20261013**.
+- Stock recovery: `builds/phase4a/recovery/NANOV170.IMG`, date **20261014**.
+- Source checkpoint: `phase4a-marked-roots-test`.
+- Checksums, source revision and test results: `builds/phase4a/manifest.json`.
 
 The player selects the newest dated valid firmware. These dates must be newer
 than what is installed. After using this recovery, rebuild subsequent custom
-images with `AUDIOBOOK_DATE=20261014` or a suitably later date.
+images with `AUDIOBOOK_DATE=20261015` or a suitably later date.
 Copy the **custom** image to the root of the player's internal storage, eject
-and restart. Check About for P3a. Keep the recovery image on the computer; to
+and restart. Check About for P4a. Keep the recovery image on the computer; to
 restore stock, copy that image instead, eject and restart. See
 [baseline installation and recovery](baseline.md#installation-and-recovery-pending-device-checkpoint).
 
@@ -65,6 +65,31 @@ Hold previous/next for stock rewind/fast-forward, as described in
 [FiiO's Echo Nano controls](https://support.fiio.jp/hc/ja/articles/60876814334617-Snowsky-ECHO-NANO%E3%81%AE%E3%82%88%E3%81%8F%E3%81%82%E3%82%8B%E8%A8%AD%E5%AE%9A%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6).
 There is no new ±30-second mapping in this build.
 
+## Audiobooks and Meditation shortcuts
+
+Put an empty `.audiobook` file inside your audiobook collection root, and an
+empty `.meditation` file inside your meditation root. Folder names are free.
+For example, after replacing the volume name with your Nano's mounted name:
+
+```sh
+touch '/Volumes/NANO/Audiobooks/.audiobook'
+touch '/Volumes/NANO/Meditations/.meditation'
+```
+
+These are **files inside folders**, not renamed folders. A category appears in
+the main menu only when its marker is found. One root opens directly; multiple
+roots show a chooser with their paths. Back follows the real folder ancestry.
+The menu rescans when opened and checks roots again before entry. Reopen the
+main menu after changing media. Scan limits are eight roots total, seven folder
+levels, 2,048 directories and 65,536 directory-entry reads; exceeding a work or
+root limit hides both shortcuts rather than showing an incomplete collection.
+
+Both markers recursively exclude their roots from Music and global Shuffle
+following **Media Library Refresh**. Existing `.nomusic` continues to exclude
+music without adding a shortcut. Book preparation still creates `.nomusic`;
+add `.audiobook` once at the collection root to show the menu. The Meditation
+shortcut uses ordinary contained folder playback; it adds no new timer.
+
 ## M4B: try audio-preserving M4A first
 
 The native extension list recognizes M4A/MP4 but omits M4B. This does not prove
@@ -104,7 +129,12 @@ book in the destination. Neither path removes DRM or modifies originals.
 
 ## Device acceptance checklist
 
-- [ ] P3a boots and a prepared book's M3U opens with audible playback.
+- [ ] With no category markers, both optional menu entries are absent.
+- [ ] Add each marker, reopen the main menu, and verify the corresponding shortcut.
+- [ ] Try two roots, select either, and check Back returns through real parents.
+- [ ] Remove a selected root/marker and verify no stale folder opens.
+- [ ] The approved icons render correctly, including the music note.
+- [ ] P4a boots and a prepared book's M3U opens with audible playback.
 - [ ] Numbered chapters play in order, even with music Shuffle enabled.
 - [ ] Next/previous and automatic end-of-book stay within that book.
 - [ ] Seek within a long file; stop, reopen and verify the approximate time.
@@ -126,14 +156,14 @@ behavior is unverified. Replacing audio in place while preserving filesystem
 indices/clusters can retain a stale position. To deliberately reset a book,
 remove its RSM companion and rerun preparation. Do not edit RSM contents.
 
-Dedicated Audiobooks menus, new icons, playback speed, embedded chapters,
+Playback speed, embedded chapters,
 manual bookmarks and completed-book tracking are not included. Upstream
 experimental power patches remain disabled.
 
 ## Build
 
 ```sh
-make audiobook AUDIOBOOK_DATE=20261012
+make audiobook AUDIOBOOK_DATE=20261013
 make test PY=path/to/python-with-unicorn
 ```
 
