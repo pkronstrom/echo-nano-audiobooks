@@ -144,3 +144,23 @@ JavaScript syntax and isolated Chrome checks passed for initial approval state,
 selection, comment export, full feedback history, local persistence, inverse
 preview and desktop overflow. Contact sheet visually inspected. No firmware
 resources or navigation were modified.
+
+### Round 5 — approvals retained, corrections isolated
+
+`icon-review-v5.html` contains four rounded outline folder alternatives, two
+cogs and two open wrenches, one slider padding correction, and one symmetrical
+book. The library C, play B, shuffle D and candle A from round four remain
+pixel-identical and approved. Revised artwork starts pending; original File
+Browser remains selectable. Round-four feedback and history are stored in
+`docs/reviews/icon-feedback-v4.json`.
+
+The fine slider knobs remain 3 × 2 pixels, with three blank columns at each
+outer edge. The even-width canvas and odd-width knobs require a one-pixel
+difference between the two internal track gaps. The rounded book is mirrored
+about the canvas centre, including its page marks and spine.
+
+Validation: preserved bitmap equality, exact book reflection, equal slider
+outer margins, blank perimeters, distinct alternatives, Python and JavaScript
+syntax, and isolated Chrome checks of carried approvals, original selection,
+comments, export, persistence and inverse preview. Contact sheet inspected.
+No firmware or navigation changes.
