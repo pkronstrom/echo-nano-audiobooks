@@ -1,7 +1,7 @@
 # Activity icon review
 
 Open [the self-contained review](icon-review.html) in a browser. It includes the
-actual current bitmap inventory, two proposed sets at native and 4× size,
+actual current bitmap inventory, four revised sets for Settings, Shuffle, Audiobooks and Meditation at native and 4× size,
 selected-state previews, individual decisions/comments, local browser saving,
 and Copy / Download feedback. The review approves icon artwork only. No icon
 substitution or navigation change has been applied to firmware.
@@ -56,7 +56,7 @@ icons: dimensions, spacing, highlight geometry, animation and clipping must also
 change. With only 32 vertical pixels, label space needs deliberate treatment.
 This artifact therefore compares icon artwork within the current resource size.
 
-## Proposed directions
+## Round 1 directions (superseded for the four revised icons)
 
 - **A · Crisp:** simplified silhouettes with outlined folder/book, list bars,
   play triangle, audio sliders, system settings shape and crossed Shuffle arrows.
@@ -82,3 +82,24 @@ only the HTML output. The final artifact embeds all pixel data and works offline
 without the firmware or Python. Feedback is stored locally where browser policy
 allows it; Copy falls back to a selected text field, and Download is also
 available. Copy/download is explicit; no feedback is sent automatically.
+
+## Round 2 — 13 October 2026
+
+The user found the first gear too much like a dartboard, asked for stronger
+Shuffle arrows and more recognizable books, and could not identify Meditation.
+The original feedback is preserved in `reviews/icon-feedback-v1.json`.
+
+[Review v2](icon-review-v2.html) compares four alternatives side by side:
+
+- **A Practical:** open wrench, heavy crossed arrows, closed hardback, seated person.
+- **B Classic:** projecting eight-tooth gear, stepped arrows, open book, lotus.
+- **C Audio:** crossed tools, solid arrows, book with headphones, guided listening headphones.
+- **D Quiet:** horizontal wrench, tight crossing arrows, stacked books, candle.
+
+All remain 20×16 pixels. Choices can be mixed per icon. The other four activities
+retain their round-1 alternatives and pending decisions in a separate section.
+V2 uses a separate browser-storage key, preserves the previous comments visibly
+and in exported feedback, and does not treat a preference as artwork approval.
+`icon-review.html` also points to the current revision. The existing firmware
+and release ZIP are unchanged. The source generator uses `icon_proposals.py`
+and `icon_review_template.html`; the generated review still works as one file.

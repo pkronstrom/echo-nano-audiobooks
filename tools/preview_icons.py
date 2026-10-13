@@ -5,13 +5,13 @@ No firmware is modified. Python standard library only.
 """
 import argparse
 import hashlib
-import html
 import json
 import re
 import struct
 from pathlib import Path
 
 from rknano_fw import load, stock_name
+from icon_proposals import variants
 
 ROOT = Path(__file__).resolve().parents[1]
 ADDRESSES = [0x03072DFF, 0x03072DAF, 0x03072D5F, 0x03072D87, 0x03072DD7]
@@ -85,42 +85,14 @@ def generate(stock, output):
     kinds=['files','library','play','musicsettings','settings','shuffle','books','meditation']
     labels=[i['label'] for i in icons]+['Audiobooks · proposed entry','Meditation · proposed entry']
     data=dict(stock=icons,outline=[dict(label=l,pixels=proposal(k)) for l,k in zip(labels,kinds)],
-              bold=[dict(label=l,pixels=proposal(k,True)) for l,k in zip(labels,kinds)])
+              bold=[dict(label=l,pixels=proposal(k,True)) for l,k in zip(labels,kinds)],
+              sets=variants(),previous=json.loads((ROOT/'docs/reviews/icon-feedback-v1.json').read_text()))
     page=TEMPLATE.replace('DATA_JSON',json.dumps(data)).replace('HASH_VALUE',hashlib.sha256(Path(stock).read_bytes()).hexdigest())
     output.write_text(page)
-    print(f'Wrote {output}; 5 decoded stock + 1 existing patch + 16 proposed icons')
+    print(f'Wrote {output}; 5 decoded stock + 1 existing patch + 16 revised icons + retained round-1 alternatives')
 
 
-TEMPLATE='''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Echo Nano · icon review</title>
-<style>body{margin:0;background:#13171b;color:#e8edf1;font:16px/1.5 system-ui}main{max-width:1100px;margin:auto;padding:32px}h1{font-size:32px}h2{margin-top:44px}p{max-width:850px;color:#bbc8d2}.tag{color:#ffe08c}a{color:#7cc9ff}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}.card{padding:16px;background:#20272e;border:1px solid #394652;border-radius:8px}.card h3{font-size:16px;margin-top:0}.samples{display:flex;align-items:center;gap:24px;min-height:90px}.icon{background:#000;color:#fff;image-rendering:pixelated;flex-shrink:0}small{color:#a8b8c6;display:block}.controls{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0}button,select{font:inherit;padding:8px;background:#283746;color:white;border:1px solid #668096;border-radius:5px}.screens{display:flex;gap:24px;align-items:center;flex-wrap:wrap}.screen{background:black;color:white;image-rendering:pixelated}.note{padding:14px;border-left:3px solid #ddba66;background:#282820}code{overflow-wrap:anywhere}label{display:flex;gap:8px;align-items:center}textarea{box-sizing:border-box;width:100%;background:#10171d;color:#eef4f7;border:1px solid #668096;border-radius:5px;padding:10px;font:14px/1.4 system-ui}.card select{width:100%;margin-bottom:10px}footer{margin-top:50px;border-top:1px solid #394652;padding-top:20px}</style>
-<main><h1>Echo Nano / activity icons</h1><p class="tag">Design review only · no icon changes installed in firmware</p>
-<p>The inventory below is decoded directly from the audited V1.7.0 firmware and the existing Shuffle patch. The display drawing code clips to <b>128 × 32 pixels</b>. Each current activity icon is <b>20 × 16 pixels</b>, packed into 40 bytes. Native means one image pixel per CSS pixel; browser zoom and your display scaling determine physical size.</p>
-<h2>Current inventory — actual bitmap bytes</h2><p>Exact main-menu order and English labels. “Music Playback” is the current Now Playing activity. Music Settings and System Settings are separate entries. Shuffle is the sixth entry added by the existing custom firmware.</p><div id="stock" class="grid"></div>
-<h2>Two proposed pixel directions</h2><p><b>A · Crisp</b> uses simple outlined silhouettes, a play triangle, list bars, sliders and crossed Shuffle arrows. <b>B · Heavy</b> thickens the same shapes by one horizontal pixel for stronger visibility, at some cost to internal detail. These are alternatives to review, not final approved assets. Books and Meditation show prospective activity symbols; their presence here does not mean a menu shortcut exists.</p>
-<div class="controls"><label>Direction <select id="direction"><option value="outline">A · Crisp</option><option value="bold">B · Heavy</option></select></label><label><input type="checkbox" id="inverse"> Selected / inverse</label></div><div id="proposed" class="grid"></div>
-<h2>Your icon feedback</h2><p>Choose an icon direction, approve individual symbols or request changes, then copy the feedback back to the assistant. This review concerns icon artwork only; it does not approve new menus, shortcuts or navigation. Nothing is applied to firmware automatically.</p>
-<div class="controls"><label>Overall decision <select id="decision"><option value="pending">Pending review</option><option value="crisp">Prefer A · Crisp</option><option value="heavy">Prefer B · Heavy</option><option value="current">Keep current icons</option><option value="mixed">Mixed / see individual feedback</option></select></label></div>
-<div id="feedback" class="grid"></div><p><label for="general">General feedback</label><textarea id="general" rows="5" placeholder="Recognizability, stroke weight, contrast, any symbols to change…"></textarea></p>
-<div class="controls"><button id="copy">Copy feedback</button><button id="download">Download feedback.txt</button></div><p id="status" role="status">Feedback is saved in this browser when local storage is available.</p><textarea id="export" rows="8" readonly aria-label="Feedback to copy"></textarea>
-<div class="note">Recommended starting direction: A · Crisp, retaining the current 20 × 16 resource size. Selected previews use simple inversion; the native selection function also adds edge treatment. A later size increase needs layout work and separate approval. The display is only 32 pixels high.</div>
-<footer><p>Regenerate: <code>python3 tools/preview_icons.py</code>. Full evidence: <a href="icons.md">icons.md</a>. Offline HTML; no fonts, scripts or images fetched from the network.</p><small>Audited stock SHA-256: HASH_VALUE</small></footer></main>
-<script>const data=DATA_JSON;
-function svg(rows,scale=1,inverse=false){let s=`<svg class="icon" width="${rows[0].length*scale}" height="${rows.length*scale}" viewBox="0 0 ${rows[0].length} ${rows.length}" shape-rendering="crispEdges" role="img" aria-label="Pixel icon"><rect width="100%" height="100%" fill="${inverse?'white':'black'}"/>`;rows.forEach((r,y)=>[...r].forEach((b,x)=>{if(b==='1')s+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${inverse?'black':'white'}"/>`}));return s+'</svg>'}
-function cards(id,items,inverse=false){document.getElementById(id).innerHTML=items.map((i,n)=>`<article class="card"><h3>${n+1}. ${i.label}</h3><div class="samples">${svg(i.pixels,1,inverse)}${svg(i.pixels,4,inverse)}</div><small>Native · 4× integer enlargement</small>${i.address?`<small>${i.address}<br>String ${i.sid}</small>`:''}</article>`).join('')}
-const direction=document.getElementById('direction'), inverse=document.getElementById('inverse');
-function update(){cards('stock',data.stock,inverse.checked);cards('proposed',data[direction.value],inverse.checked)}
-cards('stock',data.stock);[direction,inverse].forEach(e=>e.addEventListener('change',update));update();
-let saved={};try{saved=JSON.parse(localStorage.getItem('echo-nano-icon-review-v1')||'{}')}catch(e){}
-const feedback=document.getElementById('feedback'),decision=document.getElementById('decision'),general=document.getElementById('general'),output=document.getElementById('export'),status=document.getElementById('status');
-feedback.innerHTML=data.outline.map((i,n)=>`<article class="card"><h3>${i.label}</h3><label for="choice${n}">Decision</label><select id="choice${n}"><option value="pending">Pending review</option><option value="approve-crisp">Approve A · Crisp</option><option value="approve-heavy">Approve B · Heavy</option>${n<6?'<option value="keep-current">Keep current</option>':''}<option value="revise">Needs revision</option><option value="defer">Defer this icon</option></select><label for="comment${n}">Feedback</label><textarea id="comment${n}" rows="3" placeholder="What would you change?"></textarea></article>`).join('');
-decision.value=saved.decision||'pending';general.value=saved.general||'';
-data.outline.forEach((i,n)=>{document.getElementById('choice'+n).value=saved.icons?.[n]?.choice||'pending';document.getElementById('comment'+n).value=saved.icons?.[n]?.comment||''});
-function collect(){return {review:'Echo Nano icon artwork v1',scope:'Icons only. No navigation or firmware changes approved.',decision:decision.value,icons:data.outline.map((i,n)=>({label:i.label,choice:document.getElementById('choice'+n).value,comment:document.getElementById('comment'+n).value})),general:general.value}}
-function save(){const f=collect();output.value=JSON.stringify(f,null,2);try{localStorage.setItem('echo-nano-icon-review-v1',JSON.stringify(f))}catch(e){status.textContent='Browser storage unavailable. Copy or download your feedback to keep it.'}}
-[decision,general,...feedback.querySelectorAll('select,textarea')].forEach(e=>e.addEventListener('input',save));save();
-document.getElementById('copy').addEventListener('click',async()=>{save();try{await navigator.clipboard.writeText(output.value);status.textContent='Copied. Paste this feedback into the conversation.'}catch(e){output.focus();output.select();status.textContent='Clipboard unavailable here. Feedback selected: press Command+C / Ctrl+C, or Download.'}});
-document.getElementById('download').addEventListener('click',()=>{save();const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([output.value],{type:'text/plain'}));a.download='echo-nano-icon-feedback.txt';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
-</script></html>'''
+TEMPLATE=(ROOT/'tools/icon_review_template.html').read_text(encoding='utf-8')
 
 
 def main():

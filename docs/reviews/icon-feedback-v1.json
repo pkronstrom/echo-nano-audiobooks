@@ -1,0 +1,16 @@
+{
+  "review": "Echo Nano icon artwork v1",
+  "scope": "Icons only. No navigation or firmware changes approved.",
+  "decision": "pending",
+  "icons": [
+    {"label":"File Browser","choice":"pending","comment":""},
+    {"label":"Media Library","choice":"pending","comment":""},
+    {"label":"Music Playback","choice":"pending","comment":""},
+    {"label":"Music Settings","choice":"pending","comment":""},
+    {"label":"System Settings","choice":"pending","comment":"the cog icons looks like a tikkataulu. needs more coggines, or just a plain wrench"},
+    {"label":"Shuffle","choice":"pending","comment":"shuffle could be thicker, a bit different"},
+    {"label":"Audiobooks · proposed entry","choice":"pending","comment":"should look more booky"},
+    {"label":"Meditation · proposed entry","choice":"pending","comment":"I have no idea what that meditation icon is about"}
+  ],
+  "general":"give me 4 different suggestion sets for these"
+}
