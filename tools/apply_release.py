@@ -78,9 +78,38 @@ def checked_image(data):
     return image
 
 
+def compatible_modules(base, target):
+    if base.modules == target.modules:
+        return True
+    # Standalone copy of the audited module31 exception; no build-tool imports.
+    # Native code stays at its original execution address. Only its backing and
+    # appended helper length may change (docs/folder-sort-memory-audit.md).
+    if (len(base.modules) != len(target.modules) or len(base.modules) <= 31 or
+            sha(base.d) != '54a45d233a23c3ce142d1da9c093cc40c46eba417aa91fe915ee867726f4a116'):
+        return False
+    original = dict(index=31, code_load=0x030b5648, code_exec=0x03079418,
+                    code_len=9308, data_load=0x030b7aa4, data_exec=0x0300e6bc,
+                    data_len=128, bss_exec=0x0300e73c, bss_len=2150)
+    moved = target.modules[31]
+    length = moved['code_len'] - 9308
+    expected = dict(original, code_load=0x0308e000, code_len=moved['code_len'])
+    if (base.modules[31] != original or moved != expected or
+            any(a != b for i, (a, b) in enumerate(zip(base.modules, target.modules)) if i != 31) or
+            not 16 <= length <= 4332 or length % 4 or
+            base.l2f(moved['code_load']) != 0x3e200 or
+            any(base.d[0x3e200:0x41748])):
+        return False
+    magic, entry, code_end, bss_end = struct.unpack_from('<4I', target.d, 0x3e200 + 9308)
+    return (magic == 0x314f5342 and entry & 1 and
+            0x0307b884 <= (entry & ~1) < code_end and
+            code_end == 0x0307b874 + length and
+            code_end <= bss_end <= 0x03080470)
+
+
 def compatible(base, target):
     if (len(base.d) != len(target.d) or base.fw_len != target.fw_len or
-            base.load_base != target.load_base or base.modules != target.modules or base.sections != target.sections):
+            base.load_base != target.load_base or base.sections != target.sections or
+            not compatible_modules(base, target)):
         raise ValueError("target firmware layout differs from stock")
     for section in base.sections:
         # Language strings are deliberately patched; graphics/fonts remain stock.

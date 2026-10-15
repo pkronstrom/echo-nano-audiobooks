@@ -127,6 +127,13 @@ HOOKS={
     'player_speed_menu_text_3':(32,0x03079948,4,None),
     'player_speed_menu_text_fallback':(32,0x0307cf98,28,None),
     'player_speed_menu_text_guard':(32,0x03079ed0,32,None),
+    'settings_row_icon_skip':(32,0x03079738,4,None),
+    'settings_row_background':(32,0x0307973c,24,None),
+    'settings_row_full':(32,0x0307975c,4,None),
+    'settings_row_update_selected':(32,0x03079896,4,None),
+    'settings_row_update_old':(32,0x030798a2,4,None),
+    'settings_row_text_full':(32,0x03079768,2,None),
+    'settings_row_text_update':(32,0x030798ac,2,None),
     'player_speed_label_width':(27,0x0307ade8,6,None),
     'player_speed_label_width_guard':(27,0x0307a39c,56,None),
     'player_speed_label_paint':(27,0x0307ae22,4,0x03052fe4),
@@ -243,6 +250,14 @@ def validate_library_geometry(image):
             data=bytes.fromhex(expected)
             if image.d[offset:offset+len(data)]!=data:
                 raise ValueError(f'list geometry base changed at {module}:{address:08x}')
+
+SETTINGS_GEOMETRY_BASE={50829112: '387810b1', 50829116: '012804d008e000221146812002e0002211468220d8f740fd', 50829148: 'd8f73afd', 50829462: 'd8f79dfc', 50829474: 'd8f797fc', 50829160: '2320', 50829484: '2325'}
+def validate_settings_geometry(image):
+    # The logo-only block becomes a local helper after the entry skips it.
+    for address,value in SETTINGS_GEOMETRY_BASE.items():
+        off,_=image.region(32,address);data=bytes.fromhex(value)
+        if image.d[off:off+len(data)]!=data:
+            raise ValueError(f'settings geometry base changed at {address:08x}')
 
 PLAYER_SPEED_MENU_BASE={50390724: '759a0703',
  50828638: 'eef713fa',
@@ -379,7 +394,78 @@ def bookmark_gesture(image):
             raise ValueError('favorite gesture caller changed')
         image.patch(0,address,encode_t32_branch(address,0x03052d68,True))
 
-def integrate(stock_data,input_data,directory,date):
+BROWSER_SORT_FLASH_START,BROWSER_SORT_FLASH_END=0x3e200,0x41748
+BROWSER_SORT_START,BROWSER_SORT_END=0x0307b874,0x03080470
+
+BROWSER_SORT_HOOKS={
+    'browser_sort_enumerate':(0x03079592,'2de9ff4f'),
+    'browser_sort_count':(0x0307974e,'70b50c46'),
+    'browser_sort_select':(0x0307acf8,'94f84e50'),
+    'browser_sort_ordinal':(0x0307ad18,'00f0f080'),
+}
+
+def apply_browser_sort(stock,image,directory):
+    import json
+    manifest=json.loads((directory/'manifest.json').read_text())
+    names=['browser_sort.bin']+[name+'.patch' for name in BROWSER_SORT_HOOKS]
+    if set(manifest)!=set(names):raise ValueError('browser sort manifest entries changed')
+    artifacts={name:(directory/name).read_bytes() for name in names}
+    if any(hashlib.sha256(data).hexdigest()!=manifest[name] for name,data in artifacts.items()):
+        raise ValueError('browser sort artifact mismatch')
+    patches=[]
+    for name,(address,expected) in BROWSER_SORT_HOOKS.items():
+        lines=[line for line in artifacts[name+'.patch'].decode().splitlines() if line and not line.startswith('#')]
+        if len(lines)!=1:raise ValueError('browser sort patch format changed')
+        module,target,hexdata=lines[0].split(':')
+        module,target,data=int(module),int(target,16),bytes.fromhex(hexdata)
+        if (module,target,len(data))!=(31,address,4):raise ValueError('browser sort hook bounds changed')
+        off,_=image.region(31,address)
+        if bytes(image.d[off:off+4])!=bytes.fromhex(expected):raise ValueError('browser sort hook base changed')
+        patches.append((address,data))
+    # Validate payload, original module records and backing before any mutation.
+    staged=Image(bytes(image.d))
+    relocate_browser_sort(stock,staged,artifacts['browser_sort.bin'])
+    for address,data in patches:staged.patch(31,address,data)
+    image.d=staged.d;image.modules=staged.modules
+
+def relocate_browser_sort(stock,image,payload):
+    """Move already-patched module31 code into checked refresh-buffer backing."""
+    if hashlib.sha256(stock.d).hexdigest()!=STOCK_SHA256:
+        raise ValueError('browser sort requires pinned stock')
+    if image.modules!=stock.modules:
+        raise ValueError('browser sort module table changed')
+    m=image.modules[31];original=stock.modules[31]
+    if (m['code_exec'],m['code_len'],m['data_exec'],m['data_len'],m['bss_exec'],m['bss_len'])!=(0x03079418,9308,0x0300e6bc,128,0x0300e73c,2150):
+        raise ValueError('browser sort native table changed')
+    start,end=BROWSER_SORT_FLASH_START,BROWSER_SORT_FLASH_END
+    if any(stock.d[start:end]) or any(image.d[start:end]):
+        raise ValueError('browser sort backing occupied')
+    if len(image.d)!=len(stock.d) or image.sections!=stock.sections or image.fw_len!=stock.fw_len:
+        raise ValueError('browser sort firmware layout changed')
+    refresh=stock.modules[40]
+    execution=refresh['code_exec']+start-stock.l2f(refresh['code_load'])
+    if start<FLASH_END or execution!=0x0308812c or execution+end-start!=0x0308b674:
+        raise ValueError('browser sort leaves verified refresh buffer')
+    if any(x['offset']<end and x['offset']+x['length']>start for x in stock.sections):
+        raise ValueError('browser sort overlaps resource')
+    if len(payload)<16 or len(payload)%4 or len(payload)>end-start-m['code_len']:
+        raise ValueError('browser sort payload length invalid')
+    magic,entry,code_end,bss_end=struct.unpack_from('<4I',payload)
+    if magic!=0x314f5342 or not entry&1 or not BROWSER_SORT_START+16<=entry&~1<code_end:
+        raise ValueError('browser sort header invalid')
+    if code_end!=BROWSER_SORT_START+len(payload) or not code_end<=bss_end<=BROWSER_SORT_END:
+        raise ValueError('browser sort runtime bounds invalid')
+    old=image.l2f(original['code_load']);native=bytes(image.d[old:old+m['code_len']])
+    merged=native+payload
+    image.d[start:start+len(merged)]=merged
+    # The native loader reads code_load and data_load independently. Keep data
+    # and low-RAM BSS untouched; copied metadata invalidates high NOLOAD state.
+    m['code_load']=image.load_base+start-0x200;m['code_len']=len(merged)
+    table=0x208+31*32
+    struct.pack_into('<I',image.d,table,m['code_load'])
+    struct.pack_into('<I',image.d,table+8,m['code_len'])
+
+def integrate(stock_data,input_data,directory,date,sort_directory=None):
     """Build the audiobook test image; reject mismatched base or hook layout."""
     from datetime import datetime
     datetime.strptime(date,'%Y%m%d')
@@ -390,6 +476,7 @@ def integrate(stock_data,input_data,directory,date):
     bookmark_feedback(image)
     speed_guard_space(image)
     speed_status_space(image)
+    validate_settings_geometry(image)
     validate_player_speed_menu(image)
     player_speed_label_space(image)
     validate_library_geometry(image)
@@ -424,5 +511,6 @@ def integrate(stock_data,input_data,directory,date):
         image.patch_lang(language,0x83,'Audiobooks\0'.encode('utf-16le'))
         image.patch_lang(language,0x84,'Meditation\0'.encode('utf-16le'))
     image.patch(32,0x0307cf14,'P4e\0'.encode('utf-16le'))
+    apply_browser_sort(stock,image,sort_directory if sort_directory is not None else directory.parent/'browser_sort')
     image.set_date(date);image.finalize()
     return bytes(image.d)

@@ -131,6 +131,47 @@ class ReleaseTests(unittest.TestCase):
         self.assertNotIn('Traceback', result.stderr)
 
     @unittest.skipUnless((ROOT / 'NANOV170.IMG').exists() and (ROOT / 'out/audiobook/NANOV170.IMG').exists(), 'local stock and built target required')
+    def test_browser_relocation_is_exact_and_bounded(self):
+        base = Image((ROOT / 'NANOV170.IMG').read_bytes())
+        target_bytes = (ROOT / 'out/audiobook/NANOV170.IMG').read_bytes()
+        target = Image(target_bytes)
+        self.assertNotEqual(base.modules[31], target.modules[31])
+        ar.compatible(base, target)
+        # Reject every other table change, including relocation of another module.
+        for index, field, value in ((31, 'code_load', 0x0308e004),
+                                    (31, 'code_exec', 0x0307941c),
+                                    (31, 'code_len', 9308 + 4336),
+                                    (31, 'code_len', 9308 + 17),
+                                    (31, 'code_len', 9308 + 12),
+                                    (31, 'data_load', 0x0308e080),
+                                    (31, 'bss_len', 2154),
+                                    (32, 'code_load', 0x0308e000)):
+            with self.subTest(index=index, field=field, value=value):
+                changed = Image(target_bytes)
+                changed.modules[index][field] = value
+                with self.assertRaisesRegex(ValueError, 'layout'):
+                    ar.compatible(base, changed)
+        header = 0x3e200 + 9308
+        code_end = struct.unpack_from('<I', target.d, header + 8)[0]
+        for offset, value in ((0, 0), (4, 0x0307b884), (4, 0x0307b875),
+                              (4, code_end | 1), (8, code_end + 4),
+                              (12, code_end - 4), (12, 0x03080474)):
+            with self.subTest(header_offset=offset, value=value):
+                changed = Image(target_bytes)
+                struct.pack_into('<I', changed.d, header + offset, value)
+                with self.assertRaisesRegex(ValueError, 'layout'):
+                    ar.compatible(base, changed)
+        changed = Image(target_bytes)
+        protected = next(s for s in base.sections if s['name'] == 'images')
+        changed.d[protected['offset']] ^= 1
+        with self.assertRaisesRegex(ValueError, 'protected resource'):
+            ar.compatible(base, changed)
+        # The exception cannot be reused with a different purported stock image.
+        base.d[0x3e200] = 1
+        with self.assertRaisesRegex(ValueError, 'layout'):
+            ar.compatible(base, target)
+
+    @unittest.skipUnless((ROOT / 'NANOV170.IMG').exists() and (ROOT / 'out/audiobook/NANOV170.IMG').exists(), 'local stock and built target required')
     def test_real_bundle_deterministic_and_standalone_cli(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

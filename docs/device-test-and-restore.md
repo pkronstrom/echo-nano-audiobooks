@@ -358,3 +358,99 @@ readback succeeded, SHA256 b5630159bccf08f26632d8000da68a130f60c65bf56e0d29bd96e
 Both volumes ejected. Evidence: builds/device-check/small-label-stage-20261015-205607/.
 No SD content changes or raw/bootloader operations. Installation and boot await
 user confirmation;20261027 remains last confirmed booted. Disk numbers historical.
+
+
+## Offline full-width settings candidate — 2026-10-15
+
+20261031 removes both squarelogo variants from module32 settings lists, including
+the player double-click menu and Speed. Text startsx3; selection backgrounds
+cover0..123; scrollbar124 and value/slider screens stay intact. Local24B helper
+reuses the bypassed logo block; playback payload unchanged24112text/32176BSS.
+401 tests passed in263.866s. Scoped independent review found no blockers.
+Archive: builds/phase4f-controls-20261015/settings-wide-reviewed/manifest.json.
+Custom SHA256: c612cb6fe3d7e33d2b87e7f56bb39baa8b7ff067cd1f1158272bdcc5f27c364d
+Recovery20261101 SHA256: bca80f077121d66ca106f459a458076fbf8582f6ee52af18ea6220a907aa2c4e
+No device staging performed for this candidate.20261029 was staged previously;
+its boot acceptance has not been explicitly confirmed. Initial20261027 startup
+anomaly remains unresolved, though userrestart reachedmenu andliveSpeed worked.
+
+Folder sorting is NOT implemented: the native browser still follows physical
+directory order. Only generatedM3U playlists use natural sorting. User confirms
+Hemi-Sync CD2-3 appearsbeforeCD1-1. See docs/folder-sorting-investigation.md.
+
+## Native folder sorting candidate — 2026-10-15
+
+Candidate20261102/recovery20261103 adds natural numeric folder ordering for
+native Music/Meditations/File Browser lists: directories first, then names
+(CD1 before CD2 before CD10), with raw entry identity preserved for selection,
+Back and reentry. Explicit M3U order stays unchanged. Native playback Next/Prev
+sequencing is still physical unless a playlist supplies order.
+
+Browser-only helper2944B plus6560B scratch uses audited overlay memory; no
+persistent playback payload growth (24112text+32176BSS,16B static headroom).
+Module31 code backing relocates into verified unused refresh-buffer tail;
+native data/BSS and other module records are preserved. Real native loader,
+FAT/exFAT iterator, selection, stale-device/read failures and reload tests pass.
+Scoped independent Codex review found no remaining concrete blocker; this is
+not a new Fable/revx review or hardware acceptance. First-open large-folder
+latency and hardware navigation/boot acceptance remain untested.
+
+Includes prior full-width double-click settings menu fix. Archive:
+builds/phase4f-controls-20261015/folder-sort-reviewed/manifest.json.
+Custom SHA256:7a9d44f5b7e2f4d889d23c740bdc6e416963a7a3d57f73c451bdb57278d40269
+Recovery SHA256:3c85e8eabad617c353ddaa75d6a512ec7f4c4c1c7c1d023f6c901841cb88948e
+
+Verification: full suite ran430 tests in267.983s;429 passed and one release
+packaging check rejected the audited relocation. Standalone release validation
+was corrected with a narrowly pinned exception; all9 release tests then passed
+(including the failed case and a new negative-layout regression). Final12
+focused ARM sorting/selection checks passed too. Firmware unchanged after the
+full run. No device transfer at this archive checkpoint.
+
+## Folder sorting candidate staged — 2026-10-15
+
+User authorized transfer when ready. Fresh USB071b:3203 identification linked
+internal disk7(262144000B) and SD disk8 to one Nano; these IDs are historical.
+No update image existed in either root. Archived candidate20261102 and stock
+recovery20261103 passed hash/date/duplicate-header/CRC verification. Exclusive
+internal copy, flush/sync and full byte-for-byte readback succeeded:
+7a9d44f5b7e2f4d889d23c740bdc6e416963a7a3d57f73c451bdb57278d40269.
+Both volumes safely ejected. Evidence:
+builds/device-check/folder-sort-stage-20261015-214111/result.json.
+No SD content changes, raw flash or bootloader operations. Installation, boot,
+Hemi-Sync ordering, selected-file identity and Back acceptance await user test.
+No commit or push for this iteration.
+
+## Hardware regression — folder-sort20261102
+
+User reports Enter on Meditations / The Gateway Experience does nothing.
+Reproduced offline: native exFAT alias generation includes a clock suffix,
+which the new selection guard wrongly compared as persistent identity.
+Do not treat20261102 folder navigation as accepted. Narrow correction ignores
+only exFAT synthetic alias bytes while checking stable metadata/full name and
+all device/parent/read guards. FAT unchanged. Regression failed before fix and
+passes after it; changed cluster/size/name/flags still reject. Candidate20261104
+with recovery20261105 is being verified; no corrected image staged yet.
+See docs/folder-sort-native-audit.md.
+
+## Verified exFAT entry correction — 2026-10-15
+
+Corrected candidate20261104/recovery20261105 passes all433 tests in272.639s
+and scoped independent review. Browser helper2952B plus6560B BSS; resident
+playback unchanged. This fixes clock-dependent exFAT alias validation while
+retaining stale-file rejection. Hardware acceptance remains pending.
+Archive:builds/phase4f-controls-20261015/folder-entry-fixed/manifest.json.
+Custom SHA256:2509f5ba98b13073eecca16abd1391f4d66c719716fa2d8b611fd2aba813df4a
+Recovery SHA256:ad1a9cef80335a46c9baedda7035f9dafe5449ce973367a76577dcca952507c7
+User authorized replacement transfer and requested a commit; no push.
+
+## exFAT correction staged — 2026-10-15
+
+Fresh USB071b:3203 identification exposed only internal disk8(262144000B),
+no SD volume. Archived20261104 and recovery20261105 hashes/date/CRC/header
+checks passed; no leftover update was present. Exclusive internal copy and
+full readback verified2509f5ba98b13073eecca16abd1391f4d66c719716fa2d8b611fd2aba813df4a.
+Internal disk8 safely ejected. Evidence:
+builds/device-check/folder-entry-stage-20261015-215651/result.json.
+No SD writes, raw flash or bootloader operations. Installation/boot and
+The Gateway Experience folder entry await user confirmation. DiskID historical.

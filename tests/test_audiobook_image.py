@@ -15,7 +15,12 @@ class AudiobookImageTests(unittest.TestCase):
         cls.book=Image((ROOT/'out/audiobook/NANOV170.IMG').read_bytes())
     def test_complete_hooks_payload_and_crc(self):
         self.assertEqual(self.book.crc_stored(),self.book.crc_calc());self.assertTrue(self.book.header_copy_ok())
-        self.assertEqual(self.book.modules,self.stock.modules)
+        for index,(actual,stock) in enumerate(zip(self.book.modules,self.stock.modules)):
+            if index!=31:self.assertEqual(actual,stock)
+            else:
+                expected=dict(stock);expected['code_load']=self.book.load_base+0x3e200-0x200
+                expected['code_len']+=len((ROOT/'out/browser_sort/browser_sort.bin').read_bytes())
+                self.assertEqual(actual,expected)
         self.assertEqual(self.book.sections,self.stock.sections)
         for name,(mod,addr,length,callee) in HOOKS.items():
             off,_=self.book.region(mod,addr)

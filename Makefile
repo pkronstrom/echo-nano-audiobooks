@@ -36,7 +36,7 @@ ifeq ($(shell command -v arm-none-eabi-gcc),)
 $(warning arm-none-eabi-gcc not found - see README "Requirements")
 endif
 
-.PHONY: all build recovery check verify info diff help clean playback-core audiobook test
+.PHONY: all build recovery check verify info diff help clean playback-core browser-sort audiobook test
 
 all: build
 
@@ -71,7 +71,10 @@ out/gen/%.patch: patches/%.S patches/fw.inc out/gen/syms.inc tools/asm2patch.sh
 playback-core:
 	tools/build_playback.sh
 
-audiobook: build playback-core
+browser-sort:
+	tools/build_browser_sort.sh
+
+audiobook: build playback-core browser-sort
 	$(PY) tools/build_audiobook.py --stock $(FW) --base $(OUT) --date $(AUDIOBOOK_DATE)
 
 test: audiobook recovery
