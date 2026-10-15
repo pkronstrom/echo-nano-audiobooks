@@ -21,6 +21,16 @@ class PrepareBookTests(unittest.TestCase):
         result=book.prepare(self.root)
         self.assertEqual(result['tracks'],['Disc 1/00 Introduction.mp3','Disc 1/01 Chapter 1.mp3','Disc 2/2.mp3','Disc 2/10.mp3','Disc 10/01.mp3'])
         self.assertFalse((self.root/'BOOK.M3U').exists())
+    def test_appledouble_sidecars_are_not_audio_tracks(self):
+        self.audio('01.mp3');self.audio('Disc 2/02.mp3')
+        self.audio('._01.mp3');self.audio('Disc 2/._02.mp3')
+        result=book.prepare(self.root,write=True)
+        self.assertEqual(result['tracks'],['01.mp3','Disc 2/02.mp3'])
+        self.audio('._Unsupported.m4b')
+        self.assertEqual(book.prepare(self.root)['tracks'],result['tracks'])
+        with self.assertRaisesRegex(ValueError,'No supported audio'):
+            book.prepare(self.root/'._01.mp3')
+
     def test_write_retry_preserves_progress_and_explicit_order(self):
         self.audio('2 日本語.flac');self.audio('1 ä.flac')
         book.prepare(self.root,write=True)
@@ -32,6 +42,35 @@ class PrepareBookTests(unittest.TestCase):
         self.assertEqual((self.root/'BOOK.M3U').read_bytes(),custom)
         self.assertEqual((self.root/'BOOK.RSM').read_bytes(),before)
         self.assertTrue((self.root/'.nomusic').exists())
+    def test_bookmark_companion_is_created_and_never_replaced(self):
+        self.audio('01.mp3')
+        result=book.prepare(self.root,write=True)
+        path=self.root/'BOOK.BMK'
+        self.assertTrue(path.exists())
+        self.assertEqual(result['bookmarks'],str(path.resolve()))
+        data=bytearray(path.read_bytes())
+        self.assertEqual(len(data),1024)
+        # A saved bookmark: generation 1, queue fingerprint 123, chapter 2 at 9s.
+        import struct,zlib
+        struct.pack_into('<6I',data,512,0x31424e45,1,123,1,2,9000)
+        struct.pack_into('<I',data,1020,zlib.crc32(data[512:1020]))
+        path.write_bytes(data)
+        book.prepare(self.root,write=True)
+        self.assertEqual(path.read_bytes(),data)
+        path.write_bytes(b'unknown format')
+        with self.assertRaisesRegex(ValueError,'preserved'):
+            book.prepare(self.root,write=True)
+        self.assertEqual(path.read_bytes(),b'unknown format')
+
+    def test_bookmark_symlink_is_rejected_before_metadata_writes(self):
+        self.audio('01.mp3')
+        target=Path(self.tmp.name)/'target';target.write_bytes(b'untouched')
+        (self.root/'BOOK.BMK').symlink_to(target)
+        with self.assertRaisesRegex(ValueError,'symlinks'):
+            book.prepare(self.root,write=True)
+        self.assertFalse((self.root/'BOOK.M3U').exists())
+        self.assertEqual(target.read_bytes(),b'untouched')
+
     def test_hash_prefixed_names_are_not_playlist_comments(self):
         self.audio('#Chapter.mp3');self.audio('#Disc/01.mp3')
         result=book.prepare(self.root,write=True)

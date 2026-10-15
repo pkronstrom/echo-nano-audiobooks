@@ -66,7 +66,8 @@ int m3u_resolve(const u16 *base, const u8 *line, u32 len, u16 *out)
 }
 /* Player service owns this parser; callbacks must not invoke m3u_scan again.
  * Keep the large scratch arrays off the stock service stack. */
-static u8 scan_line[M3U_LINE_BYTES];
+u32 playback_scratch[M3U_LINE_BYTES / sizeof(u32)];
+u32 playback_scratch_busy;
 static u16 scan_path[M3U_PATH_UNITS];
 
 struct scan {
@@ -75,6 +76,7 @@ struct scan {
     const u16 *base;
     struct m3u_stats *stats;
     u32 candidates;
+    u16 *path;
 };
 static int emit(struct scan *s, u8 *line, u32 len, u32 offset, int overflow)
 {
@@ -84,7 +86,7 @@ static int emit(struct scan *s, u8 *line, u32 len, u32 offset, int overflow)
     if (!len || line[0] == '#') return 0;
     if (s->candidates == M3U_MAX_ENTRIES) { s->stats->limited = 1; return 1; }
     s->candidates++;
-    u16 *path = scan_path;
+    u16 *path = s->path;
     if (overflow || !m3u_resolve(s->base, line, len, path)) {
         s->stats->invalid++;
         return 0;
@@ -95,12 +97,12 @@ static int emit(struct scan *s, u8 *line, u32 len, u32 offset, int overflow)
     else s->stats->skipped++;
     return 0;
 }
-int m3u_scan(m3u_read_fn read, m3u_entry_fn entry, void *ctx, const u16 *base,
-             struct m3u_stats *stats)
+static int scan_impl(m3u_read_fn read, m3u_entry_fn entry, void *ctx, const u16 *base,
+             struct m3u_stats *stats, u8 *line, u16 *path)
 {
     *stats = (struct m3u_stats){0};
-    struct scan s = {entry, ctx, base, stats, 0};
-    u8 chunk[256], *line = scan_line;
+    struct scan s = {entry, ctx, base, stats, 0, path};
+    u8 chunk[256];
     u32 offset = 0, line_offset = 0, len = 0;
     int overflow = 0, cr = 0;
     for (;;) {
@@ -125,4 +127,26 @@ int m3u_scan(m3u_read_fn read, m3u_entry_fn entry, void *ctx, const u16 *base,
             else overflow = 1;
         }
     }
+}
+
+int m3u_scan(m3u_read_fn read, m3u_entry_fn entry, void *ctx, const u16 *base,
+             struct m3u_stats *stats)
+{
+    if (playback_scratch_busy) return -3;
+    playback_scratch_busy=1;
+    int result=scan_impl(read,entry,ctx,base,stats,(u8 *)playback_scratch,scan_path);
+    playback_scratch_busy=0;
+    return result;
+}
+
+int m3u_scan_with_workspace(struct m3u_workspace *workspace, m3u_read_fn read,
+                           m3u_entry_fn entry, void *ctx, const u16 *base,
+                           struct m3u_stats *stats)
+{
+    if (workspace->busy) return -3;
+    workspace->busy=1;
+    int result=scan_impl(read,entry,ctx,base,stats,
+                         (u8 *)workspace->line,workspace->path);
+    workspace->busy=0;
+    return result;
 }

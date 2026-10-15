@@ -4,8 +4,11 @@ import struct
 from rknano_fw import Image
 from hooks import encode_t32_branch
 STOCK_SHA256='54a45d233a23c3ce142d1da9c093cc40c46eba417aa91fe915ee867726f4a116'
-FLASH_START,FLASH_END=0xa55200,0xa58000
-RAM_START,RAM_END=0x0309b694,0x0309fff0
+# Sector-aligned unused portion of module40's first 64 KiB sort buffer.
+# Refresh already stages its separate blob earlier in that same buffer.
+FLASH_START,FLASH_END=0x36200,0x3e200
+FIRMWARE_END=0xa58000
+RAM_START,RAM_END=0x03092400,0x0309fff0
 LOADER_ADDRESS=0x03072e28
 DEBUG_TEXT=b'[INFO] ---------------------ffff is MSG_VIDEO_FILENOTSUPPORT--------------------- \n\0'
 
@@ -18,12 +21,31 @@ def stage(stock_data,input_data,payload,loader):
     if hashlib.sha256(stock_data).hexdigest()!=STOCK_SHA256:
         raise ValueError('playback layout requires the pinned stock image')
     stock,image=Image(stock_data),Image(input_data)
-    if len(image.d)!=len(stock.d) or image.fw_len!=FLASH_END or image.modules!=stock.modules or image.sections!=stock.sections:
+    # Refresh (module40) is the only permitted overlapping owner. Its forward
+    # load replaces browser/player hooks before invalidating the payload header.
+    overlaps=[]
+    for module in stock.modules:
+        for kind in ('code','data','bss'):
+            start=module[kind+'_exec'];end=start+module[kind+'_len']
+            if module[kind+'_len'] and start<RAM_END and end>RAM_START:
+                overlaps.append((module['index'],kind))
+    if overlaps!=[(40,'code')]:
+        raise ValueError('playback RAM overlaps an unexpected module')
+    refresh=stock.modules[40]
+    refresh_offset=image.l2f(refresh['code_load'])+RAM_START-refresh['code_exec']
+    if image.d[refresh_offset:refresh_offset+4]==struct.pack('<I',0x32504e45):
+        raise ValueError('refresh does not invalidate playback header')
+    if len(image.d)!=len(stock.d) or image.fw_len!=FIRMWARE_END or image.modules!=stock.modules or image.sections!=stock.sections:
         raise ValueError('firmware layout changed')
     if not image.header_copy_ok() or image.crc_stored()!=image.crc_calc():
         raise ValueError('input image integrity failed')
-    if any(s['offset']+s['length']>FLASH_START for s in stock.sections):
+    if any(s['offset']<FLASH_END and s['offset']+s['length']>FLASH_START for s in stock.sections):
         raise ValueError('payload overlaps a resource')
+    stage_exec=refresh['code_exec']+FLASH_START-stock.l2f(refresh['code_load'])
+    if not (0x0307b674<=stage_exec and stage_exec+FLASH_END-FLASH_START<=0x0308b674):
+        raise ValueError('payload staging leaves the verified refresh sort buffer')
+    if any(stock.d[FLASH_START:FLASH_END]):
+        raise ValueError('stock payload staging buffer is occupied')
     if any(image.d[FLASH_START:FLASH_END]):
         raise ValueError('payload padding is occupied')
     if len(payload)<16 or len(payload)>FLASH_END-FLASH_START or len(payload)%4:
@@ -33,12 +55,19 @@ def stage(stock_data,input_data,payload,loader):
         raise ValueError('payload entry invalid')
     if bss_start!=RAM_START+len(payload) or not bss_start<=bss_end<=RAM_END:
         raise ValueError('payload RAM bounds invalid')
+    read_length=(len(payload)+511)&~511
+    if FLASH_START+read_length>FLASH_END or RAM_START+read_length>bss_end:
+        raise ValueError('sector-rounded payload read exceeds padding/BSS bounds')
     if len(loader)!=len(DEBUG_TEXT) or len(loader)!=84:
         raise ValueError('loader does not fit reclaimed message')
+    if struct.unpack_from('<I',loader,68)[0]!=RAM_START:
+        raise ValueError('loader RAM address mismatch')
+    if struct.unpack_from('<I',loader,80)[0]!=FLASH_START-512:
+        raise ValueError('loader flash address mismatch')
     # The only immediate payload length and entry call must match this build.
     a,b=struct.unpack_from('<HH',loader,24)
     length=((a&15)<<12)|(((a>>10)&1)<<11)|(((b>>12)&7)<<8)|(b&255)
-    if a&0xfbf0!=0xf240 or b&0x0f00!=0x0200 or length!=len(payload):
+    if a&0xfbf0!=0xf240 or b&0x0f00!=0x0200 or length!=read_length:
         raise ValueError('loader payload length mismatch')
     if loader[52:56]!=encode_t32_branch(LOADER_ADDRESS+52,entry&~1,True):
         raise ValueError('loader entry mismatch')
@@ -75,6 +104,75 @@ def discovery(image):
     return image
 
 HOOKS={
+    'player_speed_menu_action_0':(32,0x0307a7f4,4,None),
+    'player_speed_menu_action_guard':(32,0x0307a79c,48,None),
+    'player_speed_menu_no_print_back':(32,0x0307a61a,4,None),
+    'player_speed_menu_no_print_display':(32,0x03079734,4,None),
+    'player_speed_menu_no_print_playlist':(32,0x0307af5e,4,None),
+    'player_speed_menu_no_print_product_init':(32,0x0307ccfe,4,None),
+    'player_speed_menu_no_print_product_uninit':(32,0x0307cee8,4,None),
+    'player_speed_menu_no_print_screen':(32,0x03079ad8,4,None),
+    'player_speed_menu_record_0':(32,0x0307955e,4,None),
+    'player_speed_menu_record_1':(32,0x0307972e,4,None),
+    'player_speed_menu_record_2':(32,0x0307988a,4,None),
+    'player_speed_menu_record_3':(32,0x0307a010,4,None),
+    'player_speed_menu_record_4':(32,0x0307a66c,4,None),
+    'player_speed_menu_record_fallback':(32,0x0307cd64,24,None),
+    'player_speed_menu_record_guard':(32,0x03079aac,32,None),
+    'player_speed_menu_service_guard':(32,0x0307b2b4,36,None),
+    'player_speed_menu_service_pointer':(32,0x0300e6c4,4,None),
+    'player_speed_menu_text_0':(32,0x030797be,4,None),
+    'player_speed_menu_text_1':(32,0x030797f8,4,None),
+    'player_speed_menu_text_2':(32,0x030798fc,4,None),
+    'player_speed_menu_text_3':(32,0x03079948,4,None),
+    'player_speed_menu_text_fallback':(32,0x0307cf98,28,None),
+    'player_speed_menu_text_guard':(32,0x03079ed0,32,None),
+    'player_speed_label_width':(27,0x0307ade8,6,None),
+    'player_speed_label_width_guard':(27,0x0307a39c,56,None),
+    'player_speed_label_paint':(27,0x0307ae22,4,0x03052fe4),
+    'player_speed_label_guard':(27,0x0307a2c8,36,None),
+    'media_row_width':(23,0x0307a316,2,None),
+    'media_row_text_full_left':(23,0x0307a428,2,None),
+    'media_row_text_full_right':(23,0x0307a43c,2,None),
+    'media_row_text_update_left':(23,0x0307a56a,4,None),
+    'media_row_text_update_right':(23,0x0307a58c,2,None),
+    'media_row_icon':(23,0x0307a408,4,0x030521d4),
+    'media_row_full_x':(23,0x0307a424,2,None),
+    'media_row_update_x':(23,0x0307a568,2,None),
+    'media_row_full_old':(23,0x0307a45a,4,0x030521d4),
+    'media_row_full_new':(23,0x0307a46e,4,0x030521d4),
+    'media_row_update_old':(23,0x0307a5ae,4,0x030521d4),
+    'media_row_update_new':(23,0x0307a5c2,4,0x030521d4),
+    'media_row_glyph_full':(23,0x0307a4b6,4,0x030521d4),
+    'media_row_glyph_update':(23,0x0307a60a,4,0x030521d4),
+    'media_row_helpers':(23,0x03079e40,48,None),
+    'library_row_text':(22,0x03079c22,8,None),
+    'library_row_icon':(22,0x03079c42,4,0x030521d4),
+    'library_row_full_x':(22,0x03079c80,2,None),
+    'library_row_full':(22,0x03079c84,4,0x030521d4),
+    'library_row_update_x':(22,0x03079d5a,4,None),
+    'library_row_update':(22,0x03079d66,4,0x030521d4),
+    'library_row_background':(22,0x0300e788,32,None),
+    'navigation_hold':(0,0x03065ec0,4,None),
+    'navigation_hold_resident':(0,0x03065918,40,None),
+    'speed_status':(0,0x0306955e,4,None),
+    'speed_status_guard':(0,0x030696d4,56,None),
+    'speed_guard':(0,0x03072f54,64,None),
+    'speed_capture':(33,0x030835c8,4,None),
+    'speed_seek':(33,0x030834d8,4,None),
+    'speed_time':(33,0x030834f6,4,None),
+    'speed_dma_pump':(0,0x0306985e,4,0x0306c1e4),
+    'speed_dma_callback':(0,0x030693fa,4,0x0306c1e4),
+    'speed_dma_start':(33,0x0308168c,4,0x0306c1e4),
+    'speed_dma_resume':(33,0x03081f98,4,0x0306c1e4),
+    'speed_dma_restart':(33,0x03082062,4,0x0306c1e4),
+    'speed_dma_reconfigure':(33,0x03083360,4,0x0306c1e4),
+    'feedback_stub':(27,0x0307a014,36,None),
+    'feedback_epilogue':(27,0x0307a860,8,None),
+    'bookmark_poll':(33,0x03082d4c,4,0x0306b05c),
+    'bookmark_gesture':(0,0x03052d68,48,None),
+    'browser_row_update':(31,0x0307a4c6,4,0x030521d4),
+    'browser_row_full':(31,0x0307a640,4,0x030521d4),
     'nav_menu_loader':(21,0x03079600,24,None),
     'nav_browser_loader':(31,0x0307afa0,24,None),
     'nav_menu_init':(21,0x030794ac,4,None),
@@ -114,6 +212,173 @@ def validate_navigation_base(image):
             if image.d[offset:offset+len(expected)]!=expected:
                 raise ValueError(f'navigation base changed at {module}:{address:08x}')
 
+BROWSER_GEOMETRY={
+    0x0307a442:('d7f7c7fe','00bf00bf'),
+    0x0307a59a:('d7f71bfe','00bf00bf'),
+    0x0307a486:('4ff02d0b','4ff00d0b'),
+    0x0307a616:('2c20','0c20'),
+    **{a:('4ff02001','4ff00001') for a in
+       (0x0307a4e6,0x0307a536,0x0307a660,0x0307a6e8)},
+}
+def browser_geometry(image):
+    for address,(before,after) in BROWSER_GEOMETRY.items():
+        offset,_=image.region(31,address)
+        if image.d[offset:offset+len(bytes.fromhex(before))]!=bytes.fromhex(before):
+            raise ValueError(f'browser geometry base changed at {address:08x}')
+        image.patch(31,address,bytes.fromhex(after))
+
+BOOKMARK_STUB_TEXT=b'[ERROR] MLCD_DrawPoint: x=%d, y=%d is out of range\0'
+NAVIGATION_HOLD_TEXT=b' \n>>>### watch dog isr coming<<<### \n\0\0\0'
+LIBRARY_GEOMETRY_BASE={
+    0x03079c22:'4ff023084ff07109',0x03079c42:'d8f7c7fa',
+    0x03079c80:'1f21',0x03079c84:'d8f7a6fa',
+    0x03079d5a:'4ff01f01',0x03079d66:'d8f735fa',
+    0x0300e788:'00'*32,
+}
+MEDIA_GEOMETRY_BASE={50832150: '4d20', 50832424: '2c20', 50832444: '2c30', 50832746: '4ff02c08', 50832780: '2c30', 50832392: 'd7f7e4fe', 50832420: '1f27', 50832744: '1f27', 50832474: 'd7f7bbfe', 50832494: 'd7f7b1fe', 50832814: 'd7f711fe', 50832834: 'd7f707fe', 50832566: 'd7f78dfe', 50832906: 'd7f7e3fd', 50830912: '04f10c00fff795fca08904f10c0128b332e02781b8f8000064680025401c08bfbde8f087701981b204f10c00fff781fc'}
+def validate_library_geometry(image):
+    for module,sites in ((22,LIBRARY_GEOMETRY_BASE),(23,MEDIA_GEOMETRY_BASE)):
+        for address,expected in sites.items():
+            offset,_=image.region(module,address)
+            data=bytes.fromhex(expected)
+            if image.d[offset:offset+len(data)]!=data:
+                raise ValueError(f'list geometry base changed at {module}:{address:08x}')
+
+PLAYER_SPEED_MENU_BASE={50390724: '759a0703',
+ 50828638: 'eef713fa',
+ 50829102: 'eef72bf9',
+ 50829108: 'f8f778fb',
+ 50829246: 'eef74ff8',
+ 50829304: 'eef732f8',
+ 50829450: 'eef77df8',
+ 50829564: 'edf7b0ff',
+ 50829640: 'edf78aff',
+ 50829996: '3d3d3d3d3d3d4d53475f5359535f5345545f444953504c41595f414c4c0a0000',
+ 50830040: 'f8f7a6f9',
+ 50831056: '4d53475f534352454e5f5550205365744d656e75536572766963650a00000000',
+ 50831376: 'edf7bafc',
+ 50832922: 'f7f705fc',
+ 50833004: 'edf78cf9',
+ 50833308: '5265714d656e75547874496e666f537472756374466c6167203d2025642c20536574646566203d20307825780a000000',
+ 50833396: 'fff7e2fb',
+ 50835294: 'f6f763ff',
+ 50836148: '5365745363726f6c6c696e67506c61796c6973742c6974656d4e756d2069732025640a00',
+ 50842878: 'f5f793f8',
+ 50842980: '4669696f50726f64756374496e666f57696e496e69740a00',
+ 50843368: 'f4f79ebf',
+ 50843544: '4669696f50726f64756374496e666f57696e4465496e69740a000000'}
+def validate_player_speed_menu(image):
+    for address,value in PLAYER_SPEED_MENU_BASE.items():
+        off,_=image.region(32,address);expected=bytes.fromhex(value)
+        if image.d[off:off+len(expected)]!=expected:
+            raise ValueError(f'player speed menu base changed at {address:08x}')
+
+def player_speed_label_space(image):
+    checks={
+        0x0307a2c8:b'Error: Cannot open LRC file: %s\n\0\0\0\0',
+        0x0307a39c:b'No valid LRC time found for current playback position\n\0\0',
+        0x0307a0f2:bytes.fromhex('75a0f7f798fe'),
+        0x0307a258:bytes.fromhex('50a0f7f7e5fd'),
+        0x0307ade8:bytes.fromhex('6b20adf83c00'),
+    }
+    for address,data in checks.items():
+        off,_=image.region(27,address)
+        if image.d[off:off+len(data)]!=data:
+            raise ValueError(f'player speed label base changed at {address:08x}')
+    # Other overlays have their own code at these addresses; they do not use
+    # module27 backing. Resident/player/decoder references are forbidden.
+    for module in (0,27,33):
+        m=image.modules[module]
+        for kind in ('code','data'):
+            off=image.l2f(m[kind+'_load'])
+            data=bytes(image.d[off:off+m[kind+'_len']])
+            for start,size in ((0x0307a2c8,36),(0x0307a39c,56)):
+                if any(struct.pack('<I',a) in data for a in range(start,start+size)):
+                    raise ValueError('player speed label cave referenced')
+    for address in (0x0307a0f4,0x0307a25a):
+        image.patch(27,address,bytes.fromhex('00bf00bf'))
+
+def navigation_hold_space(image):
+    """Center-only timing; preserve watchdog handling beyond its debug print."""
+    checks=((0x03065918,NAVIGATION_HOLD_TEXT),
+            (0x030658b6,bytes.fromhex('18a0')),
+            (0x030658b8,bytes.fromhex('0cf0b6fa')),
+            (0x03065ec0,bytes.fromhex('401c2963')),
+            (0x03004104,struct.pack('<4I',0x30000040,0,0,7)))
+    for address,expected in checks:
+        off,_=image.region(0,address)
+        if image.d[off:off+len(expected)]!=expected:
+            raise ValueError(f'navigation hold base changed at {address:08x}')
+    # The sole PC-relative ADR above is pinned. Reject absolute references,
+    # including unaligned pointers and pointers into the middle of the string.
+    pointers=[struct.pack('<I',address) for address in range(0x03065918,0x03065940)]
+    for module in image.modules:
+        for kind in ('code','data'):
+            if not module[kind+'_len']:continue
+            off=image.l2f(module[kind+'_load'])
+            data=bytes(image.d[off:off+module[kind+'_len']])
+            if any(pointer in data for pointer in pointers):
+                raise ValueError('navigation hold cave has an absolute reference')
+    image.patch(0,0x030658b8,bytes.fromhex('00bf00bf'))
+    image.patch(0,0x03004110,struct.pack('<I',5))
+
+FEEDBACK_STUB_TEXT=b'[INFO] pLongFileName = \x00[INFO]  %c \x00'
+SPEED_GUARD_ADDRESS=0x03072f54
+SPEED_DONE_ADDRESS=SPEED_GUARD_ADDRESS+8
+SPEED_STUB_TEXT=b'=== Frame Buffer Region: Cols %d-%d, Rows %d-%d (Buf: %dx%d) ===\r\n\0'
+def speed_guard_space(image):
+    """Reclaim only the audited framebuffer diagnostic; native drawing remains."""
+    checks=((SPEED_GUARD_ADDRESS,SPEED_STUB_TEXT),
+            (0x03052804,struct.pack('<I',SPEED_GUARD_ADDRESS)),
+            (0x0305240e,bytes.fromhex('fd48')),
+            (0x03052410,encode_t32_branch(0x03052410,0x03071e28,True)))
+    for address,expected in checks:
+        off,_=image.region(0,address)
+        if image.d[off:off+len(expected)]!=expected:
+            raise ValueError(f'speed guard diagnostic changed at {address:08x}')
+    image.patch(0,0x03052410,bytes.fromhex('00bf00bf'))
+
+SPEED_STATUS_TEXT=b'\n------1 file error------ \x00\x00\n------2 decode end------ \x00\x00'
+def speed_status_space(image):
+    checks=((0x030696d4,SPEED_STATUS_TEXT),
+            (0x030695b4,bytes.fromhex('47a0')),
+            (0x030695cc,bytes.fromhex('48a0')),
+            (0x0306955e,bytes.fromhex('40f04081')))
+    for address in (0x030695b6,0x030695ce):
+        checks+=((address,encode_t32_branch(address,0x03071e28,True)),)
+    for address,expected in checks:
+        off,_=image.region(0,address)
+        if image.d[off:off+len(expected)]!=expected:
+            raise ValueError(f'speed status diagnostic changed at {address:08x}')
+    for address in (0x030695b6,0x030695ce):
+        image.patch(0,address,bytes.fromhex('00bf00bf'))
+
+def bookmark_feedback(image):
+    off,_=image.region(27,0x0307a014)
+    if image.d[off:off+36]!=FEEDBACK_STUB_TEXT:
+        raise ValueError('feedback diagnostic changed')
+    for address in (0x03079e50,0x03079e5e):
+        off,_=image.region(27,address)
+        if image.d[off:off+4]!=encode_t32_branch(address,0x03071e28,True):
+            raise ValueError('feedback diagnostic caller changed')
+        image.patch(27,address,bytes.fromhex('00bf00bf'))
+
+def bookmark_gesture(image):
+    off,_=image.region(0,0x03052d68)
+    if image.d[off:off+len(BOOKMARK_STUB_TEXT)]!=BOOKMARK_STUB_TEXT:
+        raise ValueError('bookmark resident diagnostic changed')
+    # Remove only the diagnostic tail-call; out-of-bounds pixels still return.
+    off,_=image.region(0,0x03052c9c)
+    if image.d[off:off+4]!=encode_t32_branch(0x03052c9c,0x03071e28,False):
+        raise ValueError('bookmark diagnostic caller changed')
+    image.patch(0,0x03052c9c,bytes.fromhex('704700bf'))
+    # Both key modes share the native query/add/remove route and continuation.
+    for address in (0x030638ac,0x030638ee):
+        off,_=image.region(0,address)
+        if image.d[off:off+4]!=encode_t32_branch(address,0x030686e0,True):
+            raise ValueError('favorite gesture caller changed')
+        image.patch(0,address,encode_t32_branch(address,0x03052d68,True))
+
 def integrate(stock_data,input_data,directory,date):
     """Build the audiobook test image; reject mismatched base or hook layout."""
     from datetime import datetime
@@ -121,9 +386,18 @@ def integrate(stock_data,input_data,directory,date):
     loader=read_patch(directory/'loader.patch')
     if loader[:2]!=(0,LOADER_ADDRESS):raise ValueError('loader location changed')
     image=Image(stage(stock_data,input_data,(directory/'playback.bin').read_bytes(),loader[2]))
+    bookmark_gesture(image)
+    bookmark_feedback(image)
+    speed_guard_space(image)
+    speed_status_space(image)
+    validate_player_speed_menu(image)
+    player_speed_label_space(image)
+    validate_library_geometry(image)
+    navigation_hold_space(image)
     stock=Image(stock_data)
     validate_navigation_base(image)
     discovery(image)
+    browser_geometry(image)
     for name,(module,address,length,callee) in HOOKS.items():
         mod,addr,data=read_patch(directory/(name+'.patch'))
         if (mod,addr,len(data))!=(module,address,length):raise ValueError(f'Unexpected hook range: {name}')
@@ -149,6 +423,6 @@ def integrate(stock_data,input_data,directory,date):
     for language in range(len(LANGS)):
         image.patch_lang(language,0x83,'Audiobooks\0'.encode('utf-16le'))
         image.patch_lang(language,0x84,'Meditation\0'.encode('utf-16le'))
-    image.patch(32,0x0307cf14,'P4a\0'.encode('utf-16le'))
+    image.patch(32,0x0307cf14,'P4e\0'.encode('utf-16le'))
     image.set_date(date);image.finalize()
     return bytes(image.d)

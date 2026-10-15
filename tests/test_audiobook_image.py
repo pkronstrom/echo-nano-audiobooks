@@ -22,7 +22,7 @@ class AudiobookImageTests(unittest.TestCase):
             self.assertEqual(self.book.d[off:off+length],read_patch(ROOT/f'out/playback/{name}.patch')[2])
         payload=(ROOT/'out/playback/playback.bin').read_bytes()
         self.assertEqual(self.book.d[FLASH_START:FLASH_START+len(payload)],payload)
-        off,_=self.book.region(32,0x0307cf14);self.assertEqual(self.book.d[off:off+8],'P4a\0'.encode('utf-16le'))
+        off,_=self.book.region(32,0x0307cf14);self.assertEqual(self.book.d[off:off+8],'P4e\0'.encode('utf-16le'))
     def test_music_exclusion_and_resources_are_preserved(self):
         # Refresh patch regions are byte-identical to the already tested P1b image.
         for name in ('cfw_blob','cfw_hooks'):

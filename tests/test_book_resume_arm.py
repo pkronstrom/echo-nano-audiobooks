@@ -60,6 +60,19 @@ class ResumeTests(unittest.TestCase):
         self.f.call('playback_init') # simulated restart: all payload RAM forgotten
         self.assertEqual(self.load('/BOOK.M3U'),(2,1234567))
         self.assertEqual(self.load('/OTHER.M3U'),(1,765432))
+    def test_resume_does_not_touch_parser_scratch_while_busy(self):
+        self.load('/BOOK.M3U');self.select(1)
+        scratch=self.f.syms['playback_scratch']
+        before=bytes(range(256))*4
+        self.cpu.mem_write(scratch,before)
+        self.cpu.mem_write(self.f.syms['playback_scratch_busy'],struct.pack('<I',1))
+        self.f.call('book_save')
+        self.assertEqual(self.writes,[])
+        self.assertEqual(bytes(self.cpu.mem_read(scratch,1024)),before)
+        self.cpu.mem_write(self.f.syms['playback_scratch_busy'],bytes(4))
+        self.f.call('book_save')
+        self.assertEqual(self.load('/BOOK.M3U'),(1,1234567))
+
     def test_torn_save_uses_last_valid_sector(self):
         self.load('/BOOK.M3U');self.select(1);self.f.call('book_save')
         self.short_write=True;self.cpu.mem_write(0x03023090+4,struct.pack('<I',999999))

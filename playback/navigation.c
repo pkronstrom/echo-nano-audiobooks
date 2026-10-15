@@ -1,4 +1,7 @@
 #include "navigation.h"
+#include "book_menu.h"
+#include "last_book.h"
+#include "session.h"
 #include "content_roots.h"
 #include "path.h"
 #include "browser.h"
@@ -14,6 +17,8 @@ static struct content_root roots[8];
 static u8 root_count, kind_at[8], pending_kind, chooser_kind, chooser, choice, matches[8], match_count;
 u32 navigation_icons[8], navigation_count;
 static u8 labels[64];
+static u16 last_path[256];
+static u8 last_error;
 extern void navigation_dispatch_bridge(void), navigation_strip_bridge(void), navigation_event_bridge(void);
 static void branch(u32 address, void (*target)(void))
 {
@@ -37,7 +42,7 @@ static u32 scan(void)
 }
 void navigation_menu_init(void)
 {
-    chooser=pending_kind=0;
+    chooser=pending_kind=0;book_menu_reset();
     u32 kinds=scan();navigation_count=6;
     __builtin_memcpy(labels,(void *)0x0300e6d8,48);
     __builtin_memcpy(navigation_icons,(void *)0x03079504,24);
@@ -58,6 +63,14 @@ void navigation_menu_init(void)
 u32 navigation_menu_dispatch(void)
 {
     u32 selected=H(0x0300e708);
+    if(selected==2) {
+        u32 music=playback_music_request();
+        if(music==1){playback_music_launch();return 1;}
+        if(music==2){
+            /* Let the stock dispatch open its own Music Library route. */
+            H(0x0300e708)=1;return 0;
+        }
+    }
     if(selected<6||selected>=navigation_count)return 0;
     u32 kind=kind_at[selected];
     if(!(scan()&kind)){navigation_menu_init();post(51);return 1;}
@@ -123,26 +136,94 @@ static void chooser_draw(void)
     }
     post(333);post(335);
 }
+/* The landing menu owns both rows; never feed these synthetic labels to
+ * native file selection. Browse restores the real marked-root ancestry. */
+static void landing_draw(void)
+{
+    H(B+0x1cc)=0;H(B+12)=H(B+16)=2;H(B+14)=0;
+    H(B+0x1ce)=0;H(B+0x1ee)=H(B+0x1f0)=choice;H(B+8)=2;H(C+12)=0;
+    W(B)=0x0300e73c;W((u8 *)0x0300e73c+4)=0x0300e9ac;W((u8 *)0x0300e9ac+4)=0x0300e73c;
+    for(u32 i=0;i<2;i++){
+        u8 *entry=(u8 *)(i?0x0300e9ac:0x0300e73c);
+        __builtin_memset(entry+8,0,616);
+        const char *label=i?"Browse books":last_error?"Book unavailable":"Continue last book";
+        u16 *out=(u16 *)(entry+0x70);while(*label)*out++=(u8)*label++;*out=0;
+    }
+    post(333);post(335);
+}
+static void browse_roots(void)
+{
+    match_count=0;scan();
+    for(u32 i=0;i<root_count;i++)if(roots[i].kind&chooser_kind)matches[match_count++]=i;
+    if(match_count==1 && install_root(roots+matches[0])){chooser=0;post(333);post(335);return;}
+    if(match_count>1){chooser=1;choice=0;chooser_draw();return;}
+    chooser=2;post(333);
+}
 void navigation_browser_init(void)
 {
     branch(0x0307b31a,navigation_event_bridge);H(0x0307b31e)=0xbf00;
     __asm volatile("dsb\nisb" ::: "memory");
-    if(!pending_kind){chooser=0;return;}
-    u32 kind=pending_kind;chooser_kind=kind;pending_kind=0;match_count=0;scan();
-    for(u32 i=0;i<root_count;i++)if(roots[i].kind&kind)matches[match_count++]=i;
-    if(match_count==1&&install_root(roots+matches[0])){post(333);post(335);return;}
-    if(match_count>1){chooser=1;choice=0;chooser_draw();return;}
-    /* Window teardown belongs to the event callback, not its initializer. */
-    chooser=2;post(333);
+    if(book_menu_browser_init())return;
+    if(!pending_kind){
+        chooser=0;
+        /* Native return from music selects the audio-only browser category.
+         * Change this view's filter, never the shared file-type table: that
+         * table also controls ordinary playback ordinals and classification. */
+        u32 filter=W(B+0x1f4), depth=H(B+0x1cc);
+        if(H(C+8)==3 && filter==0x0300e6bc && depth<=7){
+            W(B+0x1f4)=0x0300e6e4; /* native all-files entry, including M3U */
+            u8 *record=B+depth*56+12;
+            count_folder(0x03005a5e,record,3);
+            /* The widened list has different ordinals; start a valid page. */
+            H(B + 0x1ce + depth*2)=H(B+0x1ee)=H(B+0x1f0)=0;
+            enumerate(0x03005a5e,(void *)W(B),record,0,3);
+            post(333);post(335);
+        }
+        return;
+    }
+    u32 kind=pending_kind;chooser_kind=kind;pending_kind=0;match_count=0;
+    /* The landing only validates the saved book; Browse scans fresh below. */
+    if(kind==1 && last_book_get(last_path)){
+        chooser=3;choice=0;last_error=0;landing_draw();return;
+    }
+    browse_roots();
 }
 static int same_root(const struct content_root *a,const struct content_root *b)
 {
     for(u32 i=0;i<a->depth;i++)if(a->cluster[i]!=b->cluster[i]||a->index[i]!=b->index[i])return 0;
     return 1;
 }
+static int in_book_root(void)
+{
+    u32 depth=H(B+0x1cc);if(depth>7)return 0;
+    for(u32 n=0;n<root_count;n++){
+        const struct content_root *root=roots+n;
+        if(!(root->kind&1)||depth<root->depth)continue;
+        u32 level=0;
+        while(level<root->depth && W(B+56*(level+1)+(FS_TYPE==3?24:20))==root->cluster[level])level++;
+        if(level==root->depth)return 1;
+    }
+    return 0;
+}
 u32 navigation_event(u32 message)
 {
-    if(!chooser)return 0;
+    u32 book_event=book_menu_event(message);if(book_event)return book_event;
+    if(!chooser){
+        if(message==0x40000040 && in_book_root() && book_menu_open_selected())return 1;
+        return 0;
+    }
+    if(chooser==3){
+        if(message==0x20000040||message==0x40001000){chooser=0;window(0,0);return 2;}
+        if(message==0x40000004||message==0x30000004||message==0x40000008||message==0x30000008){
+            choice^=1;landing_draw();return 1;
+        }
+        if(message==0x40000040){
+            if(choice){browse_roots();return 1;}
+            u32 launched=book_menu_continue_last();if(launched)return launched;
+            last_error=1;choice=1;landing_draw();return 1;
+        }
+        return message==0x20000080||message==0x40000002||message==0x40010000||message==0x50010000;
+    }
     if(chooser==2){chooser=0;window(0,0);return 2;}
     /* Synthetic nodes never reach stock context/delete/menu actions. */
     if(message==0x20000040||message==0x40001000){chooser=0;window(0,0);return 2;}
@@ -160,4 +241,12 @@ u32 navigation_event(u32 message)
     /* These four native routes open a context/menu using the selected node.
      * Volume and service messages retain their ordinary handlers. */
     return message==0x20000080||message==0x40000002||message==0x40010000||message==0x50010000;
+}
+/* Browser-only background tiles; keep shared resources and the x124 scrollbar.
+ * Both full redraw and selection-only redraw use the same 124px coverage. */
+void navigation_row_background(u32 image,u32 x,u32 y)
+{
+    (void)x;
+    FW(0x030521d4,void,u32,u32,u32)(image,0,y);
+    FW(0x030521d4,void,u32,u32,u32)(image,32,y);
 }

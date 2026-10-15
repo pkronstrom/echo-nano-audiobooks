@@ -1,5 +1,9 @@
 # FiiO Echo Nano custom firmware
 
+> **2026-10-14 hardware result:** P4a boot-looped. Stock recovery succeeded and
+> the user confirmed the normal menu. Do not reflash or publish this candidate.
+> Read [recovery lessons](docs/recovery-lessons-2026-10-14.md) before device work.
+
 This workspace starts from NaniteCFW revision
 `ea4e6dc2cb386483093c7b045b6e85f26939ce2e`. The project requirements are in
 [the imported specification](docs/specs/Echo-Nano-Agent-Specification.md),
@@ -12,9 +16,9 @@ per-book resume, with a preparation tool for chapter folders or single long
 files and optional MP3 conversion. It includes recursive `.nomusic`, `.audiobook` and `.meditation` exclusion
 and File Browser folder containment. See [audiobook setup, images and device
 checklist](docs/audiobooks.md). Build it with `make audiobook`; the default
-`make` retains P1b. These local changes are host/ARM-verified, pending device tests.
+`make` retains P1b. These local changes are host/ARM-verified, but P4a failed its first hardware boot test.
 
-For the next device session, use [Tomorrow's quick start](docs/TEST-TOMORROW.md).
+The previous [quick start](docs/TEST-TOMORROW.md) is historical; follow the current recovery lessons before another device session.
 The [patch-only release format](docs/releases.md) lets users supply the official
 image and generate custom/recovery images with Python alone. Public release is
 pending device validation. Review proposed icons in the [offline feedback page](docs/icon-review.html).

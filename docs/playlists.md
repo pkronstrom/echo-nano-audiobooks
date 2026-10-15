@@ -24,8 +24,9 @@ The parser, native File Browser launch and ordered queue are integrated into the
 - Native settings preserve listed order while a playlist is active, without
   rewriting the user's ordinary music preferences.
 
-Code uses 6692 bytes and BSS 7752 bytes, leaving 4336 bytes in the 18780-byte
-shared RAM window. Parser scratch is in BSS; stack reports are in
+The current offline payload uses the56304-byte shared playback RAM window
+starting at0x03092400. See [the layout audit](playback-memory-layout.md) for
+ownership evidence and current limits. Parser scratch is in BSS; stack reports are in
 `out/playback/obj/`. There is one player-service owner; the parser is not reentrant.
 The loader reloads after library refresh replaces the shared RAM signature.
 
@@ -34,8 +35,8 @@ selected path before UI state is reused. M3U is added to the generic File Browse
 filter; all eight references to the displaced audio whitelist are redirected to
 an unchanged duplicate. Native audio indexing remains audio-only.
 
-Flash payload staging uses checked zero padding `0xa55200..0xa58000`, beyond
-resources and before the copied header. Module entries and resources remain
+Flash payload staging uses checked zero padding `0x36200..0x3e200` inside
+the refresh-only sort buffer; the original refresh payload is preserved. Module entries and resources remain
 unchanged. Every hook checks the expected native instruction or reclaimed
 region before image output; the complete image CRC is recomputed.
 

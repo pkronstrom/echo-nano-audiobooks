@@ -23,8 +23,8 @@ static int append(u16 *out, u32 *used, const u16 *name)
     *used += n; out[*used] = 0;
     return 1;
 }
-int media_browser_path(media_read_fn read, void *ctx, int exfat, const u8 *browser,
-                        const u8 *node, u32 root_cluster, u16 *out)
+static int browser_path(media_read_fn read, void *ctx, int exfat, const u8 *browser,
+                        const u8 *node, u32 root_cluster, u16 *out, int directory)
 {
     out[0] = 0;
     u32 depth = half(browser+0x1cc);
@@ -46,7 +46,8 @@ int media_browser_path(media_read_fn read, void *ctx, int exfat, const u8 *brows
     for (u32 n = 0; n < 256; n++) component[n] = half(node+0x70+n*2);
     if (!append(out, &used, component)) goto invalid;
     if (media_resolve(read, ctx, exfat, out, &ref) != 1 ||
-        (ref.attrs & 16) || ref.index != word(node+12)) goto invalid;
+        !!(ref.attrs & 16) != directory || ref.index != word(node+12)) goto invalid;
+    if (directory && ref.cluster != ((u32)half(node+0x63)<<16 | half(node+0x69))) goto invalid;
     if (depth ? ref.parent.cluster != selected_parent :
                 (ref.parent.cluster && ref.parent.cluster != root_cluster)) goto invalid;
     return 1;
@@ -54,3 +55,10 @@ invalid:
     out[0] = 0;
     return 0;
 }
+
+int media_browser_path(media_read_fn read, void *ctx, int exfat, const u8 *browser,
+                       const u8 *node, u32 root_cluster, u16 *out)
+{ return browser_path(read,ctx,exfat,browser,node,root_cluster,out,0); }
+int media_browser_directory(media_read_fn read, void *ctx, int exfat, const u8 *browser,
+                            const u8 *node, u32 root_cluster, u16 *out)
+{ return browser_path(read,ctx,exfat,browser,node,root_cluster,out,1); }

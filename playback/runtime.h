@@ -12,5 +12,7 @@ int playback_load_playlist(const u16 *path, struct m3u_stats *);
 int playback_playlist_step(u8 *state, int direction);
 int playback_playlist_move(u8 *state, int direction, int wrap);
 int playback_browser_path(const u8 *node, u16 *out);
+int playback_browser_directory_at(const u8 *browser,const u8 *node,u16 *out);
+int playback_browser_directory(const u8 *node, u16 *out);
 u32 playback_init(void);
 #endif

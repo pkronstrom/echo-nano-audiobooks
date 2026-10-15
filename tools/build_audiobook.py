@@ -19,5 +19,5 @@ def main():
     recovery=Image(stock);recovery.set_date((datetime.strptime(a.date,'%Y%m%d')+timedelta(days=1)).strftime('%Y%m%d'));recovery.finalize()
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_bytes(result)
     dest=a.output.parent/'recovery'/a.output.name;dest.parent.mkdir(exist_ok=True);dest.write_bytes(recovery.d)
-    print(f'Custom: {a.output} (P4a, {a.date})\nRecovery: {dest} ({recovery.date})')
+    print(f'Custom: {a.output} (P4e, {a.date})\nRecovery: {dest} ({recovery.date})')
 if __name__=='__main__':main()

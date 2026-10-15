@@ -1,5 +1,9 @@
 # P4a audiobook device test
 
+> **2026-10-14 hardware result:** P4a boot-looped. Stock recovery succeeded and
+> the user confirmed the normal menu. Do not reflash or publish this candidate.
+> Read [recovery lessons](recovery-lessons-2026-10-14.md) before device work.
+
 P4a adds the approved icons and conditional marked-root shortcuts, retaining File Browser M3U playback in listed order and a separate saved chapter
 and time for each prepared book. It includes P1b music exclusion and folder
 containment. Host/ARM checks pass; boot, decoding and storage durability still
@@ -24,6 +28,10 @@ restore stock, copy that image instead, eject and restart. See
 
 ## Prepare a book
 
+Current preparation requirement: run this on the computer for each new book.
+The firmware updates preallocated resume/bookmark companions; it does not create
+missing companion files on the device. Keep each book in its own directory.
+
 Run from this repository, replacing the example path with your book's path:
 
 ```sh
@@ -32,11 +40,11 @@ python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/ThinkAndGrowRich' --writ
 ```
 
 The first command previews JSON. The second creates `BOOK.M3U`, a 1024-byte
-`BOOK.RSM` resume companion, and `.nomusic`. Tracks sort naturally by relative
+`BOOK.RSM` resume companion, a 1024-byte `BOOK.BMK` bookmark companion, and `.nomusic`. Tracks sort naturally by relative
 path: `00 Introduction`, `01 Chapter 1`, `02 Chapter 2`, …; numbered disc folders
 also sort numerically. Metadata tags are not used for ordering. Open the M3U in
 a text editor if you need a different order. Rerunning preparation preserves an
-existing playlist and valid resume file. Use one book directory at a time.
+existing playlist and valid resume/bookmark files. Use one book directory at a time.
 
 A single long file works too:
 
@@ -44,7 +52,7 @@ A single long file works too:
 python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/My Book/book.mp3' --write
 ```
 
-This creates `book.M3U` and `book.RSM` beside it. Single-file preparation does
+This creates `book.M3U`, `book.RSM` and `book.BMK` beside it. Single-file preparation does
 not exclude its entire parent from music. Put books in their own directory and
 prepare that directory, or add an empty `.nomusic` to your audiobook root.
 
@@ -135,7 +143,7 @@ book in the destination. Neither path removes DRM or modifies originals.
 - [ ] Try two roots, select either, and check Back returns through real parents.
 - [ ] Remove a selected root/marker and verify no stale folder opens.
 - [ ] The approved icons render correctly, including the music note.
-- [ ] P4a boots and a prepared book's M3U opens with audible playback.
+- [ ] The current reviewed candidate boots and a prepared book's M3U opens with audible playback. Never install the failed P4a image.
 - [ ] Numbered chapters play in order, even with music Shuffle enabled.
 - [ ] Next/previous and automatic end-of-book stay within that book.
 - [ ] Seek within a long file; stop, reopen and verify the approximate time.
@@ -157,9 +165,29 @@ behavior is unverified. Replacing audio in place while preserving filesystem
 indices/clusters can retain a stale position. To deliberately reset a book,
 remove its RSM companion and rerun preparation. Do not edit RSM contents.
 
-Playback speed, embedded chapters,
-manual bookmarks and completed-book tracking are not included. Upstream
-experimental power patches remain disabled.
+Manual bookmarks use a prepared `.BMK` companion; automatic creation of that
+file on the device is not implemented. Embedded chapters and completed-book
+tracking remain unsupported. Upstream experimental power patches remain disabled.
+
+## Experimental MP3 speed control
+
+P4e source adds an **MP3 speed** row below Continue, Chapters and Bookmarks.
+Choose 1x, 1.25x, 1.5x, 1.75x or 2x, then launch Continue, a chapter or a
+bookmark. The preference is global to books and lasts until restart. Changing
+it does not change a book that is already playing, including through seek,
+pause/resume or automatic chapter changes. Explicitly launch Continue, a chapter
+or a bookmark to apply the newly selected speed.
+
+The speedups use approximate pitch-preserving processing for native 16-bit MP3
+at 8–48 kHz. Other codecs retain their normal 1x playback. Music outside the
+book queue retains native playback. Bookmarks and resume positions use source
+time, rather than elapsed listening time multiplied by the selected speed.
+
+This feature is undergoing integration verification; it is not yet confirmed on
+the Nano. Read [the speed checkpoint](speed-integration-checkpoint.md) before
+building or installing an image. Hardware acceptance must include headphone
+listening at each preset, pause/resume and seek, the last chapter ending,
+bookmark reopening, and normal music playback afterward.
 
 ## Build
 

@@ -1,76 +1,66 @@
-# Tomorrow's Nano test
+# Next Nano test — current status, 2026-10-15
 
-Start with **P3a**, stock power settings. The firmware image is unchanged from
-the 107-check checkpoint; tonight's additions improve preparation, release
-packaging and the icon review, without adding another untested player hook.
+**Do not install an old P3a/P4a artifact from historical notes.** The original
+P4a boot-looped; its menu-bypass diagnostic later froze. The20261017 loader-fix
+image boots and received user menu/Shuffle/M3U-resume checks. The installed20261019 book-menu build f6be6580…bd4c boots; Continue and
+chapter2 resume work, and Bhagavad bookmark saving works after adding BOOK.BMK.
+Music still reopens the book and save feedback is absent. Follow-up changes are
+offline until reviewed; do not confuse mutable build output with that candidate.
+Read [recovery lessons](recovery-lessons-2026-10-14.md) and
+[incident record](device-test-and-restore.md) before any device operation.
 
-## 1. Firmware
+## Offline menu milestone
 
-Ready locally:
+Implemented: wide browser, playlist visibility on Back, book Continue/Chapters/
+Bookmarks menu, explicit chapter/time launch, manual bookmark gesture and
+confirmed deletion. Details and verification:
+[book menu implementation](book-menu-implementation.md).
 
-- Custom: `builds/phase3a/custom/NANOV170.IMG` (P3a, 20261012).
-- Recovery: `builds/phase3a/recovery/NANOV170.IMG` (stock, 20261013).
+Pending: broader audible playback, bookmark jump/delete/restart checks, and
+acceptance of subsequent changes. Fable returned
+maintainability warnings; implemented fixes and remaining cleanup are recorded
+in the implementation note. The archived20261019 candidate was installed; subsequent source changes have not.
+Generated files under `out/audiobook` are mutable build output, not a published
+release or a previously device-accepted candidate.
 
-The custom date must be newer than the device's installed image. Copy only the
-custom image to the internal-storage root, eject and restart; check About for
-P3a. Keep recovery on the computer. If recovery was already installed, use a
-newer custom date when generating the next pair.
+## Prepare a book
 
-For the future GitHub distribution, `builds/release/echo-nano-p3a.zip` contains
-patches and a Python applier, not complete firmware. Extract it and run:
+Books on SD should have an M3U and separate1024-byte RSM/BMK companions beside it.
+The enclosing audiobook root must have its `.audiobook` marker. Run the preparation
+tool in preview mode first; `--write` preserves existing valid progress files.
+Existing prepared books need rerunning to add BMK. See [audiobooks](audiobooks.md).
 
-```sh
-python3 apply_release.py --input '/path/to/original/NANOV170.IMG' --output ./nano-ready
-```
+## Controlled acceptance after review and staging
 
-This creates the same custom image and a later-dated stock recovery. It never
-flashes the player. See [release instructions](releases.md).
+1. Confirm exact candidate/recovery hashes and dates; identify current USB device
+   and mounted storage, inspect leftover updates, and preserve recovery evidence.
+2. First boot without SD. Check normal menus and Shuffle/File Browser before
+   proceeding. A host test pass is not boot acceptance.
+3. Insert prepared SD and open an audiobook M3U. Check Continue, numbered Chapters,
+   Bookmarks, Back to the book listing and Back from playback to the book menu.
+4. Select Chapter2, confirm correct audio and chapter counter. Play long enough
+   to establish a nonzero time. Double Previous to add a bookmark; open the list
+   and verify its chapter/time. On-screen save feedback is not implemented yet.
+5. Save another mark in another chapter. Play each mark and check time rounding.
+   Delete one: Cancel must be selected by default; cancelling preserves it.
+   Confirm deletion, reopen and check the remaining mark.
+6. Browse bookB while bookA plays; check A continues, then explicitly choose B.
+   Return to A with Continue and verify independent resume. Restart normally and
+   verify SD bookmark persistence.
+7. Check ordinary music favorites and meditation playlists retain their behavior.
+   Confirm library refresh and return to playback after the overlay reload.
 
-## 2. One book first
+Record exact actions, book/format, audio behavior, approximate time and failures.
+Preserve M3U/RSM/BMK and CFWLOG.TXT evidence. Never erase flash, download a loader,
+or treat the476MiB logical backup as a full-chip restoration image.
 
-For a folder of MP3 chapters, run from this repository:
+Speed presets, natural folder sorting and actual chapter-title labels are not
+part of this implemented menu milestone. No GitHub release has been published.
 
-```sh
-python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/Your Book'
-python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/Your Book' --write
-```
 
-Inspect the preview order before the second command. On the player, select
-**File Browser → Your Book → BOOK.M3U**. Selecting the audio file directly uses
-ordinary folder playback rather than the independent book-resume path.
+## Subsequent offline usability checkpoint
 
-For M4B containing AAC/ALAC, first try the audio-preserving option on the computer:
-
-```sh
-python3 tools/prepare_book.py '/path/to/Book.m4b' --remux-to m4a --output '/path/to/Prepared Book' --write
-```
-
-Copy the prepared directory onto the player. MP3 conversion is an explicit
-fallback if needed. See [all preparation options](audiobooks.md).
-
-## 3. Short acceptance run
-
-1. Check sound, chapter order and next/previous within the book.
-2. Seek into a chapter with the existing long-press controls.
-3. Play music, then reopen the book's M3U: check chapter/time.
-4. Repeat with a second book. Normal shutdown/restart, then reopen both M3Us.
-5. Refresh the music library: marked books and meditation should stay out of
-   library/Shuffle but remain playable in File Browser.
-6. Try your FLAC meditation phase folders and direct file selection.
-
-If something fails, record the exact action, filename/format, approximate time,
-filesystem (FAT/exFAT if known) and whether rebooting changes it. Keep
-`CFWLOG.TXT` and the affected M3U/RSM files; avoid overwriting the evidence with
-repeated preparation. Abrupt-power-loss behavior is not yet hardware verified.
-
-## 4. Icon review
-
-Open [icon-review.html](icon-review.html), compare at native size, choose an
-overall direction and individual approvals, add comments, then **Copy feedback**
-and paste it into the chat. Download is a fallback. This is icons only; it
-neither changes firmware nor approves navigation shortcuts.
-
-Dedicated book/meditation menu shortcuts still require native folder traversal
-and Back-navigation tests; see [navigation findings](navigation.md). The
-[community performance review](community-patches.md) explains why power patches
-remain disabled. No additional unique Nano patch was found upstream tonight.
+See [follow-up behavior and test steps](book-usability-followup.md). The archived
+20261021 custom/20261022 recovery pair in builds/phase4d-usability-20261015/review-fixed/
+is uninstalled. 271 tests pass, with explicit partial Music and RAM-lifetime
+last-book limits. Do not confuse it with the installed20261019 candidate.

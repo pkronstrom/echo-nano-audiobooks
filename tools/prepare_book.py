@@ -19,15 +19,28 @@ def natural_key(path):
     return tuple(tuple((1,int(x)) if x.isdecimal() else (0,x.casefold())
                        for x in re.split(r'([0-9]+)',part)) for part in Path(path).parts)
 
-def resume_bytes():
+def resume_bytes(magic=0x31524e45):
     sector=bytearray(512)
-    struct.pack_into('<I',sector,0,0x31524e45)
+    struct.pack_into('<I',sector,0,magic)
     struct.pack_into('<I',sector,508,zlib.crc32(sector[:508]))
     return bytes(sector)*2
 
 def valid_resume(data):
     return len(data)==1024 and any(struct.unpack_from('<I',data,n)[0]==0x31524e45 and
         struct.unpack_from('<I',data,n+508)[0]==zlib.crc32(data[n:n+508]) for n in (0,512))
+
+def bookmark_bytes():
+    return resume_bytes(0x31424e45)  # ENB1: two alternating 512-byte sectors
+
+def valid_bookmarks(data):
+    if len(data)!=1024:return False
+    for offset in (0,512):
+        magic,generation,signature,count=struct.unpack_from('<4I',data,offset)
+        if magic!=0x31424e45 or count>60:continue
+        if struct.unpack_from('<I',data,offset+508)[0]!=zlib.crc32(data[offset:offset+508]):continue
+        if all(1<=struct.unpack_from('<I',data,offset+16+i*8)[0]<=256 for i in range(count)):
+            return True
+    return False
 
 def checked_path(path):
     text=path.as_posix()
@@ -53,6 +66,9 @@ def write_metadata(destination,stem,body,marker):
         with playlist.open('xb') as f:f.write(body)
     if not resume.exists():
         with resume.open('xb') as f:f.write(resume_bytes())
+    bookmarks=destination/(stem+'.BMK')
+    if not bookmarks.exists():
+        with bookmarks.open('xb') as f:f.write(bookmark_bytes())
     if marker:(destination/'.nomusic').touch(exist_ok=True)
 
 def prepare(source,write=False,output=None,convert=False,name=None,remux=False):
@@ -66,6 +82,8 @@ def prepare(source,write=False,output=None,convert=False,name=None,remux=False):
     candidates=list(root.rglob('*')) if source.is_dir() else [source]
     audio=[];unsupported=[]
     for p in candidates:
+        # macOS stores resource forks beside FAT/exFAT files with audio suffixes.
+        if p.name.startswith("._"):continue
         if p.is_symlink():
             if p.suffix.lower() in CONVERTIBLE:raise ValueError(f'Audio symlinks are not supported: {p}')
             continue
@@ -99,18 +117,21 @@ def prepare(source,write=False,output=None,convert=False,name=None,remux=False):
     if any(len(line.encode('utf-8'))>1024 for line in lines):
         raise ValueError('Playlist line exceeds player limit')
     playlist=destination/(stem+'.M3U');resume=destination/(stem+'.RSM')
-    checked_path(Path(playlist.name));checked_path(Path(resume.name))
+    bookmarks=destination/(stem+'.BMK')
+    checked_path(Path(playlist.name));checked_path(Path(resume.name));checked_path(Path(bookmarks.name))
     body=('#EXTM3U\n'+'\n'.join(lines)+'\n').encode('utf-8')
     # Existing user-edited playlist order is authoritative. Validate its companion
     # but leave it intact, including on repeated preparation.
     playlist_exists=playlist.exists()
     if playlist_exists and not playlist.is_file():raise ValueError(f'Playlist is not a regular file: {playlist}')
-    if playlist.is_symlink() or resume.is_symlink() or (destination/'.nomusic').is_symlink():
+    if playlist.is_symlink() or resume.is_symlink() or bookmarks.is_symlink() or (destination/'.nomusic').is_symlink():
         raise ValueError('Metadata targets must not be symlinks')
     if resume.exists() and not valid_resume(resume.read_bytes()):
         raise ValueError(f'Existing resume file has an unknown/corrupt format; preserved: {resume}')
+    if bookmarks.exists() and not valid_bookmarks(bookmarks.read_bytes()):
+        raise ValueError(f'Existing bookmark file has an unknown/corrupt format; preserved: {bookmarks}')
     marker=destination/'.nomusic' if source.is_dir() or transform else None
-    result={'status':'prepared' if write else 'preview','playlist':str(playlist),'resume':str(resume),
+    result={'status':'prepared' if write else 'preview','playlist':str(playlist),'resume':str(resume),'bookmarks':str(bookmarks),
             'tracks':([line for line in playlist.read_text(encoding='utf-8-sig').splitlines() if line and not line.startswith('#')] if playlist_exists else lines),'order':'existing playlist preserved' if playlist_exists else 'natural filename order',
             'conversion':'mp3' if convert else None,'remux':'m4a' if remux else None,
             'marker':str(marker) if marker else None}
@@ -144,7 +165,7 @@ def prepare(source,write=False,output=None,convert=False,name=None,remux=False):
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__,epilog='Examples:\n  %(prog)s /Volumes/NANO/Audiobooks/Book\n  %(prog)s /Volumes/NANO/Audiobooks/Book --write\n  %(prog)s /Downloads/Book.m4b --convert-to mp3 --output /Volumes/NANO/Audiobooks/Book --write',formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('source',type=Path,help='One book folder, or one long audio file')
-    parser.add_argument('--write',action='store_true',help='Write playlist, resume companion and .nomusic; default is preview')
+    parser.add_argument('--write',action='store_true',help='Write playlist, resume/bookmark companions and .nomusic; default is preview')
     modes=parser.add_mutually_exclusive_group()
     modes.add_argument('--convert-to',choices=['mp3'],help='Re-encode audio using ffmpeg; originals remain untouched')
     modes.add_argument('--remux-to',choices=['m4a'],help='Copy AAC/ALAC audio without re-encoding using ffmpeg/ffprobe; Nano compatibility needs a device test')

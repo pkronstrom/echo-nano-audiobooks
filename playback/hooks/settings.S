@@ -19,8 +19,8 @@
     .org 0x03083060-PATCH_BASE
     fb playback_init_scope_bridge
     push {r0,r1}
-    movw r0,#0xb694
-    movt r0,#0x0309
+    movw r0,#(playback_header & 0xffff)
+    movt r0,#(playback_header >> 16)
     ldr r0,[r0]
     movw r1,#0x4e45
     movt r1,#0x3250
@@ -28,11 +28,20 @@
     pop {r0,r1}
     fbeq playback_save_close_bridge
     fb 0x03084e28
+    .org 0x03083084-PATCH_BASE
+    movw r2,#(playback_header & 0xffff)
+    movt r2,#(playback_header >> 16)
+    ldr r2,[r2]
+    movw r3,#0x4e45
+    movt r3,#0x3250
+    cmp r2,r3
+    fbeq playback_bookmark_poll
+    fb 0x0306b05c
     .org 0x030830a0-PATCH_BASE
     fb playback_advance_scope_bridge
     push {r0,r1}
-    movw r0,#0xb694
-    movt r0,#0x0309
+    movw r0,#(playback_header & 0xffff)
+    movt r0,#(playback_header >> 16)
     ldr r0,[r0]
     movw r1,#0x4e45
     movt r1,#0x3250

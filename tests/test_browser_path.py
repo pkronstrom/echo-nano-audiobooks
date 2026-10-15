@@ -21,7 +21,7 @@ class BrowserPathTests(unittest.TestCase):
         cls.lib.media_browser_path.argtypes=[cls.readfn,C.c_void_p,C.c_int,C.c_void_p,C.c_void_p,C.c_uint,C.c_void_p]
     @classmethod
     def tearDownClass(cls):cls.tmp.cleanup()
-    def path(self,exfat,ancestors,name,parent,index=0,depth=None):
+    def path(self,exfat,ancestors,name,parent,index=0,depth=None,directory_cluster=None):
         browser=bytearray(512);node=bytearray(624)
         struct.pack_into('<H',browser,0x1cc,len(ancestors) if depth is None else depth)
         for i,cluster in enumerate(ancestors,1):struct.pack_into('<I',browser,i*56+(24 if exfat else 20),cluster)
@@ -35,7 +35,13 @@ class BrowserPathTests(unittest.TestCase):
             if i>=len(entries):return 9
             C.memmove(out,entries[i],32);return 0
         out=(C.c_uint16*256)()
-        result=self.lib.media_browser_path(read,None,exfat,(C.c_ubyte*len(browser)).from_buffer(browser),
+        function=self.lib.media_browser_path
+        if directory_cluster is not None:
+            function=self.lib.media_browser_directory
+            function.argtypes=self.lib.media_browser_path.argtypes
+            struct.pack_into('<H',node,0x63,directory_cluster>>16)
+            struct.pack_into('<H',node,0x69,directory_cluster&65535)
+        result=function(read,None,exfat,(C.c_ubyte*len(browser)).from_buffer(browser),
                                           (C.c_ubyte*len(node)).from_buffer(node),2,out)
         n=0
         while out[n]:n+=1
@@ -54,6 +60,15 @@ class BrowserPathTests(unittest.TestCase):
                     root_index=len(folder)
                 self.assertEqual(self.path(exfat,[20,30],'list.m3u',30),(1,'/Kirjat 日本語/Meditaatio/list.m3u'))
                 self.assertEqual(self.path(exfat,[],'root.m3u',2,root_index),(1,'/root.m3u'))
+    def test_directory_path_requires_matching_type_and_cluster(self):
+        for exfat in (False,True):
+            self.dirs={2:[*exfat_entry('Book',20,True),END]} if exfat else {0:[fat_entry(b'BOOK       ',20,True),END]}
+            self.assertEqual(self.path(exfat,[],'Book',2,directory_cluster=20),(1,'/Book'))
+            self.assertEqual(self.path(exfat,[],'Book',2,directory_cluster=21),(0,''))
+            self.assertEqual(self.path(exfat,[],'Book',2),(0,''))
+        self.dirs={0:[fat_entry(b'LIST    M3U',90),END]}
+        self.assertEqual(self.path(False,[],'list.m3u',2,directory_cluster=90),(0,''))
+
     def test_stale_parent_index_and_invalid_depth_are_rejected(self):
         self.dirs={0:[fat_entry(b'LIST    M3U',90),END]}
         for args in ((False,[],'list.m3u',30,0,None),(False,[],'list.m3u',2,1,None),(False,[],'list.m3u',2,0,8)):

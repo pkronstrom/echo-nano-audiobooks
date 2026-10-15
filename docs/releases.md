@@ -1,5 +1,9 @@
 # Echo Nano patch release
 
+> **2026-10-14 hardware result:** P4a boot-looped. Stock recovery succeeded and
+> the user confirmed the normal menu. Do not reflash or publish this candidate.
+> Read [recovery lessons](recovery-lessons-2026-10-14.md) before device work.
+
 This package produces custom firmware from your own official FiiO Echo Nano
 V1.7.0 firmware. It contains changed bytes and Python scripts, not a complete
 FiiO firmware image. The current P4a build is a device-test candidate; successful

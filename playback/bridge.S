@@ -153,3 +153,17 @@ entry navigation_event_bridge
     ldr r0,[sp,#32]
     ldr r10,=0x0300d164
     jump 0x0307b320
+
+entry playback_feedback_bridge
+    push {r4,lr}
+    mov r0,r4
+    bl feedback_poll
+    pop {r4,pc}
+
+entry playback_speed_capture_bridge
+    mov r2,lr
+    b playback_speed_capture
+entry playback_speed_seek_bridge
+    b playback_speed_seek
+entry playback_speed_time_bridge
+    b playback_speed_time

@@ -63,19 +63,24 @@ int playback_open_update(const struct media_ref *ref)
     if (ref->size != 1024 || (ref->attrs & 1)) return -1;
     int handle = open_mode(ref, "RW");
     if (handle >= 0 && word(FILES+handle*FILE_SIZE+16) != 1024) {
-        fw_file_close(handle); return -1;
+        playback_close(handle); return -1;
     }
     return handle;
 }
 int playback_read(int handle, u32 offset, u8 *out, u32 length)
 {
-    if (handle < 0 || handle >= NFILES || fw_fseek(offset, 0, handle)) return -1;
-    u32 got = native_read(out, length, handle);
-    return got <= length ? (int)got : -1;
+    if(handle<0||handle>=NFILES)return -1;
+    fw_lock();
+    int result=-1;
+    if(!fw_fseek(offset,0,handle)){
+        u32 got=native_read(out,length,handle);
+        if(got<=length)result=(int)got;
+    }
+    fw_unlock();return result;
 }
 void playback_close(int handle)
 {
-    if (handle >= 0 && handle < NFILES) fw_file_close(handle);
+    if(handle>=0&&handle<NFILES){fw_lock();fw_file_close(handle);fw_unlock();}
 }
 extern u8 __play_bss_start[], __play_bss_end[];
 u32 playback_init(void)
@@ -177,3 +182,14 @@ int playback_browser_path(const u8 *node, u16 *out)
     fw_unlock();
     return result;
 }
+
+int playback_browser_directory_at(const u8 *browser,const u8 *node,u16 *out)
+{
+    fw_lock();
+    u32 root = word((const u8 *)0x03076b30+13);
+    int result = media_browser_directory(directory_read, 0, FS_TYPE == 3,
+                                        browser,node,root,out);
+    fw_unlock();return result;
+}
+int playback_browser_directory(const u8 *node,u16 *out)
+{ return playback_browser_directory_at((const u8 *)0x03005f6c,node,out); }

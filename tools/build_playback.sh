@@ -30,8 +30,11 @@ arm-none-eabi-size "$out/playback.elf"
 python3 - "$out" <<'SYMS'
 from pathlib import Path
 import sys
+sys.path.insert(0,'tools')
+from playback_layout import FLASH_START
 out = Path(sys.argv[1])
-lines = [f".equ PLAYBACK_BYTES, {len((out/'playback.bin').read_bytes())}"]
+lines = [f".equ PLAYBACK_BYTES, {len((out/'playback.bin').read_bytes())}",
+         f".equ PLAYBACK_FLASH_OFFSET, {FLASH_START-512}"]
 for line in (out/'playback.nm').read_text().splitlines():
     value, kind, name = line.split()
     if kind.upper() in ('T','B','D','R'):

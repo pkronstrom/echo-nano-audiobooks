@@ -10,6 +10,8 @@ from test_music_arm import ROOT, Image
 from test_music_filter import fat_entry, exfat_entry, END
 from test_media_path import lfn
 
+from playback_layout import RAM_START,FLASH_START
+
 class PlaybackRuntimeTests(unittest.TestCase):
     def setUp(self):
         self.syms={n:int(v,16) for v,t,n in (l.split() for l in (ROOT/'out/playback/playback.nm').read_text().splitlines())}
@@ -21,7 +23,7 @@ class PlaybackRuntimeTests(unittest.TestCase):
         for kind in ('code','data'):
             offset=image.l2f(m[kind+'_load'])
             self.cpu.mem_write(m[kind+'_exec'],bytes(image.d[offset:offset+m[kind+'_len']]))
-        self.cpu.mem_write(0x0309b694,(ROOT/'out/playback/playback.bin').read_bytes())
+        self.cpu.mem_write(RAM_START,(ROOT/'out/playback/playback.bin').read_bytes())
         self.dirs={0:[END],2:[END]}
         self.cpu.mem_write(0x03076b24,b'\x02')
         self.cpu.hook_add(UC_HOOK_CODE,self.intercept)
@@ -47,9 +49,10 @@ class PlaybackRuntimeTests(unittest.TestCase):
             if not result: cpu.mem_write(out,entries[index])
         elif address==0x0306b36c and self.flash_mode is not None:
             dev,source,length,out=[cpu.reg_read(r) for r in (UC_ARM_REG_R0,UC_ARM_REG_R1,UC_ARM_REG_R2,UC_ARM_REG_R3)]
-            self.assertEqual(dev,0x30000);self.assertEqual(source,self.slot+0xa55000)
+            self.assertEqual(dev,0x30000);self.assertEqual(source,self.slot+FLASH_START-512)
             payload=(ROOT/'out/playback/playback.bin').read_bytes()
-            self.assertEqual((length,out),(len(payload),0x0309b694));self.flash_reads+=1
+            self.assertEqual((length,out),((len(payload)+511)&~511,RAM_START));self.flash_reads+=1
+            payload=payload+bytes(length-len(payload))
             if self.flash_mode=='bad-magic':payload=b'BAD!'+payload[4:]
             cpu.mem_write(out,payload)
             result=1 if self.flash_mode=='error' else 0
@@ -210,13 +213,13 @@ class PlaybackRuntimeTests(unittest.TestCase):
     def test_loader_reuses_live_queue_and_reinitializes_after_refresh(self):
         loader=self.install_loader();self.flash_mode='ok'
         start,end=self.syms['__play_bss_start'],self.syms['__play_bss_end']
-        self.cpu.mem_write(0x0309b694,b'CFW!');self.cpu.mem_write(start,b'\xa5'*(end-start))
+        self.cpu.mem_write(RAM_START,b'CFW!');self.cpu.mem_write(start,b'\xa5'*(end-start))
         self.assertEqual(self.call(loader),0);self.assertEqual(self.flash_reads,1)
         self.assertEqual(bytes(self.cpu.mem_read(start,end-start)),bytes(end-start))
         self.cpu.mem_write(start,b'LIVE')
         self.assertEqual(self.call(loader),0);self.assertEqual(self.flash_reads,1)
         self.assertEqual(bytes(self.cpu.mem_read(start,4)),b'LIVE')
-        self.cpu.mem_write(0x0309b694,b'CFW!')
+        self.cpu.mem_write(RAM_START,b'CFW!')
         self.assertEqual(self.call(loader),0);self.assertEqual(self.flash_reads,2)
         self.assertEqual(bytes(self.cpu.mem_read(start,4)),bytes(4))
 
@@ -224,9 +227,9 @@ class PlaybackRuntimeTests(unittest.TestCase):
         loader=self.install_loader()
         for mode in ('error','bad-magic'):
             with self.subTest(mode=mode):
-                self.flash_mode=mode;self.cpu.mem_write(0x0309b694,b'CFW!')
+                self.flash_mode=mode;self.cpu.mem_write(RAM_START,b'CFW!')
                 self.assertEqual(self.call(loader),1)
-                self.assertEqual(bytes(self.cpu.mem_read(0x0309b694,4)),bytes(4))
+                self.assertEqual(bytes(self.cpu.mem_read(RAM_START,4)),bytes(4))
                 self.flash_mode='ok';self.assertEqual(self.call(loader),0)
 
     def test_compiled_parser_streams_unicode_in_order(self):

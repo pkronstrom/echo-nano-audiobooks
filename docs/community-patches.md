@@ -1,6 +1,6 @@
 # Nano community patch review
 
-Checked 12 October 2026 against public GitHub API data and the working source.
+Originally checked 12 October 2026; rechecked 15 October 2026 against public GitHub API data and the working source.
 Recommendation for the first device test: keep the existing refresh/library
 improvements, and retain stock clocks, idle behavior and wheel polling. No newer
 upstream fix was found to integrate.
@@ -88,3 +88,29 @@ with stock power settings; retain the scan log. Once those pass, a separately
 dated power experiment can compare the same files, EQ, volume and screen state,
 including long sessions, seeking, rapid wheel input and high-rate FLAC. No
 power experiment or new upstream firmware was built or flashed by this review.
+
+## Recheck — 15 October 2026
+
+Main is still ea4e6dc2cb386483093c7b045b6e85f26939ce2e; no newer commits or
+pull requests. A new fork, tuanbuinov09/nanitecfw, is identical (0 ahead/behind).
+zezic/nanitecfw remains 0 ahead, 2 behind. No new code to integrate from these
+repositories, and no new playback-speed implementation found there.
+
+New [battery report](https://github.com/maaraneasi/nanitecfw/issues/1): one user
+reports approximately 7 hours stock versus still playing at 10 hours with custom
+firmware, using 32 kHz MP3 at volume 50. There were no comments at this check.
+This is useful anecdotal evidence, not a controlled result for our build; our
+power patches remain disabled. Revisit separately after speed CPU requirements
+are understood. Do not lower decoder clocks while assessing time stretching.
+
+ECHO-Firmware-Tool latest commit remains 32e272515e579ee98ee44e051fc3017a7f9b5927
+(9 October), documenting skip-Switch behavior in MASKROM. It offers no new
+audiobook playback feature in these latest changes.
+
+Raw API evidence, issue comments and fork comparisons: builds/research/upstream-20261015/.
+
+User priority update: audiobook speed (1, 1.25, 1.5, 1.75, 2x, preferably
+pitch-preserving) precedes remaining durable-resume enhancements. Next work is
+exact-stock PCM/codec tracing and CPU/RAM feasibility, following the existing
+audiobook usability plan. Automatic creation of missing BMK files is a separate
+backlog item: current journal code requires an existing 1024-byte companion.

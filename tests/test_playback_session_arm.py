@@ -6,6 +6,8 @@ from unicorn.arm_const import UC_ARM_REG_R0,UC_ARM_REG_R1,UC_ARM_REG_R2,UC_ARM_R
 import test_playback_runtime_arm as fixture
 from test_music_filter import fat_entry,END
 
+from playback_layout import RAM_START
+
 class SessionTests(unittest.TestCase):
     def setUp(self):
         self.f=fixture.PlaybackRuntimeTests();self.f.setUp();self.cpu=self.f.cpu
@@ -120,7 +122,7 @@ class SessionTests(unittest.TestCase):
         self.f.call(0x0308237a,9000000)
         self.assertEqual(self.seeks[-1],(7200000,0))
     def test_save_guard_falls_back_when_refresh_owns_ram(self):
-        self.cpu.mem_write(0x0309b694,b'CFW!')
+        self.cpu.mem_write(RAM_START,b'CFW!')
         self.f.call(0x03083064)
         self.assertEqual(self.codec_closes,1)
     def test_stock_save_rebases_persisted_folder_index_without_corrupting_live_playlist(self):
