@@ -479,3 +479,18 @@ Recovery SHA256:145613bd8c21dbe9fc1aa13f932144de35e4b1091dd686355d21ef2061fc43be
 No device staging, commit or push for this change. Latest staged20261110; the user
 observed the last-book landing, but first-post-update boot sequence and durable
 per-book rate acceptance remain unconfirmed. See docs/named-continue-label.md.
+
+## Post-RC automatic-preparation research — 2026-10-16
+
+Local annotated tag `phase4i-release-candidate` points to bac9473. No push or
+publication. Subsequent research is separate; see
+`docs/automatic-book-preparation-investigation.md` and the reusable
+`experiments/native_file_creation/probe_stock_create.py`. All 11 offline native
+wrapper/duplicate probes passed. Stock file creation exists, but its exFAT path
+does not propagate insertion failure and can create duplicate names. Do not
+call it blindly or claim safe generic UTF-16 path creation. Directory/allocator
+write/close persistence and interrupted creation still need sector-level tests.
+No auto-creation is linked, no new firmware built, no device operations.
+Resident zero static margin remains; cold browser helper placement is only a
+candidate. Recommended next scope: missing BOOK companions first, then guarded
+M3U generation; preserve all existing files and explicit playlist order.
