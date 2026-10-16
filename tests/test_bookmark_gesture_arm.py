@@ -28,7 +28,9 @@ class BookmarkGestureTests(base.BookmarkSessionTests):
     def invoke(self):
         # Fixed resident stub is installed by image integration, not loaded from
         # a potentially absent player overlay.
-        self.assertEqual(bytes(self.cpu.mem_read(0x03052d68,2)),b'\x10\xb5')
+        patch=(base.session.fixture.ROOT/'out/playback/bookmark_gesture.patch').read_text().splitlines()[-1]
+        expected=bytes.fromhex(patch.split(':')[2])
+        self.assertEqual(bytes(self.cpu.mem_read(0x03052d68,len(expected))),expected)
         return self.f.call(0x030638aa)
 
     def test_bookmark_gesture_consumes_favorite_route_and_saves_position(self):
@@ -43,6 +45,13 @@ class BookmarkGestureTests(base.BookmarkSessionTests):
         self.f.call('playback_begin',0x20001000)
         self.assertEqual(self.invoke(),1)
         self.assertFalse(self.consumed);self.assertEqual(self.favorite_queries,1)
+        self.assertEqual(self.writes,[])
+
+    def test_folder_gesture_retains_native_favorites_on_both_routes(self):
+        self.cpu.mem_write(self.f.syms['playback_active'],struct.pack('<I',2))
+        self.assertEqual(self.invoke(),1)
+        self.assertEqual(self.f.call(0x030638ec),1)
+        self.assertFalse(self.consumed);self.assertEqual(self.favorite_queries,2)
         self.assertEqual(self.writes,[])
 
     def test_missing_payload_does_not_branch_into_overwritten_code(self):

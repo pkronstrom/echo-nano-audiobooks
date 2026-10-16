@@ -1,6 +1,9 @@
 #include "fw.h"
 #include "order.h"
 #include "natural.h"
+#include "queue.h"
+#include "browser_playback.h"
+static struct playlist_queue staged_queue;
 #define DEVICE (*(volatile u8 *)0x0300d173)
 #define B ((u8 *)0x03005f6c)
 #define H(p) (*(u16 *)(p))
@@ -169,4 +172,36 @@ int browser_sort_validate(const u8 *node)
         !different(work.names[0],node+0x70,512);
     if(!ok)clear((void *)W(B),B+56*H(B+0x1cc)+12);
     fw_unlock();return ok;
+}
+
+/* 0 refuses, 1 preserves native navigation, 2 completed an ordered launch.
+ * The staged queue stays in browser memory only until the resident API has
+ * stopped/saved the old context and copied it synchronously. */
+int browser_sort_select(const u8 *node)
+{
+    if(!browser_sort_validate(node))return 0;
+    if(node[0x4e]!=1 || H((u8 *)0x0300ec1c+8)!=3)return 1;
+    fw_lock();
+    staged_queue.count=0;staged_queue.signature=0;
+    u32 selected=0,target=W(node+12);
+    for(u32 rank=0;rank<H(folder);rank++){
+        if(page(rank))goto fail;
+        u32 key=work.keys[rank-base];
+        if(load(key,work.names[0],entry))goto fail;
+        if(entry[11]&16 || *FW(0x03079484,u8 *,void *)(entry)!=1)continue;
+        unsigned units=0;while(units<256 && work.names[0][units])units++;
+        u32 n=staged_queue.count,cluster=(u32)H(entry+20)<<16|H(entry+26);
+        if(n==PLAYLIST_CAPACITY || key>=65536 || cluster<2 ||
+           (fs==3 && (units>127 || W(folder+24)>255)))goto fail;
+        staged_queue.tracks[n]=(struct queued_file){W(folder+8),fs==3?W(folder+16):0,cluster};
+        staged_queue.indices[n]=key;staged_queue.flags[n]=fs==3?W(folder+24):0;
+        staged_queue.count=n+1;
+        if(key==target)selected=n+1;
+    }
+    fw_unlock();
+    if(!selected)return 0;
+    return FW(FOLDER_LAUNCH_ADDR,int,const struct playlist_queue *,u32)
+        (&staged_queue,selected)?2:0;
+fail:
+    staged_queue.count=0;fw_unlock();return 0;
 }

@@ -30,3 +30,29 @@ class LastBookTests(unittest.TestCase):
         self.s.launch();self.remember()
         self.assertEqual(self.f.call('last_book_snapshot',0x20002000,0x20003000),1)
         self.assertEqual(struct.unpack('<I',self.cpu.mem_read(0x20003000,4))[0],self.f.call('playlist_signature'))
+
+    def label(self):
+        self.assertIn('last_book_label',self.f.syms)
+        self.cpu.mem_write(0x20002000,b'Z'*514)
+        self.f.call('last_book_label',0x20002000)
+        self.assertEqual(bytes(self.cpu.mem_read(0x20002200,2)),b'ZZ')
+        return bytes(self.cpu.mem_read(0x20002000,512)).decode('utf-16le').split('\0')[0]
+    def test_continue_label_names_playlist_or_generic_book_folder(self):
+        from test_media_path import lfn
+        from test_music_filter import END
+        self.remember('/list.m3u');self.assertEqual(self.label(),'Continue list')
+        self.f.dirs[0].insert(-1,base.fat_entry(b'BOOKS      ',20,directory=True))
+        self.f.dirs[20]=[base.fat_entry(b'BOOK    M3U',90),END]
+        self.remember('/Books/BOOK.M3U');self.assertEqual(self.label(),'Continue Books')
+        self.f.dirs[0].insert(-1,base.fat_entry(b'BOOK    M3U',90))
+        self.remember('/BOOK.M3U');self.assertEqual(self.label(),'Continue BOOK')
+    def test_continue_label_bounds_unicode_without_splitting_surrogate(self):
+        from test_media_path import lfn
+        from test_music_filter import END
+        for name in ('雪の本', 'a'*245+'😀'):
+            self.f.dirs[0]=[*lfn(name+'.m3u',b'BOOK~1  M3U',90),END]
+            self.remember('/'+name+'.m3u')
+            label=self.label()
+            self.assertTrue(label.startswith('Continue '))
+            self.assertLessEqual(len(label.encode('utf-16le'))//2,255)
+            self.assertTrue(('Continue '+name).startswith(label))

@@ -158,7 +158,12 @@ class NavigationTests(unittest.TestCase):
                 self.assertIn(20,parents) # Real saved-file identity validation.
                 self.assertNotIn(11,parents);self.assertNotIn(30,parents)
                 title=bytes(self.cpu.mem_read(0x0300e73c+0x70,512)).decode('utf-16le').split('\0')[0]
-                self.assertEqual(title,'Continue last book')
+                self.assertEqual(title,'Continue LIST')
+                # Moving the highlight redraws the cached name without I/O.
+                reads=list(self.directory_reads)
+                self.assertEqual(self.call('navigation_event',0x40000004),1)
+                self.assertEqual(self.call('navigation_event',0x40000008),1)
+                self.assertEqual(self.directory_reads,reads)
                 # Remove the Books marker after landing. Browse must discover
                 # that only Other remains, rather than use earlier scan data.
                 self.dirs[20]=[*playlist,END]
@@ -176,7 +181,7 @@ class NavigationTests(unittest.TestCase):
         self.call('last_book_remember',0x20001000)
         self.call('navigation_menu_init');self.select();self.browser()
         title=bytes(self.cpu.mem_read(0x0300e73c+0x70,512)).decode('utf-16le').split('\0')[0]
-        self.assertEqual(title,'Continue last book')
+        self.assertEqual(title,'Continue LIST')
         self.assertEqual(self.call('navigation_event',0x40000004),1)
         self.assertEqual(self.call('navigation_event',0x40000040),1)
         self.assertEqual(self.h(B+0x1cc),2)

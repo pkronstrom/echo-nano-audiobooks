@@ -17,10 +17,9 @@ static struct content_root roots[8];
 static u8 root_count, kind_at[8], pending_kind, chooser_kind, chooser, choice, matches[8], match_count;
 u32 navigation_icons[8], navigation_count;
 static u8 labels[64];
-static u16 last_path[256];
 static u8 last_error;
 extern void navigation_dispatch_bridge(void), navigation_strip_bridge(void), navigation_event_bridge(void);
-static void branch(u32 address, void (*target)(void))
+static __attribute__((noinline)) void branch(u32 address, void (*target)(void))
 {
     u32 off=((u32)target&~1u)-address-4, sign=(off>>24)&1;
     H(address)=0xf000|(sign<<10)|((off>>12)&0x3ff);
@@ -146,8 +145,9 @@ static void landing_draw(void)
     for(u32 i=0;i<2;i++){
         u8 *entry=(u8 *)(i?0x0300e9ac:0x0300e73c);
         __builtin_memset(entry+8,0,616);
-        const char *label=i?"Browse books":last_error?"Book unavailable":"Continue last book";
-        u16 *out=(u16 *)(entry+0x70);while(*label)*out++=(u8)*label++;*out=0;
+        if(!i && !last_error){last_book_label((u16 *)(entry+0x70));continue;}
+        const char *label=i?"Browse books":"Book unavailable";
+        book_text((u16 *)(entry+0x70),label);
     }
     post(333);post(335);
 }
@@ -183,7 +183,7 @@ void navigation_browser_init(void)
     }
     u32 kind=pending_kind;chooser_kind=kind;pending_kind=0;match_count=0;
     /* The landing only validates the saved book; Browse scans fresh below. */
-    if(kind==1 && last_book_get(last_path)){
+    if(kind==1 && last_book_get(playback_path_scratch)){
         chooser=3;choice=0;last_error=0;landing_draw();return;
     }
     browse_roots();

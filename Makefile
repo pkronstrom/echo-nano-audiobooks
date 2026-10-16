@@ -71,7 +71,7 @@ out/gen/%.patch: patches/%.S patches/fw.inc out/gen/syms.inc tools/asm2patch.sh
 playback-core:
 	tools/build_playback.sh
 
-browser-sort:
+browser-sort: playback-core
 	tools/build_browser_sort.sh
 
 audiobook: build playback-core browser-sort

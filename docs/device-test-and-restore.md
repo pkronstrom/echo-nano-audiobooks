@@ -454,3 +454,150 @@ Internal disk8 safely ejected. Evidence:
 builds/device-check/folder-entry-stage-20261015-215651/result.json.
 No SD writes, raw flash or bootloader operations. Installation/boot and
 The Gateway Experience folder entry await user confirmation. DiskID historical.
+
+## Sorted folder playback candidate — 2026-10-15
+
+User confirms natural listing order works on20261104, but selecting CD1 showed
+2/N because native playback still used physical directory order. Candidate
+20261106/recovery20261107 now copies sorted audio identities into the resident
+queue before browser exit. Track counters, Next/Previous and automatic advance
+follow visible order; directories and M3Us are excluded from folder audio counts.
+Explicit M3U order remains unchanged. Book speed/bookmarks are isolated from
+ordinary folder playback; native Favorites retain physical file identity.
+
+All451 tests passed in297.724s, including actual native browser handoff and
+CD1-to-CD2 automatic advancement. Scoped independent review found no remaining
+concrete blocker; this is not a new Fable/revx review or hardware acceptance.
+Playback24568text+31664BSS leaves72B within existing memory boundaries; browser
+3336text+10408BSS stays within audited overlay space. Preview scratch sharing
+recovers512B; bootloader and memory boundaries are unchanged.
+
+Limits:256 audio entries per folder queue; raw entry indexes below65536.
+Overflow refuses playback rather than silently truncating. Cold resume does not
+rebuild natural order: reselect a folder track after restart. Folder→book→Music
+returns Library because the book replaced the shared queue.
+
+Archive: builds/phase4f-controls-20261015/ordered-playback-reviewed/manifest.json.
+No device transfer performed; Nano storage is not mounted. Hardware check:
+Meditations → Gateway → CD1 should show1/N; Next/Previous and track completion
+must follow CD2/CD3 order. Test ordinary Music and explicit M3Us too.
+
+## Audiobook player controls candidate — 2026-10-16
+
+Candidate20261108/recovery20261109 includes sorted folder playback plus book-only
+Previous/Next seeking (ten seconds, hold repeats, bounded within chapter) and
+Bookmarks in the player double-click menu. Add bookmark is first; saved
+chapter/time entries jump directly, with pages above20 marks up to60. Unsupported
+speed codecs still get Bookmarks. Music/folder controls retain native behavior.
+
+All471 tests passed in348.072s. Two scoped independent reviews found and helped
+correct paused-seek source-clock updates, nonempty bookmark-target validation,
+and pending-seek cancellation on player exit. Actual native seek dispatcher and
+speed-seek hook are exercised; committed relaunch survives uninit. Final
+rereviews found no remaining concrete blocker. This is not a new Fable/revx
+review and does not establish hardware boot or audio acceptance.
+
+Memory uses25672text+30512BSS=56184B,120B below unchanged boundary. Scratch sharing,
+bounded root indexes/flags and cold-helper code reuse make the combined payload
+48B smaller than20261106 despite added controls. Audio DSP is unchanged.
+See docs/audiobook-player-controls.md for behavior, limitations and device checks.
+
+Archive: builds/phase4g-player-controls-20261016/reviewed/manifest.json.
+Custom SHA256:7286d161307d05072480e85a7bcd0bf241bd385c9db2febb01b0bf2ef5b6e576
+Recovery SHA256:bdba2a1943c5640325d53e5094601a6b485005cb8d4942eef2e2bb0d44d5e179
+CRC and duplicate-header checks passed for both. About stillP4e. No transfer,
+commit or push performed. Device still needs testing of the new seek/menu
+controls and the prior20261106 sorted playback queue. Do not conflate this
+uninstalled candidate with user-confirmed20261104 natural folder listing.
+
+## Player controls candidate staged — 2026-10-16
+
+User connected Nano for update. Fresh normal071b:3203 identification matched
+internal disk5(262144000B) and SD disk6 on the same device. These disk IDs are
+historical. Archived candidate20261108/recovery20261109 passed hash/date/CRC/
+duplicate-header checks. No leftover update existed in either root. Exclusive
+internal copy, flush/sync and full byte-for-byte readback succeeded:
+7286d161307d05072480e85a7bcd0bf241bd385c9db2febb01b0bf2ef5b6e576.
+Both volumes safely ejected. No SD content changes, raw flash or bootloader
+operations. Evidence: builds/device-check/player-controls-stage-20261016-091930/result.json.
+Installation and boot await user confirmation; test book seek-only controls,
+Bookmarks via double-click, and Meditation CD1 counter/order after normal boot.
+
+## Startup cache and per-book speed candidate — 2026-10-16
+
+User reports update-only startup looping/hanging that clears after Power/reset.
+The exact latest screen behavior is unconfirmed. Reproduced retained-RAM failure:
+new loader accepts an older ENP2 payload without flash reads or initialization.
+Actual factory/app startup leaves that RAM intact through both vector stages.
+Candidate20261110/recovery20261111 invalidates the header at pinned application
+entry660ca before callbacks, forcing current-payload load and fresh BSS. The
+32B resident diagnostic stub preserves entry registers/frame and reboot marker.
+No bootloader or memory-boundary changes. Full update/reset/ROM retention chain
+on hardware is not established; this fixes a reproduced hazard, not a confirmed
+complete explanation of the observed device symptom. First-update boot test is
+still required. See docs/update-startup-investigation.md.
+
+Per-book selected speed now persists in the existing CRC-covered RSM word8.
+Legacy/missing/invalid values default1x; identity mismatch resets state. Browser
+preview selection is local until its book launches and is normally saved.
+Normal progress saving/stop persists launched rate, including across unsupported
+chapters playing native1x. No extra file; prepared RSM required. Abrupt reset
+before saving can retain the older rate. Optional0.75x is deferred: the current
+DSP and source-time invariants only support contraction. Audio core/buffers are
+unchanged. See docs/per-book-speed.md.
+
+All484 tests passed in375.034s. Scoped independent reviews covered startup
+invalidation and initial persistence logic. Parent/worker reproduced and fixed
+pending-rate leakage across ordinary/folder selections and unsupported-codec
+fallback losing the book preference; final tests exercise these corrections.
+An unsafe pre-decoder immediate resume save was removed. No new Fable/revx
+review. Host emulation/review are not hardware boot/audio acceptance.
+
+Resident25752text+30520BSS=56272B leaves32B below0x0309fff0. Browser3336text/
+10408BSS unchanged. Reused pinned native whitelist and cold-helper code sharing;
+no DSP buffer/clock or reserved-boundary increase.
+
+Archive: builds/phase4h-startup-speed-20261016/reviewed/manifest.json.
+Custom SHA256:d8e261af1f43bdb5f7e3feed9780a88d148bd3964ac8de40774da0b16d9c0e9a
+Recovery SHA256:92ab37a147e549bd7fd39f352ea1509cbd4aa776136efde44ed49a9470d36318
+Both pass CRC/duplicate-header checks. About stillP4e. No device transfer,
+commit or push this iteration. Last staged20261108 has no explicit boot/controls
+acceptance. Nano storage is not mounted. Next test must observe the first boot
+after updating before manual reset, then per-book rate save/reopen/restart.
+
+## Startup/speed candidate staged — 2026-10-16
+
+User connected Nano to test20261110. Fresh071b:3203 identification linked internal
+disk5(262144000B) and SD disk6 to one Nano; these identifiers are historical.
+Archived candidate/recovery20261111 hashes, dates, duplicate headers and CRCs
+verified. No leftover update existed in either root. Exclusive internal copy,
+flush/sync and complete byte-for-byte readback succeeded:
+d8e261af1f43bdb5f7e3feed9780a88d148bd3964ac8de40774da0b16d9c0e9a.
+Both volumes safely ejected. No SD content writes, raw flash or bootloader
+operations. Evidence: builds/device-check/startup-speed-stage-20261016-095039/result.json.
+Installation/first-post-update boot await user observation before any manual
+reset. Also pending: per-book speed save/switch/reopen/restart acceptance.
+
+## Offline named Continue row — 2026-10-16
+
+Candidate20261112/recovery20261113 changes Audiobooks landing to
+`Continue <book name>`; genericBOOK.M3U uses the immediate parent folder.
+Unicode/case are preserved, with bounded UTF-16 truncation. Cached path formatting
+adds no disk reads; current-session last-book lifetime is unchanged.
+
+All488 tests passed in384.249s, plus34 final focused checks. Parent scoped review
+checked label bounds, unchanged identity validation, and parser/snapshot lifetime.
+No new independent/Fable/revx review or hardware acceptance. Preview saved journal
+metadata shares the inactive parser workspace, excluding its busy word; failed
+scans clear metadata before returning. Four checked last-book identity words and
+shared label/cold-helper code retain the existing memory boundary.
+
+Resident25864text+30440BSS=56304B reaches exactly0x0309fff0 (zero static margin);
+reboot marker, stack placement, loader and DSP buffers are unchanged. Browser
+3336text/10408BSS unchanged. Future additions must free static space first.
+Archive: builds/phase4i-named-continue-20261016/reviewed/manifest.json.
+Custom SHA256:1e9065a050adf21bd5c419550de1e5ee807cc9dbc39c6bfbbc8912ccd7d70720
+Recovery SHA256:145613bd8c21dbe9fc1aa13f932144de35e4b1091dd686355d21ef2061fc43be
+No device staging, commit or push for this change. Latest staged20261110; the user
+observed the last-book landing, but first-post-update boot sequence and durable
+per-book rate acceptance remain unconfirmed. See docs/named-continue-label.md.

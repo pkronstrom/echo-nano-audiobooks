@@ -19,6 +19,7 @@ static u32 remaining, queued_ms, fraction, staged;
 static volatile u32 audible_ms;
 static u32 end_ms[2];
 static uint64_t source_end;
+u32 playback_speed_launched(void){return launched>=4&&launched<=8?launched:4;}
 u32 playback_speed_get(void){return desired>=4&&desired<=8?desired:4;}
 void playback_speed_set(u32 q){if(q>=4&&q<=8)desired=q;}
 static u32 lock(void){u32 p;__asm__ volatile("mrs %0,primask\ncpsid i":"=r"(p)::"memory");return p;}
@@ -72,7 +73,7 @@ static int native_capture(void **p,u32 *n)
 }
 static int eligible(void)
 {
-    if(!playback_active || launched<=4 || WORD(0x03039e94)!=0 ||
+    if(playback_active!=1 || launched<=4 || WORD(0x03039e94)!=0 ||
        WORD(0x03039714)!=0x03023090 || WORD(0x0302312c)!=16)return 0;
     rate=WORD(0x03023098);
     return rate>=8000 && rate<=48000;
@@ -225,7 +226,7 @@ void playback_speed_done(void)
 }
 int playback_speed_position(u32 *ms)
 {
-    if(!active || !playback_active)return 0;
+    if(!active || playback_active!=1)return 0;
     *ms=audible_ms;return 1;
 }
 int playback_speed_seek(u32 ms,u32 flag)
@@ -251,7 +252,7 @@ int playback_speed_time(u32 *ms)
 int playback_speed_supported(void)
 {
     u32 hz=WORD(0x03023098);
-    return !(bypass && launched>4) && playback_active && WORD(0x03039e94)==0 &&
+    return !(bypass && launched>4) && playback_active==1 && WORD(0x03039e94)==0 &&
         WORD(0x03039714)==0x03023090 && WORD(0x0302312c)==16 && hz>=8000 && hz<=48000;
 }
 u32 playback_speed_actual(void)

@@ -4,6 +4,7 @@
 #include "runtime.h"
 #include "queue.h"
 #include "session.h"
+#include "speed.h"
 #define MAGIC JOURNAL_RESUME_MAGIC /* ENR1, fixed 512-byte journal sectors */
 static struct media_ref record_file;
 #define sector (*(u32 (*)[128])playback_scratch)
@@ -17,38 +18,39 @@ u32 book_crc(const void *data,u32 length)
     }
     return ~crc;
 }
-static int valid(void) { return journal_sector_valid(sector,MAGIC); }
+static __attribute__((noinline)) int valid(void) { return journal_sector_valid(sector,MAGIC); }
 void book_clear(void) { enabled=0;playback_cancel_bookmark();bookmarks_clear(); }
 u32 book_load(const u16 *playlist,u32 *milliseconds)
 {
-    *milliseconds=0;
+    *milliseconds=0;playback_speed_set(4);
     if (playback_scratch_busy) return 0;
     enabled=0;
     int h=journal_open(playlist,"RSM",&record_file);
     if (h<0) return 0;
-    u32 position=0,ms=0; signature=playlist_physical_signature();
+    u32 position=0,ms=0,rate=4; signature=playlist_physical_signature();
     for (u32 i=0;i<2;i++) {
         if (!journal_read_sector(h,i)) { enabled=0; break; }
         if (!valid()) continue;
         if (!enabled || (int)(sector[1]-generation)>0) {
             enabled=1; generation=sector[1];slot=i;
-            position=0;ms=0;
+            position=0;ms=0;rate=4;
             struct media_ref chapter;
             if (sector[2]==signature && sector[3] &&
                 playlist_ref(sector[3]-1,&chapter) &&
                 chapter.parent.cluster==sector[5] && chapter.index==sector[6] && chapter.cluster==sector[7]) {
-                position=sector[3];ms=sector[4];
+                position=sector[3];ms=sector[4];rate=book_rate(sector[8]);
             }
         }
     }
     playback_close(h);
     if (!enabled) return 0;
+    playback_speed_set(rate);
     *milliseconds=ms;
     return position;
 }
 void book_save(void)
 {
-    if (playback_scratch_busy || !enabled || !playback_active) return;
+    if (playback_scratch_busy || !enabled || playback_active!=1) return;
     struct media_ref chapter;u32 ms;
     u32 position=playback_position(&chapter,&ms);
     if (!position) return;
@@ -59,6 +61,7 @@ void book_save(void)
     __builtin_memset(sector,0,sizeof(sector));
     sector[0]=MAGIC;sector[1]=generation+1;sector[2]=signature;sector[3]=position;sector[4]=ms;
     sector[5]=chapter.parent.cluster;sector[6]=chapter.index;sector[7]=chapter.cluster;
+    sector[8]=BOOK_SPEED_TAG+playback_speed_launched();
     sector[127]=book_crc(sector,508);
     u32 next=slot^1;
     fw_lock();u32 written=fw_file_write(sector,next*512,512,h);fw_unlock();

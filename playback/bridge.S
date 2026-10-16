@@ -167,3 +167,10 @@ entry playback_speed_seek_bridge
     b playback_speed_seek
 entry playback_speed_time_bridge
     b playback_speed_time
+
+@ Resident favorite hook tail-calls here only for book sessions.
+entry playback_bookmark_bridge
+    push {r4,lr}
+    bl playback_request_bookmark
+    pop {r4,lr}
+    jump 0x030638ea

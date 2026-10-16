@@ -12,7 +12,7 @@ static const u8 labels[5][22]={
 };
 void playback_speed_label(void)
 {
-    if(!playback_active)return;
+    if(playback_active!=1)return;
     const u8 *s=labels[playback_speed_actual()-4];
     for(u8 *p=(u8 *)0x03007d88+86*5;p<(u8 *)0x03007d88+108*5;p+=5){
         p[1]&=0x0f;p[2]=*s++;

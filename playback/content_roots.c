@@ -22,7 +22,7 @@ static u8 mark(const u16 *n, u32 len)
     }
     return 0;
 }
-static u16 sum16(u16 sum, const u8 *e, int primary)
+static __attribute__((noinline)) u16 sum16(u16 sum, const u8 *e, int primary)
 {
     for(u32 j=0;j<32;j++) if(!primary || (j!=2 && j!=3))
         sum=(sum>>1)+(sum<<15)+e[j];
@@ -108,7 +108,7 @@ int content_scan(media_read_fn read, void *ctx, int fs, struct content_root *roo
         int cycle=0;
         for(u32 j=0;j<=depth;j++) if(dirs[j].cluster==ref.cluster) cycle=1;
         if(cycle) continue;
-        if(++visited>2048) return -1;
+        if(++visited>2048 || ref.index>65535) return -1;
         path.index[depth]=ref.index; path.cluster[depth]=ref.cluster;
         depth++; dirs[depth]=(struct media_dir){ref.cluster,ref.size,0,ref.flags};
         positions[depth]=0; kinds[depth]=0;

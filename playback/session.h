@@ -1,7 +1,9 @@
 #ifndef ECHO_PLAYBACK_SESSION_H
 #define ECHO_PLAYBACK_SESSION_H
 #include "runtime.h"
-extern u32 playback_active;
+extern u32 playback_active; /* 1 book, 2 sorted folder */
+struct playlist_queue;
+int playback_folder_launch(const struct playlist_queue *,u32 position);
 u32 playback_music_request(void);
 void playback_music_launch(void);
 const u8 *playback_browser_selected_m3u(void);
@@ -9,6 +11,7 @@ const u8 *playback_browser_selected_node(void);
 void playback_launch_override(u32 chapter,u32 milliseconds,u32 signature);
 int playback_launch_path(const u16 *path,u32 chapter,u32 milliseconds,u32 signature);
 void playback_launch_cancel(void);
+void playback_launch_rate(u32 quarters);
 u32 playback_browser_select(u8 *extensions);
 void playback_begin(const u16 *argument);
 int playback_prepare(u32 mode);
@@ -27,6 +30,13 @@ u32 playback_bookmark_poll(u32 message);
  * Completed preflight is repeated after drain. Post-handoff I/O failure cannot
  * resurrect a closed decoder; desired/latched rates roll back and status fails.
  * A completed restart uses native seek granularity, not sample-exact timing. */
+/* Book-only 10-second seek, clamped inside the current file. Same poll/cancel
+ * lifecycle as rate changes; completion returns 3 without a window change. */
+int playback_seek_request(int direction);
+/* UI snapshot uses independent preview storage. A jump revalidates both the
+ * selected mark and physical target before and after draining audio. */
+int playback_bookmarks_open(void);
+int playback_bookmark_jump(u32 index);
 int playback_rate_request(u32 quarters);
 int playback_rate_poll(void);
 void playback_rate_cancel(void);

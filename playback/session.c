@@ -20,8 +20,11 @@ static struct {
     u8 device, filesystem, play_mode;
 } music;
 static u16 pending_path[256];
-static u32 pending, path_armed, starting, resume_position, resume_ms;
-static u32 override_armed, override_pending, override_chapter, override_ms, override_signature, starting_explicit;
+static u8 pending, path_armed, starting;
+static u32 resume_position, resume_ms;
+static u8 override_armed, override_pending, starting_explicit, override_rate;
+void playback_launch_rate(u32 quarters) { override_rate=quarters; }
+static u32 override_chapter, override_ms, override_signature;
 static volatile u32 bookmark_pending;
 static volatile u32 bookmark_session;
 static u32 bookmark_chapter, bookmark_ms, bookmark_token, bookmark_feedback_token;
@@ -31,10 +34,13 @@ static struct {
     u32 signature, generation;
     u8 valid, device, filesystem;
 } current;
-static u32 rate_quarters, rate_generation, rate_paused, rate_polls, rate_previous, rate_position, rate_previous_actual;
+static u32 rate_generation;
+static u16 rate_polls, rate_position;
+static u8 rate_quarters, rate_paused, rate_previous, rate_previous_actual;
 static int rate_status;
+static u32 jump_mark,jump_entry[2];
 u32 playback_active;
-static int rate_fail(void)
+static __attribute__((noipa)) int rate_fail(void)
 {
     if(rate_status==2){
         playback_speed_set(rate_previous_actual);playback_speed_launch();
@@ -51,7 +57,7 @@ static int music_record_matches(const u8 *record)
 }
 static void music_capture(void)
 {
-    if (playback_active) return;
+    if (playback_active) { if(playback_active==2)music.valid=0; return; }
     music.valid=music.requested=music.restoring=music.failed=0;
     u32 mode=half(STATE+0xf2), index=half(STATE+2), scope=half(STATE+10);
     if (mode!=99 || !index || !half(STATE) ||
@@ -79,15 +85,16 @@ static void music_capture(void)
  * 2 asks navigation to open the native Music Library without touching the book. */
 u32 playback_music_request(void)
 {
+    if (playback_active==2) return 0;
     if (music.failed) return 2;
-    if (!playback_active) return 0;
+    if (playback_active!=1) return 0;
     u8 checked[96]={0};
     if (!music.valid || music.device!=*(const u8 *)0x0300d173 ||
         music.filesystem!=FS_TYPE || playback_select_ref(&music.ref,checked,1,1) ||
         !music_record_matches(checked+0x14)) return 2;
     music.requested=1;return 1;
 }
-static void player_relaunch(void)
+static void player_stop(void)
 {
     /* Match the native browser handoff, not Now Playing's reuse-existing-
      * service route. Removing this callback synchronously stops the decoder
@@ -96,15 +103,41 @@ static void player_relaunch(void)
     *(volatile u32 *)0x0300d1cc=0;
     FW(0x03059910,void,void *,void *)((void *)0x0300dc1c,(void *)0x0302315c);
     *(volatile u8 *)0x0300d1d0=0;
+}
+static void player_open(void)
+{
     FW(0x0306b082,void,u32)(396);
     FW(0x0306b040,void,u32)(349);
     FW(0x0306b082,void,u32)(395);
     const u16 argument=1;
     FW(0x0306b26a,void,u32,const void *)(3,&argument);
 }
+static void player_relaunch(void) { player_stop();player_open(); }
 void playback_music_launch(void)
 {
     if(music.requested)player_relaunch();
+}
+/* No browser pointer survives this synchronous stop/save/copy transaction. */
+int playback_folder_launch(const struct playlist_queue *queue,u32 position)
+{
+    struct media_ref ref;u8 checked[96];
+    if(rate_status==1 || rate_status==2 || !queue || !queue->count ||
+       queue->count>PLAYLIST_CAPACITY || !position || position>queue->count ||
+       !playlist_queue_ref(queue,position-1,&ref) ||
+       playback_select_ref(&ref,checked,position,queue->count))return 0;
+    player_stop(); /* old queue and book context remain intact through save */
+    book_clear();current.valid=0;current.generation++;
+    current.device=*(const u8 *)0x0300d173;current.filesystem=FS_TYPE;
+    playlist_import(queue);
+    path_armed=override_armed=override_pending=override_rate=0;
+    resume_position=position;resume_ms=0;starting_explicit=1;
+    playback_active=2;pending=2;starting=1;
+    *(u16 *)(STATE+0xf2)=99;
+    player_open();return 1;
+}
+static int folder_changed(void)
+{
+    return playback_active==2 && (current.device!=*(const u8 *)0x0300d173 || current.filesystem!=FS_TYPE);
 }
 static int m3u_name(const u8 *node)
 {
@@ -153,7 +186,7 @@ u32 playback_browser_select(u8 *extensions)
         pending=1;override_pending=requested;
         return address|1;
     }
-    if (node[0x4e]) pending=0; /* a deliberate ordinary-file selection */
+    if (node[0x4e]) pending=override_rate=0; /* a deliberate ordinary-file selection */
     return address;
 }
 void playback_launch_override(u32 chapter,u32 milliseconds,u32 signature)
@@ -172,7 +205,7 @@ int playback_launch_path(const u16 *path,u32 chapter,u32 milliseconds,u32 signat
     playback_launch_override(chapter,milliseconds,signature);path_armed=1;
     return 1;
 }
-void playback_launch_cancel(void) { override_armed=path_armed=0; }
+void playback_launch_cancel(void) { override_armed=path_armed=override_rate=0; }
 void playback_begin(const u16 *argument)
 {
     u32 requested=music.requested;
@@ -189,12 +222,14 @@ void playback_begin(const u16 *argument)
 int playback_prepare(u32 mode)
 {
     if (music.restoring) return 0;
+    if (pending==2) { pending=0;return folder_changed(); }
     if (pending) {
         struct m3u_stats stats;
         pending=0; playback_active=0;book_clear();
         int count=playback_load_playlist(pending_path,&stats);
         u32 explicit=override_pending;override_pending=0;starting_explicit=0;
         if (count<=0 || (explicit && (playlist_signature()!=override_signature || override_chapter>(u32)count))) {
+            override_rate=0;
             if(rate_status==2)rate_fail();
             FW(0x0306b040,void,u32)(245);
             return 1;
@@ -208,8 +243,11 @@ int playback_prepare(u32 mode)
             current.signature=playlist_signature();current.device=*(const u8 *)0x0300d173;
             current.filesystem=FS_TYPE;current.valid=1;
         }
+        if(override_rate)playback_speed_set(override_rate);
+        override_rate=0;
         if(rate_status==2)playback_speed_set(rate_quarters);
         playback_speed_launch();
+        if(rate_status==2 && jump_mark)playback_speed_set(rate_previous);
         playback_active=1; starting=1;
         if(explicit)last_book_remember(pending_path);
     }
@@ -225,6 +263,7 @@ void playback_force_mode(void)
 }
 int playback_queue_init(u8 *state,u32 index,u32 scope,u32 order,const char *extensions)
 {
+    if(folder_changed())return 19;
     if (music.restoring) {
         music.restoring=0;
         *(volatile u32 *)0x0300d1cc=0;*(volatile u8 *)0x0300d1d0=0;
@@ -271,6 +310,7 @@ int playback_queue_init(u8 *state,u32 index,u32 scope,u32 order,const char *exte
 int playback_advance(u8 *state,int steps)
 {
     if (!playback_active) return FW(0x03060c10,int,u8 *,int)(state,steps);
+    if(folder_changed())return 19;
     if (steps>512 || steps < -512) return 19;
     int direction=steps<0?-1:1;
     u32 n=steps<0?(u32)-steps:(u32)steps;
@@ -285,7 +325,7 @@ int playback_advance(u8 *state,int steps)
  * Shared by manual bookmarks and automatic resume; called on player service. */
 u32 playback_position(struct media_ref *chapter,u32 *milliseconds)
 {
-    if (!playback_active || playback_scratch_busy) return 0;
+    if (playback_active!=1 || playback_scratch_busy) return 0;
     u32 position=half(STATE+2);
     if (!position || !playlist_ref(position-1,chapter)) return 0;
     const u8 *raw=STATE+0x14;
@@ -324,7 +364,7 @@ u32 playback_bookmark_poll(u32 message)
         __asm__ volatile ("" ::: "memory");
         u32 position=bookmark_chapter,ms=bookmark_ms,token=bookmark_token,notice=bookmark_feedback_token;
         bookmark_pending=0;
-        if (playback_active && token==bookmark_session)
+        if (playback_active==1 && token==bookmark_session)
             feedback_result(notice,bookmarks_change(~0u,position,ms)>=0);
     }
     return FW(0x0306b05c,u32,u32)(message);
@@ -341,7 +381,7 @@ static int same_ref(const struct media_ref *a,const struct media_ref *b)
 }
 /* Revalidate physical chapter identity as well as playlist bytes: replacing an
  * MP3 without editing its M3U must not inherit the old chapter's source time. */
-static u32 rate_preflight(u32 *ms)
+static __attribute__((noipa)) u32 rate_preflight(u32 *ms)
 {
     struct media_ref checked,chapter;u8 selected[96];
     u32 generation=current.generation,position=playback_position(&chapter,ms);
@@ -356,18 +396,54 @@ static u32 rate_preflight(u32 *ms)
        position!=playback_position(&chapter,ms))return 0;
     return position;
 }
+int playback_bookmarks_open(void)
+{
+    u32 ms;
+    return rate_status!=1 && rate_status!=2 && rate_preflight(&ms)!=0;
+}
+static int jump_valid(void)
+{
+    struct media_ref a,b;u8 selected[96];u32 entry[2];
+    return book_preview_mark(jump_mark-1,entry) && entry[0]==jump_entry[0] && entry[1]==jump_entry[1] &&
+        entry[0] && playlist_ref(entry[0]-1,&a) && book_preview_ref(entry[0]-1,&b) && same_ref(&a,&b) &&
+        !playback_select_ref(&a,selected,entry[0],playlist_count());
+}
+static int restart_request(u32 quarters,u32 mark)
+{
+    if(rate_status==1 || rate_status==2)return -1;
+    jump_mark=mark;
+    if(mark && !book_preview_mark(mark-1,jump_entry))return rate_status=-1;
+    u32 ms,position=rate_preflight(&ms);
+    if(!position || (mark && !jump_valid()))return rate_status=-1;
+    u32 state=*(volatile u16 *)0x0300d81a;
+    if(state!=0 && state!=3)return rate_status=-1;
+    rate_paused=state==3;rate_generation=current.generation;rate_quarters=quarters;rate_polls=0;
+    rate_position=position;rate_previous=playback_speed_get();
+    rate_previous_actual=playback_speed_launched();rate_status=1;
+    if(!rate_paused)FW(0x030816ee,void,void)();
+    return playback_rate_poll();
+}
 int playback_rate_request(u32 quarters)
 {
     if(rate_status==1 || rate_status==2)return -1;
     if(quarters<4 || quarters>8 || !playback_speed_supported())return rate_status=-1;
     if(quarters==playback_speed_actual()){playback_speed_set(quarters);return rate_status=3;}
-    u32 ms,position=rate_preflight(&ms);
-    if(!position)return rate_status=-1;
-    u32 state=*(volatile u16 *)0x0300d81a;
-    if(state!=0 && state!=3)return rate_status=-1;
-    rate_paused=state==3;rate_generation=current.generation;rate_quarters=quarters;rate_polls=0;
-    rate_position=position;rate_previous=playback_speed_get();
-    rate_previous_actual=playback_speed_actual();rate_status=1;
+    return restart_request(quarters,0);
+}
+int playback_bookmark_jump(u32 index)
+{ return index<60?restart_request(playback_speed_launched(),index+1):-1; }
+int playback_seek_request(int direction)
+{
+    struct media_ref chapter;u32 ms;
+    if(rate_status==1 || rate_status==2)return -1;
+    u32 position=playback_position(&chapter,&ms),state=*(volatile u16 *)0x0300d81a;
+    if(!position || !current.valid || current.device!=*(const u8 *)0x0300d173 ||
+       current.filesystem!=FS_TYPE || (state!=0 && state!=3))return -1;
+    u32 end=PLAYER[0]>1000?PLAYER[0]-1000:0;
+    u32 target=direction<0?(ms>10000?ms-10000:0):(ms>end || end-ms<10000?end:ms+10000);
+    if(target>end)target=end;
+    jump_mark=~0u;jump_entry[0]=target;
+    rate_position=position;rate_paused=state==3;rate_generation=current.generation;rate_polls=0;rate_status=1;
     if(!rate_paused)FW(0x030816ee,void,void)();
     return playback_rate_poll();
 }
@@ -377,8 +453,20 @@ int playback_rate_poll(void)
     if(!playback_active || current.generation!=rate_generation ||
        *(volatile u16 *)0x0300d81a!=3 || ++rate_polls>200)return rate_status=-1;
     if(!playback_speed_drained())return 1;
+    if(jump_mark==~0u){
+        struct media_ref chapter;u32 ms;
+        if(current.device!=*(const u8 *)0x0300d173 || current.filesystem!=FS_TYPE ||
+           playback_position(&chapter,&ms)!=rate_position)return rate_status=-1;
+        FW(0x03082524,void,u32,u32)(251,jump_entry[0]);
+        /* Native command 251 seeks the decoder but does not update this clock. */
+        PLAYER[1]=jump_entry[0];
+        if(!rate_paused)FW(0x03081f10,void,void)();
+        FW(0x0306b040,void,u32)(57);return rate_status=3;
+    }
     u32 ms,position=rate_preflight(&ms);
-    if(!position || position!=rate_position || !playback_launch_path(current.path,position,ms,current.signature))return rate_status=-1;
+    if(!position || position!=rate_position || (jump_mark && !jump_valid()))return rate_status=-1;
+    if(jump_mark){position=jump_entry[0];ms=jump_entry[1];}
+    if(!playback_launch_path(current.path,position,ms,current.signature))return rate_status=-1;
     /* Resident player handoff, independent of the browser overlay. */
     path_armed=override_armed=0;pending=override_pending=1;rate_status=2;
     player_relaunch();return rate_status;

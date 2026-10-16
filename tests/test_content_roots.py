@@ -10,8 +10,8 @@ from test_music_filter import fat_entry, exfat_entry, END
 ROOT = Path(__file__).resolve().parents[1]
 
 class Root(C.Structure):
-    _fields_ = [('index', C.c_uint * 7), ('cluster', C.c_uint * 7),
-                ('depth', C.c_ubyte), ('kind', C.c_ubyte), ('pad', C.c_ushort)]
+    _fields_ = [('cluster', C.c_uint * 7), ('index', C.c_ushort * 7),
+                ('depth', C.c_ubyte), ('kind', C.c_ubyte)]
 
 def checksum(entries):
     entries = [bytearray(e) for e in entries]

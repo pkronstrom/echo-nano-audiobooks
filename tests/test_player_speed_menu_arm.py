@@ -6,7 +6,7 @@ from unicorn.arm_const import *
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'tools'))
 from rknano_fw import Image
 from playback_layout import read_patch
-STOP=0x030ff000;OUT=0x030f0000;MENU=0xff00
+STOP=0x030ff000;OUT=0x030f0000;MENU=0xff00;MARKS=0xff10
 class PlayerSpeedMenuTests(unittest.TestCase):
  @classmethod
  def setUpClass(cls):
@@ -15,8 +15,8 @@ class PlayerSpeedMenuTests(unittest.TestCase):
    p=Path(d);obj=p/'menu.o';elf=p/'menu.elf';binary=p/'menu.bin'
    def run(args):return subprocess.check_output(args,cwd=ROOT,env=env)
    run(['arm-none-eabi-gcc','-mthumb','-mcpu=cortex-m3','-Os','-ffreestanding','-fno-common','-fno-strict-aliasing','-Isrc','-Iplayback','-c','playback/player_speed_menu.c','-o',str(obj)])
-   cls.apis={'playback_speed_supported':0x030ff100,'playback_rate_request':0x030ff110,'playback_rate_poll':0x030ff120,'playback_rate_cancel':0x030ff130,'playback_speed_label_text':0x030ff140}
-   run(['arm-none-eabi-ld','-Ttext=0x03098000','-e','player_speed_menu_record',str(obj),'-o',str(elf)]+['--defsym='+k+'='+hex(v|1) for k,v in cls.apis.items()])
+   cls.apis={'playback_speed_supported':0x030ff100,'playback_rate_request':0x030ff110,'playback_rate_poll':0x030ff120,'playback_rate_cancel':0x030ff130,'playback_speed_label_text':0x030ff140,'playback_bookmarks_open':0x030ff150,'playback_bookmark_jump':0x030ff160,'playback_request_bookmark':0x030ff170,'book_preview_marks':0x030ff180,'book_mark_label':0x030ff190,'playback_active':0x030ff200}
+   run(['arm-none-eabi-ld','-Ttext=0x03098000','-e','player_speed_menu_record',str(obj),'-o',str(elf)]+['--defsym='+k+'='+hex(v if k=='playback_active' else v|1) for k,v in cls.apis.items()])
    run(['arm-none-eabi-objcopy','-O','binary',str(elf),str(binary)]);cls.code=binary.read_bytes()
    cls.symbols={line.split()[2]:int(line.split()[0],16) for line in run(['arm-none-eabi-nm',str(elf)]).decode().splitlines() if len(line.split())==3}
    (p/'playback_syms.inc').write_text('\n'.join('.equ '+k+', '+hex(v) for k,v in cls.symbols.items()))
@@ -35,15 +35,17 @@ class PlayerSpeedMenuTests(unittest.TestCase):
   self.assertEqual(bytes(self.cpu.mem_read(0x03072f62,22)).hex(),'30b4084c2468084dac4218bf0846844630bc03bc6047')
   for module,address,data in self.patches:self.assertEqual(module,32);self.cpu.mem_write(address,data)
   self.cpu.mem_write(0x03098000,self.code);self.cpu.mem_write(0x03092400,b'ENP2')
-  self.exit_service=False;self.native=False;self.stop_at=None;self.supported=1;self.request=1;self.poll=0;self.transition=0;self.calls=[];self.cpu.hook_add(UC_HOOK_CODE,self.hook)
+  self.marks=0;self.exit_service=False;self.native=False;self.stop_at=None;self.supported=1;self.request=1;self.poll=0;self.transition=0;self.calls=[];self.cpu.hook_add(UC_HOOK_CODE,self.hook)
  def hook(self,cpu,address,size,user):
   if address==self.stop_at:cpu.reg_write(UC_ARM_REG_PC,STOP);return
   r0=cpu.reg_read(UC_ARM_REG_R0);r1=cpu.reg_read(UC_ARM_REG_R1);r2=cpu.reg_read(UC_ARM_REG_R2);result=None
   if address==0x030ff140:
    label=('1x','1.25x','1.5x','1.75x','2x')[r0-4]
    cpu.mem_write(0x030f1000,label.encode()+b'\0');result=0x030f1000
+  elif address==0x030ff190:
+   cpu.mem_write(r0,('Ch '+str(r1+1)+' 00:00:03\0').encode('utf-16le'));result=0
   elif address in self.apis.values():
-   self.calls.append((address,r0));result={0x030ff100:self.supported,0x030ff110:self.request,0x030ff120:self.poll,0x030ff130:0}[address]
+   self.calls.append((address,r0));result={0x030ff100:self.supported,0x030ff110:self.request,0x030ff120:self.poll,0x030ff130:0,0x030ff150:1,0x030ff160:self.request,0x030ff170:0,0x030ff180:self.marks}[address]
   elif address==0x03067988:
    self.assertLess(r0,431);offset=self.image.lang_text(2,r0)-58;cpu.mem_write(r1,bytes(self.image.d[offset:offset+58]));self.calls.append(('record',r0));result=0
   elif address==0x03067860:
@@ -69,6 +71,38 @@ class PlayerSpeedMenuTests(unittest.TestCase):
  def test_music_record_preserves_six_controls_and_only_appends_when_supported(self):
   self.supported=0;before=self.record(237);self.assertEqual(before[7],6)
   self.supported=1;after=self.record(237);self.assertEqual(after[:7],before[:7]);self.assertEqual(after[8:14],before[8:14]);self.assertEqual(after[7],7);self.assertEqual(after[14],MENU)
+ def test_bookmarks_available_without_speed_and_add_first(self):
+  self.supported=0;self.cpu.mem_write(0x030ff200,struct.pack('<I',1))
+  rec=self.record(237);self.assertEqual(rec[7],7);self.assertEqual(rec[14],MARKS)
+  rec=self.record(MARKS);self.assertEqual(rec[8],MARKS+1)
+ def test_bookmark_pages_cover_all_sixty_without_overflow(self):
+  self.marks=60
+  rec=self.record(MARKS);self.assertEqual(rec[7:12],(4,MARKS+1,MARKS+2,MARKS+3,MARKS+4))
+  for page in range(3):
+   rec=self.record(MARKS+2+page);self.assertEqual(rec[7],20)
+   self.assertEqual(rec[8:28],tuple(range(0xff20+20*page,0xff20+20*(page+1))))
+ def test_native_bookmark_enter_and_back(self):
+  self.cpu.mem_write(0x030ff200,struct.pack('<I',1));self.marks=2
+  parent=self.setup_native_menu(7)
+  self.assertEqual(self.call(0x0307a79c,MARKS),0)
+  child=parent+24;record=self.read32(child+20)
+  self.assertEqual(self.read16(record),MARKS);self.assertEqual(self.read16(record+14),3)
+  self.assertEqual(self.read16(child+14),237)
+  self.cpu.reg_write(UC_ARM_REG_R4,child);self.cpu.reg_write(UC_ARM_REG_R8,0x0300e914)
+  self.stop_at=0x0307a670;self.call(0x0307a636)
+  self.assertEqual(self.read32(0x0300e924),1);self.assertEqual(self.read16(parent+10),7)
+ def test_bookmark_action_add_and_jump(self):
+  self.cpu.mem_write(0x030ff200,struct.pack('<I',1))
+  self.assertEqual(self.call(0x0307a79c,MARKS+1),1)
+  self.assertIn(('window',3,0),self.calls)
+  self.assertTrue(any(c[0]==0x030ff170 for c in self.calls))
+  self.calls=[];self.request=2
+  self.assertEqual(self.call(0x0307a79c,0xff20+59),1)
+  self.assertIn((0x030ff160,59),self.calls);self.assertNotIn(('window',3,0),self.calls)
+ def test_bookmark_label_is_bounded(self):
+  self.cpu.mem_write(OUT,b'Z'*32);self.call(0x03079ed0,0xff20,OUT,10)
+  self.assertEqual(bytes(self.cpu.mem_read(OUT,10)).decode('utf-16le'),'Ch 1\0')
+  self.assertEqual(bytes(self.cpu.mem_read(OUT+10,2)),b'ZZ')
  def test_native_seventh_row_index_dispatches_speed(self):
   self.record(237)
   state=0x030f2000

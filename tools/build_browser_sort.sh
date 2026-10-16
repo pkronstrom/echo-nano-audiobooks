@@ -3,9 +3,18 @@
 set -euo pipefail
 out=${1:-out/browser_sort}
 mkdir -p "$out/obj"
+python3 - "$out" <<'BIND'
+from pathlib import Path
+import hashlib,json,sys
+out=Path(sys.argv[1]);play=out.parent/'playback'
+symbols={n:int(v,16) for v,t,n in (l.split() for l in (play/'playback.nm').read_text().splitlines())}
+payload=(play/'playback.bin').read_bytes()
+(out/'browser_playback.h').write_text('#define FOLDER_LAUNCH_ADDR 0x%x\n' % symbols['playback_folder_launch'])
+(out/'playback.bind').write_text(json.dumps({'bytes':len(payload),'sha256':hashlib.sha256(payload).hexdigest()}))
+BIND
 flags=(-mthumb -mcpu=cortex-m3 -Os -std=gnu11 -ffreestanding -fno-common
        -fno-strict-aliasing -fstack-usage -ffunction-sections -fdata-sections
-       -Wall -Wextra -Werror -Isrc -Ibrowser_sort)
+       -Wall -Wextra -Werror -Isrc -Ibrowser_sort -Iplayback -I"$out")
 objs=()
 for source in browser_sort/*.c browser_sort/*.S src/libc.c; do
     object="$out/obj/$(basename "${source%.*}").o"
@@ -37,7 +46,7 @@ from pathlib import Path
 import hashlib,json,sys
 out=Path(sys.argv[1])
 names=['browser_sort_enumerate','browser_sort_count','browser_sort_select','browser_sort_ordinal']
-files=['browser_sort.bin']+[n+'.patch' for n in names]
+files=['browser_sort.bin','playback.bind']+[n+'.patch' for n in names]
 manifest={name:hashlib.sha256((out/name).read_bytes()).hexdigest() for name in files}
 (out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
 MANIFEST

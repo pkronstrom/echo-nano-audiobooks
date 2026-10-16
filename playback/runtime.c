@@ -93,7 +93,8 @@ u32 playback_init(void)
  * creates the codec's usual 8.3 alias and exFAT metadata; never accept its next
  * matching file if the saved entry has since disappeared. */
 #define native_next FW(0x0305dd8c, int, void *, void *, const char *, u32)
-static const char audio_extensions[] = "MP1MP2MP3WMAWAVAPEFLAAACM4AOGGMP43GPDFFDSF";
+/* Immutable native whitelist, pinned by discovery() during image generation. */
+#define audio_extensions ((const char *)0x03005ab4)
 int playback_select_ref(const struct media_ref *ref, u8 *state, u32 position, u32 count)
 {
     if (!position || position > count || count > 512 || ref->index >= 65536) return -1;

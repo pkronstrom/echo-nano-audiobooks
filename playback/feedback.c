@@ -36,7 +36,7 @@ static void init(const void *arg) { (void)arg;since=TICKS; }
 static u32 key(void) { return 0; }
 static u32 service(void)
 {
-    if(!playback_active || feedback_token()!=shown_token || (u32)(TICKS-since)>=150) {
+    if(playback_active!=1 || feedback_token()!=shown_token || (u32)(TICKS-since)>=150) {
         destroy(&popup);
         post(57); /* native player full redraw; 227 means native error recovery */
     }
@@ -44,7 +44,7 @@ static u32 service(void)
 }
 static void paint(void)
 {
-    if(!shown || !playback_active || feedback_token()!=shown_token)return;
+    if(!shown || playback_active!=1 || feedback_token()!=shown_token)return;
     u32 old_a=FW(0x03067904,u32,u32)(0);
     u32 old_b=FW(0x030678e0,u32,u32)(1);
     __builtin_memset((void *)0x03007d88,0,640);
@@ -59,7 +59,8 @@ static void paint(void)
 }
 void feedback_poll(u32 transition)
 {
-    if(transition || !playback_active)return;
+    if(transition || playback_active!=1)return;
+    playback_rate_poll(); /* Complete a paused book seek only after DMA drains. */
     /* Callback identity proves the parent is module27's MusicWin, rather than
      * another overlay's data at the same address. */
     if((u32)MUSIC->service!=0x0307a4df || (u32)MUSIC->paint!=0x0307b993)return;

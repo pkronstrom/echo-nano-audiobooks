@@ -2,6 +2,7 @@
 #define ECHO_PLAYBACK_SPEED_H
 #include "runtime.h"
 u32 playback_speed_get(void);
+u32 playback_speed_launched(void);
 void playback_speed_set(u32 quarters);
 void playback_speed_reset(void);
 void playback_speed_launch(void);

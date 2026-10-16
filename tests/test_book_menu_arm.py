@@ -99,7 +99,8 @@ class BookMenuTests(unittest.TestCase):
                 self.event(NEXT)
             self.assertEqual(self.title(index&1),label)
             self.event(SELECT)
-            self.assertEqual(self.call('playback_speed_get'),index+4)
+            self.assertEqual(self.call('book_preview_rate'),index+4)
+            self.assertEqual(self.call('playback_speed_get'),4)
             self.assertEqual(self.title(),'Bookmarks')
             self.assertEqual(self.title(1),'MP3 speed '+label)
             self.assertEqual(self.override,[])
@@ -237,12 +238,12 @@ class BookMenuTests(unittest.TestCase):
         module(31)
         self.cpu.mem_write(B+0x1f4,struct.pack('<I',0x0300e6e4))
         self.call('navigation_browser_init')
-        self.assertEqual(self.title(),'Continue last book')
+        self.assertEqual(self.title(),'Continue list')
         self.assertEqual(self.call('navigation_event',SELECT),2)
         self.call('navigation_browser_init')
         self.assertTrue(self.title().startswith('Continue '))
         self.assertEqual(self.call('navigation_event',BACK),1)
-        self.assertEqual(self.title(),'Continue last book')
+        self.assertEqual(self.title(),'Continue list')
         calls=[]
         def enumeration(cpu,address,size,user):
             if address not in (0x0307974e,0x03079592):return

@@ -60,6 +60,67 @@ class ResumeTests(unittest.TestCase):
         self.f.call('playback_init') # simulated restart: all payload RAM forgotten
         self.assertEqual(self.load('/BOOK.M3U'),(2,1234567))
         self.assertEqual(self.load('/OTHER.M3U'),(1,765432))
+    def test_speed_is_per_book_and_survives_payload_restart(self):
+        self.f.call('playback_speed_set',8)
+        self.load('/BOOK.M3U');self.select(1)
+        self.assertEqual(self.f.call('playback_speed_get'),4)
+        self.cpu.mem_write(0x03023098,struct.pack('<I',48000))
+        self.cpu.mem_write(0x0302312c,struct.pack('<I',16))
+        self.f.call('playback_speed_set',6);self.f.call('playback_speed_launch')
+        self.f.call('playback_speed_set',8) # Pending preference is not this book's launched setting.
+        self.cpu.mem_write(0x03039e94,struct.pack('<I',1)) # Unsupported chapter plays at 1x.
+        self.assertEqual(self.f.call('playback_speed_actual'),4)
+        self.f.call('book_save')
+        self.f.call('playback_init');self.load('/BOOK.M3U')
+        self.assertEqual(self.f.call('playback_speed_get'),6)
+        self.f.call('playback_launch_rate',8);self.f.call('playback_launch_cancel')
+        self.cpu.mem_write(0x03039e94,struct.pack('<I',0))
+        # Reopen through the real pending-path session, not just the journal API.
+        self.cpu.mem_write(0x20001000,'/BOOK.M3U\0'.encode('utf-16le'))
+        self.assertEqual(self.f.call('playback_launch_path',0x20001000,0,0,self.f.call('playlist_signature')),1)
+        self.f.call('playback_browser_select',0x20004000)
+        self.f.call('playback_begin',0x20001000)
+        self.assertEqual(self.f.call('playback_prepare',3),0)
+        self.assertEqual(self.f.call('playback_speed_get'),6)
+        self.assertEqual(self.f.call('playback_speed_actual'),6)
+        self.load('/OTHER.M3U');self.assertEqual(self.f.call('playback_speed_get'),4)
+
+    def test_missing_companion_resets_previous_books_speed(self):
+        self.f.dirs[0].pop(1);self.f.call('playback_speed_set',8)
+        self.assertEqual(self.load('/BOOK.M3U'),(0,0))
+        self.assertEqual(self.f.call('playback_speed_get'),4)
+
+    def test_invalid_rate_tag_keeps_resume_but_defaults_to_one(self):
+        self.load('/BOOK.M3U');self.select(1);self.f.call('book_save')
+        for tag in (0,0x53504403,0x53504409,0x12345678):
+            data=bytearray(self.f.files[91]);struct.pack_into('<I',data,512+32,tag)
+            struct.pack_into('<I',data,1020,zlib.crc32(data[512:1020]));self.f.files[91]=bytes(data)
+            self.f.call('playback_speed_set',8)
+            self.assertEqual(self.load('/BOOK.M3U'),(1,1234567))
+            self.assertEqual(self.f.call('playback_speed_get'),4)
+    def test_preview_speed_does_not_change_playing_books_rate(self):
+        self.load('/BOOK.M3U');self.f.call('playback_speed_set',6)
+        self.cpu.mem_write(0x20001000,'/OTHER.M3U\0'.encode('utf-16le'))
+        self.assertEqual(self.f.call('book_preview_open',0x20001000),1)
+        self.assertEqual(self.f.call('book_preview_rate'),4)
+        self.f.call('book_preview_set_rate',8)
+        self.assertEqual(self.f.call('book_preview_rate'),8)
+        self.assertEqual(self.f.call('playback_speed_get'),6)
+
+    def test_failed_preview_scan_clears_overlaid_metadata_and_can_reopen(self):
+        self.cpu.mem_write(0x20001000,'/BOOK.M3U\0'.encode('utf-16le'))
+        self.assertEqual(self.f.call('book_preview_open',0x20001000),2)
+        self.f.call('book_preview_set_rate',8)
+        self.f.files[90]=b'xxxxxxx\nxxxxxxx\n' # Neither line resolves.
+        self.assertEqual(self.f.call('book_preview_open',0x20001000),0)
+        self.assertEqual(self.f.call('book_preview_count'),0)
+        self.assertEqual(self.f.call('book_preview_marks'),0)
+        self.assertEqual(self.f.call('book_preview_rate'),4)
+        self.assertEqual(self.f.call('book_preview_resume',0x20002000),0)
+        self.assertEqual(bytes(self.cpu.mem_read(0x20002000,4)),bytes(4))
+        self.f.files[90]=b'one.mp3\ntwo.mp3\n'
+        self.assertEqual(self.f.call('book_preview_open',0x20001000),2)
+
     def test_resume_does_not_touch_parser_scratch_while_busy(self):
         self.load('/BOOK.M3U');self.select(1)
         scratch=self.f.syms['playback_scratch']

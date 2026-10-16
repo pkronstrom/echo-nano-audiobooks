@@ -2,6 +2,11 @@
 
 static u16 le16(const u8 *p) { return p[0] | (u16)p[1] << 8; }
 static u32 le32(const u8 *p) { return le16(p) | (u32)le16(p+2) << 16; }
+/* Share the ASCII fold helper instead of cloning it into name comparators.
+ * Host fixtures also compile this file with Clang. */
+#if defined(__GNUC__) && !defined(__clang__)
+__attribute__((noipa))
+#endif
 static u16 fold(u16 c) { return c >= 'A' && c <= 'Z' ? c + 32 : c; }
 static int same(const u16 *name, const u16 *wanted, u32 length)
 {

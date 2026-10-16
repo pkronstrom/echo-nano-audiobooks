@@ -26,6 +26,7 @@ u32 playlist_queue_signature(const struct playlist_queue *);
 int playlist_queue_ref(const struct playlist_queue *, u32, struct media_ref *);
 /* Replaces queue. Returns accepted count, or negative error with empty queue. */
 int playlist_build(m3u_read_fn, playlist_lookup_fn, void *, const u16 *, struct m3u_stats *);
+void playlist_import(const struct playlist_queue *);
 void playlist_clear(void);
 u32 playlist_count(void);
 /* Playlist bytes + accepted line offsets; independent of on-card clusters. */

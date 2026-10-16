@@ -173,7 +173,9 @@ tracking remain unsupported. Upstream experimental power patches remain disabled
 
 P4e source adds an **MP3 speed** row below Continue, Chapters and Bookmarks.
 Choose 1x, 1.25x, 1.5x, 1.75x or 2x, then launch Continue, a chapter or a
-bookmark. The preference is global to books and lasts until restart. Changing
+bookmark. The 20261110 candidate stores each book's launched speed in its existing RSM
+resume companion during normal progress saving/stopping. It restores on reopening
+and restart; legacy or missing values default to 1x. See [per-book speed](per-book-speed.md). Changing
 it does not change a book that is already playing, including through seek,
 pause/resume or automatic chapter changes. Explicitly launch Continue, a chapter
 or a bookmark to apply the newly selected speed.
@@ -199,3 +201,8 @@ make test PY=path/to/python-with-unicorn
 GNU make 4.3+ and the Arm GNU toolchain are required. The image outputs are
 `out/audiobook/NANOV170.IMG` and `out/audiobook/recovery/NANOV170.IMG`.
 The default `make` still produces the separate P1b image.
+
+The Audiobooks landing row reads **Continue <book name>** for the current saved
+book, followed by Browse books. A generic `BOOK.M3U` uses its parent folder's
+name. This selection remains in RAM for the current firmware session; the
+per-book resume position and speed use their existing SD journal files.

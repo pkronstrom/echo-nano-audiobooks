@@ -6,9 +6,10 @@
 #define CONTENT_AUDIOBOOK 1
 #define CONTENT_MEDITATION 2
 struct content_root {
-    u32 index[CONTENT_DEPTH_MAX], cluster[CONTENT_DEPTH_MAX];
+    u32 cluster[CONTENT_DEPTH_MAX];
+    /* The scan consumes at most65536 raw entries across all directories. */
+    u16 index[CONTENT_DEPTH_MAX];
     u8 depth, kind;
-    u16 pad;
 };
 /* Physical DFS; root depth zero denotes the card root. Returns count, -1 on
  * capacity/work limit, -2 on I/O. Discard all output on error. */

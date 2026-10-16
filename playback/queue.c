@@ -88,6 +88,7 @@ int playlist_queue_ref(const struct playlist_queue *queue, u32 index, struct med
 int playlist_build(m3u_read_fn read, playlist_lookup_fn lookup, void *ctx,
                    const u16 *base, struct m3u_stats *stats)
 { return playlist_queue_build(&active_queue,read,lookup,ctx,base,stats); }
+void playlist_import(const struct playlist_queue *q) { active_queue=*q; }
 void playlist_clear(void) { playlist_queue_clear(&active_queue); }
 u32 playlist_count(void) { return playlist_queue_count(&active_queue); }
 u32 playlist_signature(void) { return playlist_queue_signature(&active_queue); }

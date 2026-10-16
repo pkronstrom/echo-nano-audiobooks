@@ -12,7 +12,8 @@
  * substituting labels; synthetic nodes must never reach native file actions. */
 static u32 browser_saved[128],control_saved[8],nodes_saved[312];
 static u16 path[256];
-static u32 active,returning,view,choice,selected_mark,direct_folder,path_launch;
+static u8 active,returning,view,selected_mark,direct_folder,path_launch;
+static u16 choice; /* Chapters can contain 256 entries. */
 enum { TOP, CHAPTERS, MARKS, MARK_ACTION, DELETE_CONFIRM, ERROR_VIEW, BOOK_ERROR, SPEED };
 static u8 *node(u32 slot) { return (u8 *)(slot?0x0300e9ac:0x0300e73c); }
 static void restore(void)
@@ -23,7 +24,7 @@ static void restore(void)
 }
 /* Saved browser records contain physical identities, not durable paths. A
  * same-name replacement must never resurrect the old native cursor. */
-static int parent_valid(void)
+static __attribute__((noinline)) int parent_valid(void)
 {
     if(!direct_folder)return 1;
     const u8 *browser=(const u8 *)browser_saved;
@@ -54,7 +55,7 @@ static u32 items(void)
     if(view==MARKS){u32 n=book_preview_marks();return n?n:1;}
     return 2;
 }
-static u16 *text(u16 *out,const char *value)
+u16 *book_text(u16 *out,const char *value)
 { while(*value)*out++=(u8)*value++;*out=0;return out; }
 static u16 *number(u16 *out,u32 n)
 {
@@ -76,26 +77,30 @@ const char *playback_speed_label_text(u32 quarters)
     static const char *const names[]={"1x","1.25x","1.5x","1.75x","2x"};
     return names[quarters>=4 && quarters<=8?quarters-4:0];
 }
+void book_mark_label(u16 *out,u32 index)
+{
+    u32 entry[2];
+    if(!book_preview_mark(index,entry)){book_text(out,"No bookmarks");return;}
+    out=book_text(out,"Ch ");out=number(out,entry[0]);out=book_text(out," ");time_text(out,entry[1]);
+}
 static void label(u16 *out,u32 index)
 {
     if(view==TOP){
-        if(index==1){text(out,"Chapters");return;}
-        if(index==2){text(out,"Bookmarks");return;}
-        if(index==3){text(text(out,"MP3 speed "),playback_speed_label_text(playback_speed_get()));return;}
+        if(index==1){book_text(out,"Chapters");return;}
+        if(index==2){book_text(out,"Bookmarks");return;}
+        if(index==3){book_text(book_text(out,"MP3 speed "),playback_speed_label_text(book_preview_rate()));return;}
         u32 ms,chapter=book_preview_resume(&ms);
-        out=text(out,"Continue ");out=number(out,chapter?chapter:1);
-        out=text(out," ");time_text(out,ms);return;
+        out=book_text(out,"Continue ");out=number(out,chapter?chapter:1);
+        out=book_text(out," ");time_text(out,ms);return;
     }
-    if(view==SPEED){text(out,playback_speed_label_text(index+4));return;}
-    if(view==CHAPTERS){out=text(out,"Chapter ");number(out,index+1);return;}
+    if(view==SPEED){book_text(out,playback_speed_label_text(index+4));return;}
+    if(view==CHAPTERS){out=book_text(out,"Chapter ");number(out,index+1);return;}
     if(view==MARKS){
-        u32 entry[2];
-        if(!book_preview_mark(index,entry)){text(out,"No bookmarks");return;}
-        out=text(out,"Ch ");out=number(out,entry[0]);out=text(out," ");time_text(out,entry[1]);return;
+        book_mark_label(out,index);return;
     }
-    if(view==MARK_ACTION){text(out,index?"Delete bookmark":"Play bookmark");return;}
-    if(view==DELETE_CONFIRM){text(out,index?"Cancel":"Delete bookmark?");return;}
-    text(out,index?"Back":view==BOOK_ERROR?"Book unavailable":"Delete failed");
+    if(view==MARK_ACTION){book_text(out,index?"Delete bookmark":"Play bookmark");return;}
+    if(view==DELETE_CONFIRM){book_text(out,index?"Cancel":"Delete bookmark?");return;}
+    book_text(out,index?"Back":view==BOOK_ERROR?"Book unavailable":"Delete failed");
 }
 static void draw(void)
 {
@@ -147,6 +152,7 @@ static int launch(u32 chapter,u32 ms)
             returning=0;active=1;view=BOOK_ERROR;choice=1;draw();return 0;
         }
     }else playback_launch_override(chapter,ms,signature);
+    playback_launch_rate(book_preview_rate());
     if(!FW(0x0307acb6,int,void)()){
         playback_launch_cancel();returning=0;active=1;view=TOP;choice=0;draw();return 0;
     }
@@ -185,16 +191,16 @@ u32 book_menu_event(u32 message)
         draw();return 1;
     }
     if(message==0x40000004||message==0x30000004){choice=(choice+1)%items();draw();return 1;}
-    if(message==0x40000008||message==0x30000008){choice=choice?choice-1:items()-1;draw();return 1;}
+    if(message==0x40000008||message==0x30000008){choice=choice?choice-1u:items()-1;draw();return 1;}
     if(message==0x40000040){
         if(view==BOOK_ERROR){if(direct_folder)return leave();active=0;FW(0x0306b26a,void,u32,const void *)(0,0);return 2;}
         if(view==TOP){
             if(!choice)return launch(0,0)?2:1;
             view=choice==1?CHAPTERS:choice==2?MARKS:SPEED;
-            choice=view==SPEED?playback_speed_get()-4:0;
+            choice=view==SPEED?book_preview_rate()-4:0;
         }else if(view==SPEED){
-            /* Desired rate is latched only by the next playback launch. */
-            playback_speed_set(choice+4);view=TOP;choice=3;
+            /* Selection belongs to this preview; commit only when its book launches. */
+            book_preview_set_rate(choice+4);view=TOP;choice=3;
         }else if(view==CHAPTERS)return launch(choice+1,0)?2:1;
         else if(view==MARKS){if(book_preview_marks()){selected_mark=choice;view=MARK_ACTION;choice=0;}}
         else if(view==MARK_ACTION){

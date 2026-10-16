@@ -93,6 +93,7 @@ class SpeedAdapterTests(unittest.TestCase):
         self.cpu.mem_write(0x0300e73c+0x70,'list.m3u'.encode('utf-16le')+b'\0\0')
         self.cpu.mem_write(0x0300ec1c+8,struct.pack('<H',3))
         self.cpu.mem_write(0x0300d85c+0xf2,struct.pack('<H',99))
+        self.f.call('playback_launch_rate',self.f.call('playback_speed_get'))
         self.assertEqual(self.f.call('playback_browser_select',0x20004000),0x0300e73d)
         self.f.call('playback_begin',0x20001000)
         self.assertEqual(self.f.call('playback_prepare',3),0)

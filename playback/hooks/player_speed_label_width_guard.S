@@ -9,10 +9,10 @@
     bne stock
     ldr r0,=playback_active
     ldr r0,[r0]
-    cmp r0,#0
-    ite ne
-    movne r0,#86
-    moveq r0,#107
+    cmp r0,#1
+    ite eq
+    moveq r0,#86
+    movne r0,#107
     b done
 stock:
     movs r0,#107

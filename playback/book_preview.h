@@ -3,6 +3,8 @@
 #include "runtime.h"
 /* Independent, read-only metadata for the book being browsed. Never selects
  * decoder state or changes the active queue/resume/bookmark companion. */
+u32 book_preview_rate(void);
+void book_preview_set_rate(u32 quarters);
 int book_preview_open(const u16 *path);
 u32 book_preview_count(void);
 int book_preview_ref(u32 index,struct media_ref *out);

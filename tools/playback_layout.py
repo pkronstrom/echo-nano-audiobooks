@@ -104,6 +104,12 @@ def discovery(image):
     return image
 
 HOOKS={
+    'startup_invalidate':(0,0x030733e0,32,None),
+    'startup_invalidate_entry':(0,0x030660ca,4,None),
+    'player_controls_uninit_guard':(27,0x0307a270,44,None),
+    'player_controls_uninit_pointer':(27,0x0300e6d4,4,None),
+    'player_controls_key':(27,0x0307bc7e,4,0x03063242),
+    'player_controls_guard':(27,0x0307a3d4,36,None),
     'player_speed_menu_action_0':(32,0x0307a7f4,4,None),
     'player_speed_menu_action_guard':(32,0x0307a79c,48,None),
     'player_speed_menu_no_print_back':(32,0x0307a61a,4,None),
@@ -313,6 +319,52 @@ def player_speed_label_space(image):
     for address in (0x0307a0f4,0x0307a25a):
         image.patch(27,address,bytes.fromhex('00bf00bf'))
 
+def startup_invalidation_space(image):
+    """Reclaim only the pinned SafePoweroff print; preserve all startup logic."""
+    start,size=0x030733e0,35
+    checks=((0,start,b'---1---gSysConfig.SafePoweroff=%d\n\0'),
+            (0,0x030660ca,bytes.fromhex('2de9f043')),
+            (1,0x0307a23a,bytes.fromhex('8248d4f84912f7f7f2fd')),
+            (1,0x0307a444,struct.pack('<I',start)))
+    for module,address,expected in checks:
+        off,_=image.region(module,address)
+        if image.d[off:off+len(expected)]!=expected:
+            raise ValueError(f'startup invalidation base changed at {address:08x}')
+    # Across every overlay, the sole absolute reference must remain the pinned
+    # module1 printf literal. Also reject interior/unaligned pointer references.
+    for module in image.modules:
+        for kind in ('code','data'):
+            off=image.l2f(module[kind+'_load'])
+            data=bytes(image.d[off:off+module[kind+'_len']])
+            for address in range(start,start+size):
+                needle=struct.pack('<I',address);found=data.find(needle)
+                while found>=0:
+                    if (module['index'],kind,module[kind+'_exec']+found,address)!=(1,'code',0x0307a444,start):
+                        raise ValueError('startup invalidation cave referenced')
+                    found=data.find(needle,found+1)
+    image.patch(1,0x0307a240,bytes.fromhex('00bf00bf'))
+
+def player_controls_space(image):
+    start,size=0x0307a3d4,36
+    checks={start:bytes.fromhex('3d3d3d20456e64204d757369634c7263496e6974204465627567203d3d3d0a0a00000000'),
+            0x0307a25e:bytes.fromhex('5da0f7f7e2fd'),
+            0x0307a270:bytes.fromhex('4c52432066696c652073697a653a20256420627974657320286275666665722073697a653a202564290a0000'),
+            0x0307a0aa:bytes.fromhex('71a0f7f7bcfe'),
+            0x0300e6d4:bytes.fromhex('13950703')}
+    for address,data in checks.items():
+        off,_=image.region(27,address)
+        if image.d[off:off+len(data)]!=data:
+            raise ValueError('player controls diagnostic changed')
+    for module in (0,27,33):
+        m=image.modules[module]
+        for kind in ('code','data'):
+            off=image.l2f(m[kind+'_load']);data=bytes(image.d[off:off+m[kind+'_len']])
+            for start,size in ((0x0307a3d4,36),(0x0307a270,44)):
+                if any(struct.pack('<I',a) in data for a in range(start,start+size)):
+                    raise ValueError('player controls cave referenced')
+    image.patch(27,0x0307a260,bytes.fromhex('00bf00bf'))
+    image.patch(27,0x0307a0ac,bytes.fromhex('00bf00bf'))
+
 def navigation_hold_space(image):
     """Center-only timing; preserve watchdog handling beyond its debug print."""
     checks=((0x03065918,NAVIGATION_HOLD_TEXT),
@@ -407,11 +459,15 @@ BROWSER_SORT_HOOKS={
 def apply_browser_sort(stock,image,directory):
     import json
     manifest=json.loads((directory/'manifest.json').read_text())
-    names=['browser_sort.bin']+[name+'.patch' for name in BROWSER_SORT_HOOKS]
+    names=['browser_sort.bin','playback.bind']+[name+'.patch' for name in BROWSER_SORT_HOOKS]
     if set(manifest)!=set(names):raise ValueError('browser sort manifest entries changed')
     artifacts={name:(directory/name).read_bytes() for name in names}
     if any(hashlib.sha256(data).hexdigest()!=manifest[name] for name,data in artifacts.items()):
         raise ValueError('browser sort artifact mismatch')
+    binding=json.loads(artifacts['playback.bind'])
+    length=binding['bytes']
+    if not isinstance(length,int) or not 16<=length<=0x8000 or hashlib.sha256(image.d[FLASH_START:FLASH_START+length]).hexdigest()!=binding['sha256']:
+        raise ValueError('browser sort playback binding mismatch')
     patches=[]
     for name,(address,expected) in BROWSER_SORT_HOOKS.items():
         lines=[line for line in artifacts[name+'.patch'].decode().splitlines() if line and not line.startswith('#')]
@@ -479,6 +535,8 @@ def integrate(stock_data,input_data,directory,date,sort_directory=None):
     validate_settings_geometry(image)
     validate_player_speed_menu(image)
     player_speed_label_space(image)
+    player_controls_space(image)
+    startup_invalidation_space(image)
     validate_library_geometry(image)
     navigation_hold_space(image)
     stock=Image(stock_data)

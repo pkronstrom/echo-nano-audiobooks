@@ -86,7 +86,9 @@ class BrowserSortLayoutTests(unittest.TestCase):
     target=0x0307aefc if name=='browser_sort_ordinal' else START+16
     data=layout.encode_t32_branch(address,target,False)
     (directory/(name+'.patch')).write_text(f'31:{address:08x}:{data.hex()}\n')
-   files=['browser_sort.bin']+[name+'.patch' for name in layout.BROWSER_SORT_HOOKS]
+   binding={'bytes':16,'sha256':hashlib.sha256(self.image.d[layout.FLASH_START:layout.FLASH_START+16]).hexdigest()}
+   (directory/'playback.bind').write_text(json.dumps(binding))
+   files=['browser_sort.bin','playback.bind']+[name+'.patch' for name in layout.BROWSER_SORT_HOOKS]
    manifest={name:hashlib.sha256((directory/name).read_bytes()).hexdigest() for name in files}
    (directory/'manifest.json').write_text(json.dumps(manifest))
    before=bytes(self.image.d)
@@ -94,6 +96,9 @@ class BrowserSortLayoutTests(unittest.TestCase):
    with self.assertRaisesRegex(ValueError,'artifact'):layout.apply_browser_sort(self.stock,self.image,directory)
    self.assertEqual(bytes(self.image.d),before)
    (directory/'browser_sort.bin').write_bytes(self.payload)
+   self.image.d[layout.FLASH_START]^=1
+   with self.assertRaisesRegex(ValueError,'binding'):layout.apply_browser_sort(self.stock,self.image,directory)
+   self.image.d[layout.FLASH_START]^=1
    layout.apply_browser_sort(self.stock,self.image,directory)
    for name,(address,expected) in layout.BROWSER_SORT_HOOKS.items():
     off,_=self.image.region(31,address);self.assertEqual(bytes(self.image.d[off:off+4]),layout.read_patch(directory/(name+'.patch'))[2])
