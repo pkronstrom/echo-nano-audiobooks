@@ -90,3 +90,31 @@ BSS initialization, reboot-marker preservation and the refresh/reload lifecycle.
 Earlier statements in this document that no relocated build was installed refer
 to the original audit: installed20261025 uses this placement and boots; the new
 controls/live-speed20261027 candidate itself remains uninstalled.
+
+## Post-RC automatic preparation layout — 2026-10-16
+
+The resident RC payload remains25864B text plus30440B BSS, exactly ending at
+0x0309fff0. Its26112-byte sector-rounded loader request needs only flash
+0x36200..0x3c800; the former32KiB reservation is reduced without changing
+resident code, RAM boundaries, the loader algorithm or queue ABI.
+
+Browser code backing now occupies the verified zero interval
+0x3c800..0x42348, mapped by module40 to0x0308672c..0x0308c274. This covers the
+tail of refresh sort A and first3072B of sort B. It excludes resources and the
+refresh blob. The browser's native9308B code and appended helper are contiguous
+in backing; its original code execution address, low data/BSS records and every
+other module record stay unchanged. Native refresh ownership and clearing of
+both sort buffers are unchanged.
+
+The helper's maximum flash length is14060B, with an independent runtime bound
+0x0307b874..0x03080470 below the active MP3 decoder. Current measured helper
+13960B text plus5320B BSS ends0x030803c8, leaving168B after alignment. Browser
+natural-sort windows hold64 keys and stream further windows; the256-track
+playback queue is unchanged. Render rows, launch staging and preparation borrow
+one3848B union only across disjoint lifetimes. New control flags are copied
+reset metadata rather than stale NOLOAD state.
+
+Offline regressions run actual native module/window loading and restoration,
+verify exact code bytes through the actual stock byte reader in both slots,
+and retain the refresh/stub/resident-reload checks. These do not establish
+undocumented runtime ownership, complete IRQ stack bounds or hardware safety.

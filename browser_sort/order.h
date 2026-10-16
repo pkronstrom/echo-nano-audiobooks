@@ -1,7 +1,9 @@
 #ifndef ECHO_BROWSER_ORDER_H
 #define ECHO_BROWSER_ORDER_H
 #include <stdint.h>
+#ifndef BROWSER_ORDER_CAPACITY
 #define BROWSER_ORDER_CAPACITY 1024u
+#endif
 /* Iterator emits each accepted physical entry exactly once. Names are bounded
  * to256 UTF16 units. reset/name return0 success or negative error; next returns
  * 1 key,0 EOF,negative error. The provider feeds the watchdog and owns I/O locks. */

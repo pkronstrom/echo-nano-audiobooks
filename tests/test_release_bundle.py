@@ -140,7 +140,7 @@ class ReleaseTests(unittest.TestCase):
         # Reject every other table change, including relocation of another module.
         for index, field, value in ((31, 'code_load', 0x0308e004),
                                     (31, 'code_exec', 0x0307941c),
-                                    (31, 'code_len', 9308 + 4336),
+                                    (31, 'code_len', 9308 + 14064),
                                     (31, 'code_len', 9308 + 17),
                                     (31, 'code_len', 9308 + 12),
                                     (31, 'data_load', 0x0308e080),
@@ -151,7 +151,7 @@ class ReleaseTests(unittest.TestCase):
                 changed.modules[index][field] = value
                 with self.assertRaisesRegex(ValueError, 'layout'):
                     ar.compatible(base, changed)
-        header = 0x3e200 + 9308
+        header = 0x3c800 + 9308
         code_end = struct.unpack_from('<I', target.d, header + 8)[0]
         for offset, value in ((0, 0), (4, 0x0307b884), (4, 0x0307b875),
                               (4, code_end | 1), (8, code_end + 4),
@@ -167,7 +167,7 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'protected resource'):
             ar.compatible(base, changed)
         # The exception cannot be reused with a different purported stock image.
-        base.d[0x3e200] = 1
+        base.d[0x3c800] = 1
         with self.assertRaisesRegex(ValueError, 'layout'):
             ar.compatible(base, target)
 
@@ -179,7 +179,7 @@ class ReleaseTests(unittest.TestCase):
             # Freeze bundle inputs while other contributors may edit the workspace.
             snapshot = root / 'source'
             for name in ('tools/apply_release.py', 'tools/rknano_fw.py', 'tools/prepare_book.py',
-                         'LICENSE', 'docs/releases.md', 'docs/audiobooks.md', 'docs/approved-icons.json',
+                         'LICENSE', 'docs/releases.md', 'docs/audiobooks.md', 'docs/automatic-book-preparation.md', 'docs/approved-icons.json',
                          'docs/icon-library-assets/tabler/LICENSE', 'docs/icon-library-assets/lucide/LICENSE',
                          'docs/icon-library-assets/bootstrap/LICENSE'):
                 dest = snapshot / name
@@ -198,6 +198,9 @@ class ReleaseTests(unittest.TestCase):
                 self.assertIn('python3 prepare_book.py', guide)
                 self.assertNotIn('builds/phase3a', guide)
                 self.assertNotIn('tools/prepare_book.py', guide)
+                automatic_guide=archive.read('automatic-book-preparation.md').decode()
+                self.assertIn('BOOK.M3U',automatic_guide)
+                self.assertNotIn('tools/prepare_book.py',automatic_guide)
                 archive.extractall(root / 'bundle')
             run = subprocess.run([sys.executable, str(root / 'bundle/apply_release.py'), '--input', str(ROOT / 'NANOV170.IMG'), '--output', str(root / 'ready')], capture_output=True, text=True)
             self.assertEqual(run.returncode, 0, run.stderr)

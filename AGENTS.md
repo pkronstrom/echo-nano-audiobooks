@@ -494,3 +494,44 @@ No auto-creation is linked, no new firmware built, no device operations.
 Resident zero static margin remains; cold browser helper placement is only a
 candidate. Recommended next scope: missing BOOK companions first, then guarded
 M3U generation; preserve all existing files and explicit playlist order.
+
+## Post-RC automatic preparation — final offline checkpoint, 2026-10-16
+
+Supersedes the research-only status above. The cold browser now creates missing
+BOOK.RSM/BMK and naturally sorted BOOK.M3U for a simple directly contained book,
+inside a live marked Audiobooks tree. Existing BOOK/custom M3Us and state are
+preserved. Larger directories bypass generation and retain native entry. Music,
+Meditations, collection roots and nested-disc grouping are excluded. Read
+docs/automatic-book-preparation.md BEFORE changing or testing the adapter.
+
+All578 tests passed in498.928s. Independent scoped storage/UI and fresh final
+review give limited offline approval after tested fixes, including foreign dirty
+cache/FCB ownership, malformed parents/bitmap geometry, stale medium/parent,
+copied overlay flags, invalid bookmarks, playlist limits, multi-cluster bypass,
+and native parent selection remaining valid after preparation no-ops. This is
+not a new Fable/revx review or hardware acceptance. Real stock module+byte-reader
+loading in both slots and byte-identical isolated payload/image rebuilds pass.
+
+Resident25864text/30440BSS remains unchanged at3092400..309fff0, zero static
+margin; queue ABI and bootloader unchanged. Resident flash reservation shrinks
+to26112B (exact sector-rounded read),36200..3c800. Browser backing3c800..42348
+uses checked-zero refresh sort-A tail plus first3KiB sort B. Browser13960text/
+5320BSS ends030803c8,168B below unchanged decoder boundary03080470. Rows/launch/
+preparation share scratch;64-key sort windows stream without truncation.
+
+Storage is deliberately restricted: one FAT,512B sectors, single-cluster book
+directory, first contiguous free run within one allocation sector, bounded4096
+allocation-sector search. exFAT requires actual root81 bitmap ID0/cluster2,
+contiguous bitmap<=4096sectors and one-cluster root; new three-entry sets must
+fit one directory sector. Unsupported shapes use host preparation. Unknown,
+partial or invalid companions/TMP are preserved; no automatic cleanup/retry.
+Interrupted initial creation can leave owned empty files or leaked reservations.
+Atomic sector/stable media/exclusive writer assumptions and full IRQ-stack
+bounds remain unproved. Observed native entry stack3160B FAT/3184B exFAT is NOT
+a bound. Do not describe synthetic fixtures as complete mount/card acceptance.
+
+Archive:builds/phase4j-auto-preparation-20261016/reviewed/manifest.json.
+Custom20261114 SHA2569ed49a71ffafc11615e69165729e0378303d8211243bdff85c9b3d6bd9420792.
+Stock recovery20261115 SHA2565d6a3bacc87321b32087f75559d28e44a233b0bf08cf88ac636b3a6efb986039.
+About remainsP4e. phase4i-release-candidate stays atbac9473. No Nano access,
+update staging, hardware acceptance, push or publication for this iteration.

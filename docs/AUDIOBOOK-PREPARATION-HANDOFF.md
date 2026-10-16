@@ -2,8 +2,11 @@
 
 Run commands from the repository root.
 
-The current firmware **updates existing state files but does not create them**.
-Prepare every new book on the computer, including books containing just one MP3.
+The installed firmware and tagged RC update existing state files; prepare new
+books on the computer for those versions. The post-RC candidate adds guarded
+automatic preparation for simple book folders, but is not yet hardware tested.
+See [automatic preparation](automatic-book-preparation.md) for its limits and
+fallback. The following host workflow remains supported for all versions.
 
 ## SD layout
 

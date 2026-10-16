@@ -1,5 +1,11 @@
 # Automatic audiobook preparation: feasibility investigation
 
+> Historical research checkpoints below are superseded by the linked cold-browser
+> implementation. See [current behavior and limits](automatic-book-preparation.md).
+> Automatic creation/publication is implemented and offline verified:578 tests
+> pass, with limited independent offline approval. Nothing has been installed
+> on the Nano for this work.
+
 Date: 2026-10-16. Research after the local annotated tag
 `phase4i-release-candidate`, which points to
 `bac947351396fa21e66eb8606f96a67da65cd872`. The tag excludes this research.
@@ -116,3 +122,62 @@ provable ownership and must never overwrite existing content.
 No automatic preparation code is linked, no new update image was generated,
 and no hardware acceptance is claimed. Next useful work is the allocation/write
 harness and a minimal BOOK companion-creation adapter, before broad M3U UX work.
+
+## Streaming metadata prototype checkpoint — 2026-10-16
+
+`experiments/auto_book_prepare/playlist.c` now plans and streams a relative UTF-8
+playlist from an already naturally ordered source, using 768B of caller-owned
+workspace and 512-byte write blocks. It emits the current ENR1/ENB1 blank-sector
+formats through the existing CRC callback. It performs no filesystem operations
+and is not linked into firmware.
+
+All12 focused host tests pass. They cover Unicode, leading `#`, 1/256-entry
+bounds, invalid names, failed/short/oversized writes, changed scan results and a
+round trip through the production parser with one-byte reads. Independent review
+identified the native resolver's absolute-path limit; a failing boundary test
+preceded the correction. Planning now checks the normalized parent prefix plus
+each chapter name against255 UTF-16 units, including surrogate pairs, and leaves
+room for BOOK.M3U. The caller must supply the verified normalized prefix length.
+
+The output trailer alone is never permission to publish: a source mutation during
+emission can leave a complete trailer while returning failure. Publication must
+require successful emission AND closed, cold content/identity verification.
+Existing files remain outside this prototype's write authority.
+
+ARM Cortex-M3 `-Os` object measurement is924B text, zero data/BSS; this excludes
+the caller's workspace, adapter, callbacks and final linked alignment. Compiler
+stack reports are per-function, not a complete native/IRQ stack bound. Guarded
+empty creation is a separate research prototype; safe allocation, bounded content
+writes, cold verification, publication and browser integration remain unfinished.
+The release-candidate tag and firmware artifacts are unchanged.
+
+## Final linked checkpoint — 2026-10-16
+
+The previous sections record intermediate research. The completed cold-browser
+path creates missing fixed-name companions, streams and cold-verifies BOOK.TMP,
+then publishes BOOK.M3U through guarded native routines. Native FAT mutation is
+used only after a checked bounded free-run search, avoiding the stock allocator's
+unbounded rescan; exFAT bitmap geometry is proved before its native mutator runs.
+No raw device writer or new filesystem implementation was introduced.
+
+All578 tests passed in498.928s. Independent scoped storage verification covers
+40 guarded and12 raw native tests. UI tests cover collection gating, live parent
+metadata, medium changes, copied overlay state, failure restoration and actual
+native folder entry after preparation bypass. Review corrections also protect
+foreign dirty caches/FCBs, invalid bookmarks, explicit/custom playlist limits and
+prepared multi-cluster folders. Final review gives limited offline approval;
+there was no new Fable/revx run or hardware acceptance.
+
+Resident25864B text/30440B BSS and queue ABI remain unchanged. Browser13960B
+text/5320B BSS ends030803c8 with168B static margin. Shared scratch and64-key
+paged natural-sort windows recover space. Flash rebalancing and stock module /
+byte-reader loading are verified in both slots; isolated payload/image rebuilds
+are byte-identical. Observed synthetic native book-entry stack peaks3160B FAT /
+3184B exFAT are measurements, not complete stack bounds.
+
+Supported geometry, failure artifacts and host fallback are documented in the
+current guide. Existing partial/foreign files are preserved; interrupted initial
+creation can leave an empty owned file or leaked free-space reservation. Stable
+mounted media and atomic sectors remain model assumptions. No install, device
+write, push or publication occurred. Archive:
+`builds/phase4j-auto-preparation-20261016/reviewed/manifest.json`.

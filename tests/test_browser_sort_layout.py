@@ -6,7 +6,7 @@ from unicorn.arm_const import *
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'tools'))
 from rknano_fw import Image
 import playback_layout as layout
-START=0x0307b874;END=0x03080470;FLASH=0x3e200
+START=0x0307b874;END=0x03080470;FLASH=0x3c800
 class BrowserSortLayoutTests(unittest.TestCase):
  def setUp(self):
   self.stock=Image((ROOT/'NANOV170.IMG').read_bytes());self.image=Image((ROOT/'out/NANOV170.IMG').read_bytes())
@@ -29,7 +29,7 @@ class BrowserSortLayoutTests(unittest.TestCase):
   self.setUp();self.image.modules[31]['code_len']+=4
   with self.assertRaisesRegex(ValueError,'table'):self.relocate()
  def test_bad_header_and_code_runtime_overflow_are_rejected(self):
-  for payload in (b'BAD!'+self.payload[4:],self.payload+bytes(4332),struct.pack('<4I',0x314f5342,START+17,START+32,END+4)+self.payload[16:]):
+  for payload in (b'BAD!'+self.payload[4:],self.payload+bytes(14060),struct.pack('<4I',0x314f5342,START+17,START+32,END+4)+self.payload[16:]):
    with self.subTest(payload=len(payload)),self.assertRaises(ValueError):self.relocate(payload)
  def test_native_loader_copies_code_data_and_bss_independently(self):
   if getattr(self,'window_load',False) and not getattr(self,'compiled',False):
@@ -78,6 +78,11 @@ class BrowserSortLayoutTests(unittest.TestCase):
   self.assertTrue(any(o<self.image.l2f(m['data_load'])-512<o+n for o,n in reads))
  def test_native_window_nine_auxiliary_is_reloaded_before_browser_resume(self):
   self.window_load=True
+  self.test_native_loader_copies_code_data_and_bss_independently()
+ def test_maximum_helper_runtime_with_existing_state_reloads_natively(self):
+  self.compiled=True;self.window_load=True
+  # Largest flash-legal helper still fits the unchanged browser runtime end.
+  self.payload=struct.pack('<4I',0x314f5342,START+17,START+14060,END)+b'\x70\x47'+bytes(14060-18)
   self.test_native_loader_copies_code_data_and_bss_independently()
  def test_hook_manifest_and_relocation_are_one_checked_transaction(self):
   with tempfile.TemporaryDirectory(prefix='sort-layout-') as temp:

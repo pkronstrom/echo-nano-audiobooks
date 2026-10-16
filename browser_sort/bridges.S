@@ -21,3 +21,21 @@ browser_sort_select_bridge:
 1:  b.w 0x0307af40
 
 2:  b.w 0x0307b076
+
+/* Same frame and continuations as the resident navigation_event_bridge.
+ * browser_book_event runs cold preparation before the resident dispatcher. */
+.global browser_book_event_bridge
+.thumb_func
+browser_book_event_bridge:
+    push {r0-r3,r12,lr}
+    ldr r0,[sp,#56]
+    bl browser_book_event
+    cmp r0,#0
+    beq 3f
+    subs r4,r0,#1
+    pop {r0-r3,r12,lr}
+    b.w 0x0307b758
+3:  pop {r0-r3,r12,lr}
+    ldr r0,[sp,#32]
+    ldr r10,=0x0300d164
+    b.w 0x0307b320

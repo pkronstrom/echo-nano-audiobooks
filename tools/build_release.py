@@ -57,6 +57,8 @@ def build(stock_path, target_path, output, icons=None, allow_dirty=False):
     book_guide = book_guide.replace("Run from this repository", "Run from the extracted patch folder")
     book_guide = book_guide.replace("python3 tools/prepare_book.py", "python3 prepare_book.py")
     files["audiobooks.md"] = ("# Book preparation and device checks\n\n" + book_guide).encode()
+    automatic_guide=(ROOT / "docs/automatic-book-preparation.md").read_text(encoding="utf-8")
+    files["automatic-book-preparation.md"]=automatic_guide.replace("python3 tools/prepare_book.py", "python3 prepare_book.py").encode()
     files["approved-icons.json"] = (ROOT / "docs/approved-icons.json").read_bytes()
     for library in ("tabler", "lucide", "bootstrap"):
         files[f"licenses/{library}.txt"] = (ROOT / "docs/icon-library-assets" / library / "LICENSE").read_bytes()

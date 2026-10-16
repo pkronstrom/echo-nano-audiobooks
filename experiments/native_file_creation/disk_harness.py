@@ -1,6 +1,6 @@
 """Sector-backed stock ARM filesystem research; never accesses real media.
 
-Only sector read/write and IRQ lock/unlock are substituted. All parent lookup,
+Only sector read/write, IRQ lock/unlock and watchdog hardware are substituted. All parent lookup,
 directory insertion, allocation, cache flush, open and file reads execute stock.
 The small fixture seeds already-mounted native geometry, not a mount parser.
 """
@@ -36,23 +36,34 @@ class NativeDisk:
     CLUSTERS = 64
     DEV = 0x30002
 
-    def __init__(self, filesystem='fat'):
+    def __init__(self, filesystem='fat', sectors_per_cluster=1, clusters=64):
         if filesystem not in ('fat', 'exfat'):
             raise ValueError('fixture supports FAT32 and exFAT')
         self.filesystem = filesystem
-        self.ROOT_CLUSTER = 3 if filesystem == 'exfat' else 2
-        self.sectors = bytearray(128 * 512)
+        if sectors_per_cluster not in (1,2,4,8,16,32,64,128,256):
+            raise ValueError('fixture cluster size must be a power of two up to 256 sectors')
+        self.SPC = sectors_per_cluster
+        self.CLUSTERS = clusters
+        self.DATA_LBA = max(4, 2 + (clusters + 129)//128)
+        bitmap_clusters = ((clusters+7)//8 + self.SPC*512-1)//(self.SPC*512)
+        self.ROOT_CLUSTER = 2+bitmap_clusters if filesystem == 'exfat' else 2
+        self.sectors = bytearray(max(128,self.DATA_LBA+self.CLUSTERS*self.SPC) * 512)
         struct.pack_into('<III', self.sectors, 512, 0x0ffffff8, 0x0fffffff, 0x0fffffff)
         if filesystem == 'exfat':
-            struct.pack_into('<I', self.sectors, 512 + 3 * 4, 0x0fffffff)
-            self.sectors[self.DATA_LBA * 512] = 3  # bitmap and root allocated
+            for cluster in range(2,self.ROOT_CLUSTER):
+                struct.pack_into('<I',self.sectors,512+cluster*4,cluster+1 if cluster+1<self.ROOT_CLUSTER else 0x0fffffff)
+            struct.pack_into('<I', self.sectors, 512 + self.ROOT_CLUSTER * 4, 0x0fffffff)
+            for cluster in range(2,self.ROOT_CLUSTER+1):
+                self.sectors[self.DATA_LBA*512+(cluster-2)//8] |= 1<<((cluster-2)%8)
         self.sector_reads = []
         self.sector_writes = []
         self.failed_write_lbas = set()
         self.failed_read_lbas = set()
         self.fail_read_number = None
         self.native_calls = []
+        self.watchdog_kicks = 0
         self.cut_before_write = None
+        self.fail_write_number = None
         self.minimum_sp = STACK
         self._boot_cpu()
 
@@ -74,25 +85,29 @@ class NativeDisk:
         # Native packed mount geometry: FS type, device kind, cluster/sector
         # shifts, device ID, bytes/sector, sectors/cluster, root, cluster count,
         # data LBA, reserved sector count, partition LBA.
-        self.cpu.mem_write(0x03076b24, bytes([3 if self.filesystem == 'exfat' else 2, 3, 0, 0, 9, 0]))
+        self.cpu.mem_write(0x03076b24, bytes([3 if self.filesystem == 'exfat' else 2, 3, self.SPC.bit_length()-1, 0, 9, 0]))
         for address, value in ((0x03076b2c, self.DEV), (0x03076b30, 512),
-                               (0x03076b34, 1), (0x03076b3d, self.ROOT_CLUSTER),
+                               (0x03076b34, self.SPC), (0x03076b3d, self.ROOT_CLUSTER),
                                (0x03076b4b, self.CLUSTERS), (0x03076b4f, self.DATA_LBA),
                                (0x03076b53, 0), (0x03076b5b, self.FAT_LBA)):
             self._word(address, value)
         self.cpu.mem_write(0x03076b38, struct.pack('<H', self.FAT_LBA))
+        self.cpu.mem_write(0x03076b3a,b'\x01')  # mounted FAT count
         self.cpu.hook_add(UC_HOOK_CODE, self._hook)
         self.call(0x0305bddc)  # Native file/cache initialization.
 
     def _hook(self, cpu, address, size, user):
         self.minimum_sp = min(self.minimum_sp, cpu.reg_read(UC_ARM_REG_SP))
         result = None
-        if address in (0x0305fba6, 0x0305e912, 0x0305e9c2, 0x0305c2e0):
+        if address in (0x0305fba6, 0x0305e912, 0x0305e9c2, 0x0305c2e0, 0x0305eba0, 0x0305ec52):
             self.native_calls.append(address)
         if address == RETURN:
             cpu.emu_stop()
             return
-        if address in (0x0306a40e, 0x0306a466):
+        if address == 0x03065800:
+            self.watchdog_kicks += 1
+            result = 0
+        elif address in (0x0306a40e, 0x0306a466):
             result = 0
         elif address in (0x0306b716, 0x0306b75e):
             dev, lba, count, buffer = [cpu.reg_read(reg) for reg in REGS]
@@ -109,7 +124,7 @@ class NativeDisk:
                 self.sector_writes.append((lba, count))
                 if len(self.sector_writes) == self.cut_before_write:
                     raise PowerCut(f'before sector write {self.cut_before_write}')
-                if any(sector in self.failed_write_lbas for sector in range(lba, lba + count)):
+                if len(self.sector_writes) == self.fail_write_number or any(sector in self.failed_write_lbas for sector in range(lba, lba + count)):
                     result = 1
                 else:
                     self.sectors[start:end] = cpu.mem_read(buffer, end - start)
@@ -126,7 +141,7 @@ class NativeDisk:
         for index, value in enumerate(args[4:]):
             self._word(STACK + index * 4, value)
         self.cpu.reg_write(UC_ARM_REG_LR, RETURN | 1)
-        self.cpu.emu_start(address | 1, RETURN, count=1000000)
+        self.cpu.emu_start(address | 1, RETURN, count=20000000)
         pc = self.cpu.reg_read(UC_ARM_REG_PC)
         if pc != RETURN:
             raise AssertionError(f'native call {address:x} exceeded instruction bound at {pc:x}')
@@ -141,7 +156,7 @@ class NativeDisk:
         if self.filesystem == 'exfat':
             short = name.encode('ascii').ljust(11, b'\0')
         self._word(0x03077664, self.ROOT_CLUSTER)
-        descriptor = struct.pack('<III', self.ROOT_CLUSTER, len(self.chain(self.ROOT_CLUSTER)) * 512, 0) + b'\x01' + bytes(29)
+        descriptor = struct.pack('<III', self.ROOT_CLUSTER, len(self.chain(self.ROOT_CLUSTER)) * self.SPC * 512, 0) + b'\x01' + bytes(29)
         self.cpu.mem_write(0x03078a5c, descriptor)
         self.cpu.mem_write(0x20001000, b'.\0')
         self.cpu.mem_write(0x20002000, short + b'\0')
@@ -156,14 +171,14 @@ class NativeDisk:
 
     def entry(self, index=0):
         chain = self.chain(self.ROOT_CLUSTER)
-        cluster = chain[index // 16]
-        start = (self.DATA_LBA + cluster - 2) * 512 + (index % 16) * 32
+        cluster = chain[index // (16*self.SPC)]
+        start = (self.DATA_LBA + (cluster - 2)*self.SPC) * 512 + (index % (16*self.SPC)) * 32
         return bytes(self.sectors[start:start + 32])
 
     def set_entry(self, index, entry):
-        if len(entry) != 32 or not 0 <= index < 16:
+        if len(entry) != 32 or not 0 <= index < 16*self.SPC:
             raise ValueError('fixture seed entry must fit initial root sector')
-        start = (self.DATA_LBA + self.ROOT_CLUSTER - 2) * 512 + index * 32
+        start = (self.DATA_LBA + (self.ROOT_CLUSTER - 2)*self.SPC) * 512 + index * 32
         self.sectors[start:start + 32] = entry
 
     def set_fat(self, cluster, value):

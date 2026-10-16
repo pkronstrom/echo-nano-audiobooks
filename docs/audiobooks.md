@@ -28,9 +28,12 @@ restore stock, copy that image instead, eject and restart. See
 
 ## Prepare a book
 
-Current preparation requirement: run this on the computer for each new book.
-The firmware updates preallocated resume/bookmark companions; it does not create
-missing companion files on the device. Keep each book in its own directory.
+The tagged RC and installed versions require host preparation for each new book.
+The post-RC candidate adds guarded automatic `BOOK.M3U` / RSM / BMK creation
+when entering a simple book folder through Audiobooks. It preserves existing
+files and custom playlists. Hardware acceptance is pending; supported card/layout
+limits and fallback are in [automatic preparation](automatic-book-preparation.md).
+The host workflow below remains supported. Keep each book in its own directory.
 
 Run from this repository, replacing the example path with your book's path:
 
@@ -165,8 +168,9 @@ behavior is unverified. Replacing audio in place while preserving filesystem
 indices/clusters can retain a stale position. To deliberately reset a book,
 remove its RSM companion and rerun preparation. Do not edit RSM contents.
 
-Manual bookmarks use a prepared `.BMK` companion; automatic creation of that
-file on the device is not implemented. Embedded chapters and completed-book
+Manual bookmarks use a valid `.BMK` companion. The post-RC automatic-preparation
+candidate can create a missing BOOK.BMK in its supported scope; installed/tagged
+versions still require host preparation. Embedded chapters and completed-book
 tracking remain unsupported. Upstream experimental power patches remain disabled.
 
 ## Experimental MP3 speed control

@@ -33,12 +33,21 @@ class PlaybackLayoutTests(unittest.TestCase):
         expected.finalize()
         self.assertEqual(result.d,expected.d)
     def test_staging_room_is_in_unused_refresh_sort_buffer(self):
-        self.assertGreaterEqual(FLASH_END-FLASH_START,32768)
+        self.assertEqual((FLASH_START,FLASH_END),(0x36200,0x3c800))
+        self.assertEqual(FLASH_END-FLASH_START,26112)
         image=Image(self.stock);module=image.modules[40]
         execution=module['code_exec']+FLASH_START-image.l2f(module['code_load'])
         self.assertGreaterEqual(execution,0x0307b674)
         self.assertLessEqual(execution+FLASH_END-FLASH_START,0x0308b674)
         self.assertFalse(any(image.d[FLASH_START:FLASH_END]))
+
+    def test_sector_rounded_payload_stops_before_browser_backing(self):
+        from playback_layout import BROWSER_SORT_FLASH_START
+        self.assertEqual(FLASH_START+((len(self.payload)+511)&~511),BROWSER_SORT_FLASH_START)
+        changed=bytearray(self.payload)+bytes(26116-len(self.payload))
+        struct.pack_into('<I',changed,8,0x03092400+len(changed))
+        with self.assertRaisesRegex(ValueError,'size'):
+            stage(self.stock,self.input,changed,self.loader)
 
     def test_occupied_padding_and_stale_code_pairs_are_rejected(self):
         changed=Image(self.input);changed.d[FLASH_START]=1;changed.finalize()

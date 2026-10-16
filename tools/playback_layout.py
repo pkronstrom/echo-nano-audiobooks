@@ -6,7 +6,7 @@ from hooks import encode_t32_branch
 STOCK_SHA256='54a45d233a23c3ce142d1da9c093cc40c46eba417aa91fe915ee867726f4a116'
 # Sector-aligned unused portion of module40's first 64 KiB sort buffer.
 # Refresh already stages its separate blob earlier in that same buffer.
-FLASH_START,FLASH_END=0x36200,0x3e200
+FLASH_START,FLASH_END=0x36200,0x3c800
 FIRMWARE_END=0xa58000
 RAM_START,RAM_END=0x03092400,0x0309fff0
 LOADER_ADDRESS=0x03072e28
@@ -446,7 +446,9 @@ def bookmark_gesture(image):
             raise ValueError('favorite gesture caller changed')
         image.patch(0,address,encode_t32_branch(address,0x03052d68,True))
 
-BROWSER_SORT_FLASH_START,BROWSER_SORT_FLASH_END=0x3e200,0x41748
+# Audited zero backing: tail of refresh sort A plus first 3KiB of sort B.
+# Runtime browser bound is independent and remains below the active decoder.
+BROWSER_SORT_FLASH_START,BROWSER_SORT_FLASH_END=0x3c800,0x42348
 BROWSER_SORT_START,BROWSER_SORT_END=0x0307b874,0x03080470
 
 BROWSER_SORT_HOOKS={
@@ -466,7 +468,7 @@ def apply_browser_sort(stock,image,directory):
         raise ValueError('browser sort artifact mismatch')
     binding=json.loads(artifacts['playback.bind'])
     length=binding['bytes']
-    if not isinstance(length,int) or not 16<=length<=0x8000 or hashlib.sha256(image.d[FLASH_START:FLASH_START+length]).hexdigest()!=binding['sha256']:
+    if not isinstance(length,int) or not 16<=length<=FLASH_END-FLASH_START or hashlib.sha256(image.d[FLASH_START:FLASH_START+length]).hexdigest()!=binding['sha256']:
         raise ValueError('browser sort playback binding mismatch')
     patches=[]
     for name,(address,expected) in BROWSER_SORT_HOOKS.items():
@@ -500,7 +502,7 @@ def relocate_browser_sort(stock,image,payload):
         raise ValueError('browser sort firmware layout changed')
     refresh=stock.modules[40]
     execution=refresh['code_exec']+start-stock.l2f(refresh['code_load'])
-    if start<FLASH_END or execution!=0x0308812c or execution+end-start!=0x0308b674:
+    if start<FLASH_END or execution!=0x0308672c or execution+end-start!=0x0308c274:
         raise ValueError('browser sort leaves verified refresh buffer')
     if any(x['offset']<end and x['offset']+x['length']>start for x in stock.sections):
         raise ValueError('browser sort overlaps resource')

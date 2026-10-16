@@ -4,6 +4,7 @@ ENTRY(browser_sort_enumerate)
 SECTIONS {
     .text : {
         KEEP(*(.header))
+        KEEP(*(.book_init))
         *(.text*) *(.rodata*) *(.data*)
         __sort_metadata_start = .;
         KEEP(*(.sort_metadata))
@@ -19,6 +20,8 @@ SECTIONS {
     } > BROWSER
     /DISCARD/ : { *(.ARM.exidx*) *(.ARM.attributes) *(.comment) *(.note*) }
 }
-ASSERT(SIZEOF(.text) <= 4332, "browser sort code exceeds verified flash tail")
+ASSERT(SIZEOF(.text) <= 14060, "browser sort code exceeds verified flash tail")
 ASSERT(__sort_bss_end <= 0x03080470, "browser sort state overlaps native decoder")
 ASSERT(__sort_metadata_end - __sort_metadata_start >= 4, "browser sort copied reset metadata missing")
+
+ASSERT(browser_book_init == 0x0307b884, "cold browser init entry moved")

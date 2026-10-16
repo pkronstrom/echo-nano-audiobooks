@@ -18,7 +18,7 @@ class AudiobookImageTests(unittest.TestCase):
         for index,(actual,stock) in enumerate(zip(self.book.modules,self.stock.modules)):
             if index!=31:self.assertEqual(actual,stock)
             else:
-                expected=dict(stock);expected['code_load']=self.book.load_base+0x3e200-0x200
+                expected=dict(stock);expected['code_load']=self.book.load_base+0x3c800-0x200
                 expected['code_len']+=len((ROOT/'out/browser_sort/browser_sort.bin').read_bytes())
                 self.assertEqual(actual,expected)
         self.assertEqual(self.book.sections,self.stock.sections)
