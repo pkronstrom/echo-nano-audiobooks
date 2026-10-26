@@ -64,4 +64,4 @@ anomaly remains unresolved, though userrestart reachedmenu andliveSpeed worked.
 
 Folder sorting is NOT implemented: the native browser still follows physical
 directory order. Only generatedM3U playlists use natural sorting. User confirms
-Hemi-Sync CD2-3 appearsbeforeCD1-1. See docs/folder-sorting-investigation.md.
+Meditation set CD2-3 appearsbeforeCD1-1. See docs/folder-sorting-investigation.md.

@@ -48,7 +48,7 @@ Do not report emulator passing as hardware safety or a clean independent review.
 Latest hardware feedback (2026-10-15): book-menu candidate f6be6580…bd4c booted;
 Continue and chapter2 resume were observed. Bookmark gesture has no visible
 result, and Music Playback reopens the book. These are open acceptance issues,
-not passing checks. See device-test-and-restore.md. SD inspection subsequently confirmed missing BOOK.BMK for Bhagavad; it was
+not passing checks. See device-test-and-restore.md. SD inspection subsequently confirmed missing BOOK.BMK for Book A; it was
 created and verified while preserving M3U/RSM. User subsequently confirmed
 bookmark saving works on hardware, but the shortcut has no visible feedback.
 See bookmark-investigation-20261015 evidence and the incident record.
@@ -138,7 +138,7 @@ and Audiobooks/Meditations opening timing await user confirmation. Installed
 
 Latest device feedback:20261025 packet/menu candidate boots and user reports
 crackle fixed. Audiobooks entry ~2s, Meditations ~3s remain but acceptable to
-user. Bookmark gesture on Ichigo briefly blackens display; text visibility
+user. Bookmark gesture on Book B briefly blackens display; text visibility
 and save result need clarification (feedback painter replaces whole screen).
 New requested UX work: modestly shorter Back/Home holds, remove giant side
 artwork from Music Playback and Media Library for more text. Investigate exact
@@ -205,7 +205,7 @@ Installation, boot and live-speed acceptance await user confirmation; installed
 
 User initially suspected boot loop, then restarted once and reached the menu.
 Startup anomaly remains unresolved; do not call repeated cold boot validated.
-User confirms Ichigo Speed via double-click works nicely. The Way to Wealth
+User confirms Book B Speed via double-click works nicely. Book D
 lacks Speed as expected: preparation manifest records M4B remuxed to M4A, not
 MP3. No conversion performed in this follow-up.
 User requested speed label on middle row immediately left of SD, using small
@@ -223,7 +223,7 @@ Archive: builds/phase4f-controls-20261015/small-label-reviewed/manifest.json.
 Custom SHA256: b5630159bccf08f26632d8000da68a130f60c65bf56e0d29bd96e4d02abb48a3
 Recovery20261030 SHA256: 21d22f3b7b7e54920826c487c51f5d6e37ab2cc4c298cf256dd426e9a2d21e32
 No device staging performed. Installed20261027 reached menu after userrestart
-and Ichigo live speed works; initial startup anomaly remains unresolved.
+and Book B live speed works; initial startup anomaly remains unresolved.
 
 
 ## Small-label candidate staged — 2026-10-15
@@ -254,7 +254,7 @@ anomaly remains unresolved, though userrestart reachedmenu andliveSpeed worked.
 
 Folder sorting is NOT implemented: the native browser still follows physical
 directory order. Only generatedM3U playlists use natural sorting. User confirms
-Hemi-Sync CD2-3 appearsbeforeCD1-1. See docs/folder-sorting-investigation.md.
+Meditation set CD2-3 appearsbeforeCD1-1. See docs/folder-sorting-investigation.md.
 
 ## Native folder sorting candidate — 2026-10-15
 
@@ -296,12 +296,12 @@ internal copy, flush/sync and full byte-for-byte readback succeeded:
 Both volumes safely ejected. Evidence:
 builds/device-check/folder-sort-stage-20261015-214111/result.json.
 No SD content changes, raw flash or bootloader operations. Installation, boot,
-Hemi-Sync ordering, selected-file identity and Back acceptance await user test.
+Meditation set ordering, selected-file identity and Back acceptance await user test.
 No commit or push for this iteration.
 
 ## Hardware regression — folder-sort20261102
 
-User reports Enter on Meditations / The Gateway Experience does nothing.
+User reports Enter on Meditations / Meditation set does nothing.
 Reproduced offline: native exFAT alias generation includes a clock suffix,
 which the new selection guard wrongly compared as persistent identity.
 Do not treat20261102 folder navigation as accepted. Narrow correction ignores
@@ -331,7 +331,7 @@ full readback verified2509f5ba98b13073eecca16abd1391f4d66c719716fa2d8b611fd2aba8
 Internal disk8 safely ejected. Evidence:
 builds/device-check/folder-entry-stage-20261015-215651/result.json.
 No SD writes, raw flash or bootloader operations. Installation/boot and
-The Gateway Experience folder entry await user confirmation. DiskID historical.
+the meditation set folder entry await user confirmation. DiskID historical.
 
 ## Sorted folder playback candidate — 2026-10-15
 
@@ -357,7 +357,7 @@ returns Library because the book replaced the shared queue.
 
 Archive: builds/phase4f-controls-20261015/ordered-playback-reviewed/manifest.json.
 No device transfer performed; Nano storage is not mounted. Hardware check:
-Meditations → Gateway → CD1 should show1/N; Next/Previous and track completion
+Meditations → Meditation set → CD1 should show1/N; Next/Previous and track completion
 must follow CD2/CD3 order. Test ordinary Music and explicit M3Us too.
 
 ## Audiobook player controls candidate — 2026-10-16
@@ -570,7 +570,7 @@ Archive: builds/phase4k-long-books-20261018/reviewed/manifest.json.
 Custom SHA256:0902a40a9df68b8badc63273c0c6d512ab2aae374be731913e42ac502fbe2f97
 Recovery SHA256:004caf0875a3c3605f9e1dbd6733608544f5818493a90402091334867e91af0e
 Offline RC only; no installation, publication, commit or push. First-update boot
-anomaly and user-deferred Soulcraft full restart remain unresolved. Hardware
+anomaly and user-deferred Book C full restart remain unresolved. Hardware
 clock legibility, autosave durability/audio timing and long-file seek acceptance
 remain pending. Read docs/long-audiobook-followup.md for evidence and limits.
 
@@ -587,7 +587,7 @@ readback succeeded:
 Both volumes safely ejected. Evidence: builds/device-check/long-books-stage-20261018-135339/result.json.
 No SD content changes, raw flash or bootloader operations. Installation and
 first-post-update boot await user confirmation; hardware hours/autosave acceptance
-and the deferred Soulcraft full-restart issue remain open. Archived RC manifest
+and the deferred Book C full-restart issue remain open. Archived RC manifest
 is preserved as the pre-staging checkpoint. No commit, push or publication.
 
 
@@ -670,9 +670,9 @@ book opening remains20261118. Archive manifest retains its offline provenance.
 
 ## 20261120 hardware UI feedback — 2026-10-18
 
-User photo IMG_5542 shows Soulcraft playing with hours displayed and the new
+A user photo shows Book C playing with hours displayed and the new
 book glyph, but stale author text and footer symbols. User confirms Continue
-Soulcraft works from the Audiobooks menu. This confirms the candidate ran;
+Book C works from the Audiobooks menu. This confirms the candidate ran;
 first-post-update boot timing and a separate restart durability check were not
 reported. The screen change is not accepted. Photo remains private/outside Git.
 

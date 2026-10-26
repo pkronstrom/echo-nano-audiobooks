@@ -3,7 +3,7 @@
 Status: storage, favorite gesture, book/chapters/bookmark menus, jump and confirmed
 deletion are implemented offline. See [current UI integration](book-menu-implementation.md).
 On2026-10-15 the user confirmed bookmark saving on the installed book-menu
-candidate after Bhagavad received its missing BMK companion. Other operations
+candidate after Book A received its missing BMK companion. Other operations
 remain host-tested rather than device-accepted. No public release is approved.
 
 Bookmarks belong beside the playlist, on the same storage device:

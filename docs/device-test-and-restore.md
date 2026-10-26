@@ -164,17 +164,17 @@ build and companion evidence while diagnosing bookmarks.
 ## Missing bookmark companion — 2026-10-15
 
 Connected Music SD (UUID693B8030-CB7E-32AE-999B-5D186782949A, Secure Digital)
-contained BOOK.M3U and BOOK.RSM but no BOOK.BMK for Bhagavad Gita. The other
+contained BOOK.M3U and BOOK.RSM but no BOOK.BMK for Book A. The other
 four prepared test-book folders also had no BMK. The firmware requires a
 preallocated companion; missing storage makes saving fail without visible feedback.
 This establishes a storage prerequisite failure, not that the physical gesture works.
 
-Preserved Bhagavad playlist/resume under ignored
+Preserved Book A playlist/resume under ignored
 builds/device-check/bookmark-investigation-20261015/. Both resume sectors have
-valid CRCs. Ran the preparation tool for Bhagavad only; created 1024-byte BMK
+valid CRCs. Ran the preparation tool for Book A only; created 1024-byte BMK
 with two valid empty ENB1 sectors, flushed and read back. M3U and RSM remained
 byte-identical. No audio or firmware was changed. Other test books still need
-preparation before bookmark tests. Device retest: reopen Bhagavad BOOK.M3U,
+preparation before bookmark tests. Device retest: reopen Book A BOOK.M3U,
 start playback, double Previous, wait briefly, Back then Bookmarks.
 
 Lesson: installing bookmark-capable firmware does not retrofit companion files
@@ -184,7 +184,7 @@ diagnosis; future UI should distinguish missing storage from an empty journal.
 
 ## Bookmark hardware retest passed — 2026-10-15
 
-After adding Bhagavad's missing BOOK.BMK, the user confirmed bookmarks work.
+After adding Book A's missing BOOK.BMK, the user confirmed bookmarks work.
 The user also confirmed there is no visible feedback when pressing the shortcut.
 Bookmark creation/gesture is therefore hardware-confirmed for this test; visible
 save confirmation remains a UX issue. This does not establish every bookmark
@@ -257,7 +257,7 @@ not mark both acceptance items passed yet or infer every speed was tested.
 
 User clarified accelerated crackle was fixed; category menus still take about
 2s Audiobooks/3s Meditations and user considers this tolerable. Double Previous
-bookmark gesture on Ichigo showed a black screen for about a second. Whether
+bookmark gesture on Book B showed a black screen for about a second. Whether
 confirmation text appeared and bookmark persisted awaits clarification.
 
 feedback.c paint clears all640 framebuffer bytes, renders a confirmation and
@@ -327,7 +327,7 @@ Installation, boot and live-speed acceptance await user confirmation; installed
 
 User initially suspected boot loop, then restarted once and reached the menu.
 Startup anomaly remains unresolved; do not call repeated cold boot validated.
-User confirms Ichigo Speed via double-click works nicely. The Way to Wealth
+User confirms Book B Speed via double-click works nicely. Book D
 lacks Speed as expected: preparation manifest records M4B remuxed to M4A, not
 MP3. No conversion performed in this follow-up.
 User requested speed label on middle row immediately left of SD, using small
@@ -345,7 +345,7 @@ Archive: builds/phase4f-controls-20261015/small-label-reviewed/manifest.json.
 Custom SHA256: b5630159bccf08f26632d8000da68a130f60c65bf56e0d29bd96e4d02abb48a3
 Recovery20261030 SHA256: 21d22f3b7b7e54920826c487c51f5d6e37ab2cc4c298cf256dd426e9a2d21e32
 No device staging performed. Installed20261027 reached menu after userrestart
-and Ichigo live speed works; initial startup anomaly remains unresolved.
+and Book B live speed works; initial startup anomaly remains unresolved.
 
 
 ## Small-label candidate staged — 2026-10-15
@@ -376,7 +376,7 @@ anomaly remains unresolved, though userrestart reachedmenu andliveSpeed worked.
 
 Folder sorting is NOT implemented: the native browser still follows physical
 directory order. Only generatedM3U playlists use natural sorting. User confirms
-Hemi-Sync CD2-3 appearsbeforeCD1-1. See docs/folder-sorting-investigation.md.
+Meditation set CD2-3 appearsbeforeCD1-1. See docs/folder-sorting-investigation.md.
 
 ## Native folder sorting candidate — 2026-10-15
 
@@ -418,12 +418,12 @@ internal copy, flush/sync and full byte-for-byte readback succeeded:
 Both volumes safely ejected. Evidence:
 builds/device-check/folder-sort-stage-20261015-214111/result.json.
 No SD content changes, raw flash or bootloader operations. Installation, boot,
-Hemi-Sync ordering, selected-file identity and Back acceptance await user test.
+Meditation set ordering, selected-file identity and Back acceptance await user test.
 No commit or push for this iteration.
 
 ## Hardware regression — folder-sort20261102
 
-User reports Enter on Meditations / The Gateway Experience does nothing.
+User reports Enter on Meditations / Meditation set does nothing.
 Reproduced offline: native exFAT alias generation includes a clock suffix,
 which the new selection guard wrongly compared as persistent identity.
 Do not treat20261102 folder navigation as accepted. Narrow correction ignores
@@ -453,7 +453,7 @@ full readback verified2509f5ba98b13073eecca16abd1391f4d66c719716fa2d8b611fd2aba8
 Internal disk8 safely ejected. Evidence:
 builds/device-check/folder-entry-stage-20261015-215651/result.json.
 No SD writes, raw flash or bootloader operations. Installation/boot and
-The Gateway Experience folder entry await user confirmation. DiskID historical.
+the meditation set folder entry await user confirmation. DiskID historical.
 
 ## Sorted folder playback candidate — 2026-10-15
 
@@ -479,7 +479,7 @@ returns Library because the book replaced the shared queue.
 
 Archive: builds/phase4f-controls-20261015/ordered-playback-reviewed/manifest.json.
 No device transfer performed; Nano storage is not mounted. Hardware check:
-Meditations → Gateway → CD1 should show1/N; Next/Previous and track completion
+Meditations → Meditation set → CD1 should show1/N; Next/Previous and track completion
 must follow CD2/CD3 order. Test ordinary Music and explicit M3Us too.
 
 ## Audiobook player controls candidate — 2026-10-16
@@ -631,7 +631,7 @@ readback succeeded:
 Both volumes safely ejected. Evidence: builds/device-check/long-books-stage-20261018-135339/result.json.
 No SD content changes, raw flash or bootloader operations. Installation and
 first-post-update boot await user confirmation; hardware hours/autosave acceptance
-and the deferred Soulcraft full-restart issue remain open. Archived RC manifest
+and the deferred Book C full-restart issue remain open. Archived RC manifest
 is preserved as the pre-staging checkpoint. No commit, push or publication.
 
 
@@ -701,9 +701,9 @@ book opening remains20261118. Archive manifest retains its offline provenance.
 
 ## 20261120 hardware UI feedback — 2026-10-18
 
-User photo IMG_5542 shows Soulcraft playing with hours displayed and the new
+A user photo shows Book C playing with hours displayed and the new
 book glyph, but stale author text and footer symbols. User confirms Continue
-Soulcraft works from the Audiobooks menu. This confirms the candidate ran;
+Book C works from the Audiobooks menu. This confirms the candidate ran;
 first-post-update boot timing and a separate restart durability check were not
 reported. The screen change is not accepted. Photo remains private/outside Git.
 

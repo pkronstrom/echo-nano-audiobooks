@@ -9,7 +9,7 @@ candidate is not installed or hardware-accepted.
 **Do not install an old P3a/P4a artifact from historical notes.** The original
 P4a boot-looped; its menu-bypass diagnostic later froze. The20261017 loader-fix
 image boots and received user menu/Shuffle/M3U-resume checks. The installed20261019 book-menu build f6be6580…bd4c boots; Continue and
-chapter2 resume work, and Bhagavad bookmark saving works after adding BOOK.BMK.
+chapter2 resume work, and Book A bookmark saving works after adding BOOK.BMK.
 Music still reopens the book and save feedback is absent. Follow-up changes are
 offline until reviewed; do not confuse mutable build output with that candidate.
 Read [recovery lessons](recovery-lessons-2026-10-14.md) and

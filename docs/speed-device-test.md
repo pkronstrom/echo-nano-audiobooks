@@ -2,7 +2,7 @@
 
 This is a controlled device-test checklist, not a hardware-validation result.
 The installed20261027 live-speed build reached the menu after one user restart;
-the initial startup anomaly remains unresolved. The user reports Ichigo speed
+the initial startup anomaly remains unresolved. The user reports Book B speed
 selection via the player menu works nicely. The20261029 small-label follow-up
 remains offline. The earlier20261025 packet fix was reported crackle-free. Identify images
 by archive and SHA256, not date alone; an earlier controls-only20261027 archive

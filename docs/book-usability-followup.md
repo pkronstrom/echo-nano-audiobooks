@@ -36,7 +36,7 @@ RAM. Restart or library refresh clears them. Per-book BOOK.RSM and BOOK.BMK
 remain durable on SD. A durable last-selected-book feature still needs a
 separate, preallocated journal and preparation migration; it is not implemented.
 
-Only Bhagavad received its missing BMK on the previous SD connection. The other
+Only Book A received its missing BMK on the previous SD connection. The other
 four prepared test books need the preparation tool rerun before testing saves.
 No SD card was modified during this offline checkpoint.
 

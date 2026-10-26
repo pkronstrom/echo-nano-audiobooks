@@ -18,7 +18,7 @@ or a published release. This corrected pair has not yet received hardware accept
 pair adds the narrowly reviewed large-cluster fallback correction.
 
 Includes hours on Now Playing, best-effort five-minute Continue saving, and host
-chapter export with constant-bitrate MP3. The Soulcraft full-restart report is
+chapter export with constant-bitrate MP3. The Book C full-restart report is
 still unresolved; existing SD audio and saved state have not been replaced.
 See [long-audiobook follow-up](long-audiobook-followup.md) for limits and evidence.
 
@@ -139,7 +139,7 @@ offline candidate, not installed or published; prior archives remain historical.
 
 ## 20261122 content navigation/display candidate
 
-Supersedes20261120's incomplete screen. The user confirmed Continue Soulcraft
+Supersedes20261120's incomplete screen. The user confirmed Continue Book C
 works, but the photo showed stale author/footer symbols. Corrected candidate
 20261122/recovery20261123 also adds the approved menu order, current-context
 Now Playing and direct chapter context through Folders. See

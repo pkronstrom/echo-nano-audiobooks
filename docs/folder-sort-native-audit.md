@@ -251,7 +251,7 @@ broader mixed-content filters and physical-device acceptance remain limits.
 
 ## Hardware follow-up: exFAT selection refusal
 
-User reported20261102 reaches Meditations but Enter on The Gateway Experience
+User reported20261102 reaches Meditations but Enter on the meditation set
 has no effect. Reproduced in native ARM execution:305fa94 synthesizes the11-byte
 short alias using0300d144 clock modulo1000. Comparing all32 converted entry bytes
 therefore falsely treated an unchanged entry as replaced between rendering and

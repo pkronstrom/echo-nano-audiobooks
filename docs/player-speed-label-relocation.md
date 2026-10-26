@@ -69,4 +69,4 @@ Archive: builds/phase4f-controls-20261015/small-label-reviewed/manifest.json.
 Custom SHA256: b5630159bccf08f26632d8000da68a130f60c65bf56e0d29bd96e4d02abb48a3
 Recovery20261030 SHA256: 21d22f3b7b7e54920826c487c51f5d6e37ab2cc4c298cf256dd426e9a2d21e32
 No device staging performed. Installed20261027 reached menu after userrestart
-and Ichigo live speed works; initial startup anomaly remains unresolved.
+and Book B live speed works; initial startup anomaly remains unresolved.

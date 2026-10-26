@@ -1,7 +1,7 @@
 # Long audiobook follow-up — 2026-10-18
 
 Offline RC 20261116/recovery 20261117. No device staging, installation, commit or push. The reported
-ten-second seek restarting Soulcraft is **not yet reproduced or fixed**.
+ten-second seek restarting Book C is **not yet reproduced or fixed**.
 
 ## Source changes
 
@@ -35,8 +35,8 @@ it does not implement timestamp sections within one MP3.
 
 ## Evidence and remaining work
 
-The mounted Bembun T5 SSD contains Soulcraft's original M4B: 51,373 seconds,
-AAC 22,050 Hz stereo, 16 embedded chapters. No Soulcraft MP3 or Nano volume was
+A mounted external SSD contains Book C's original M4B: 51,373 seconds,
+AAC 22,050 Hz stereo, 16 embedded chapters. No Book C MP3 or Nano volume was
 found. A local reproduction using BKZ's original one-file conversion command
 has a plausible 51,373-second duration. This does not establish the exact bytes
 or player behavior of the file that restarted. The listening speed is unknown.
@@ -86,7 +86,7 @@ Fresh identification: Music SD, exFAT, UUID
 Mac's SD reader. Historical device identifier disk4s1 must not be reused without
 identification. No Nano internal volume was present. All card access was read-only.
 
-Soulcraft's 603,055,993-byte MP3 matches its original BKZ receipt SHA256
+Book C's 603,055,993-byte MP3 matches its original BKZ receipt SHA256
 `360b62e8659bd444411b6c5469512ef21e27bd9764cb7fc133978a6a66111d07`.
 It is MPEG-2 Layer III, 22,050 Hz stereo, VBR with Xing metadata, no embedded
 chapters. BOOK.M3U references this one file. Both RSM and BMK journal sectors
@@ -111,7 +111,7 @@ This explains inaccurate seeks, not a proven restart at source zero.
 
 Future MP3 conversions in BKZ and prepare_book.py now use 128 kb/s constant
 bitrate instead of VBR quality 2. Chapter export remains as above. Existing MP3
-inputs/transfers are preserved; Soulcraft on the SD card has not been replaced.
+inputs/transfers are preserved; Book C on the SD card has not been replaced.
 Real short chapter conversions pass at 128 kb/s in both exporters. Long-book
 and hardware audio acceptance remain pending.
 

@@ -4,10 +4,10 @@
 
 The loader-corrected20261017 image reaches responsive menus and passes the
 previous Shuffle→File Browser freeze sequence. User reports M3U resume works.
-Readback of Bhagavad Gita BOOK.RSM contains valid CRC records, generations6/7,
+Readback of Book A BOOK.RSM contains valid CRC records, generations6/7,
 chapter1 at171448/174760ms. Audible output has not yet been confirmed.
 
-Original Ichigo MP3 and minimal-metadata MP3 each take about8s to start directly;
+Original Book B MP3 and minimal-metadata MP3 each take about8s to start directly;
 minimal M3U starts quickly. Earlier attribution to cover art was premature and
 is withdrawn. Compare identical bytes through the two launch routes.
 
@@ -141,7 +141,7 @@ The book/chapters/bookmark menus and jump controls remain to be implemented.
 
 ## Launch timing observation — 2026-10-15
 
-User tentatively reports Ichigo indexed opens fastest, with minimal also fast.
+User tentatively reports Book B indexed opens fastest, with minimal also fast.
 No new timed comparison or exact file identity was supplied. Preserve both as
 comparison cases; do not equate this with proof of metadata or codec cost.
 Main-menu category latency is a separate root-discovery path.

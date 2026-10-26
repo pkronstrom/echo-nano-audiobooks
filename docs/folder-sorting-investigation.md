@@ -1,6 +1,6 @@
 # Native folder sorting remains unfinished
 
-User reports Hemi-Sync meditation entries show CD2-3 beforeCD1-1. Current natural
+User reports Meditation set entries show CD2-3 beforeCD1-1. Current natural
 sorting exists only in tools/prepare_book.py when generating a new playlist.
 Existing playlists are preserved. Native Music/meditation folder listings still
 use physical directory order; no claim of natural folder sorting is warranted.

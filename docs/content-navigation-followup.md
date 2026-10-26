@@ -2,7 +2,7 @@
 
 Candidate 20261122 / stock recovery 20261123. Offline only; not installed.
 Supersedes the incomplete 20261120 audiobook screen. The user confirmed its
-Continue Soulcraft menu entry works, but reported stale author/footer symbols
+Continue Book C menu entry works, but reported stale author/footer symbols
 and an unclear book glyph. First-boot and separate restart durability acceptance
 were not explicitly reported.
 
@@ -84,7 +84,7 @@ No device staging, commit or push was performed for this iteration.
 
 ## Device acceptance checklist
 
-- Observe first boot, then open Soulcraft: clear book glyph, left-aligned chapter
+- Observe first boot, then open Book C: clear book glyph, left-aligned chapter
   row, no heart/mode symbols, visible battery and correct hours/speed/count.
 - Open Now Playing from a book, a meditation and music; current audio remains.
 - Check every reordered icon opens its matching screen and the highlight returns.

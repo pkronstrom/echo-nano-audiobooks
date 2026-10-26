@@ -17,7 +17,7 @@ class BookScreenTests(unittest.TestCase):
         self.cpu.hook_add(UC_HOOK_CODE,self.hook)
         self.cpu.mem_write(self.f.syms['playback_active'],struct.pack('<I',1))
         self.cpu.mem_write(0x0300e6e3,b'\0')
-        self.cpu.mem_write(self.f.call('playback_book_path'),'/Books/Soulcraft/BOOK.M3U\0'.encode('utf-16le'))
+        self.cpu.mem_write(self.f.call('playback_book_path'),'/Books/BookTitle/BOOK.M3U\0'.encode('utf-16le'))
         self.cpu.mem_write(0x03039928,'The chapter title\0'.encode('utf-16le'))
         self.cpu.mem_write(0x03039a26,'Author should be hidden\0'.encode('utf-16le'))
         self.cpu.mem_write(0x03039798,'Chapter file.mp3\0'.encode('utf-16le'))
@@ -46,9 +46,9 @@ class BookScreenTests(unittest.TestCase):
         before=bytes([0xa5])*640;self.cpu.mem_write(0x03007d88,before)
         self.cpu.mem_write(0x0300d6e0,b'\x01\0')
         self.assertEqual(self.f.call(0x0307b1f4),1)
-        self.assertEqual([(r,t) for r,t,_ in self.rows],[((12,0,127,11),'Soulcraft'),((0,12,86,23),'The chapter title')])
+        self.assertEqual([(r,t) for r,t,_ in self.rows],[((12,0,127,11),'BookTitle'),((0,12,86,23),'The chapter title')])
         self.assertEqual(self.scroll,[0x03005edc,0x03005f0c])
-        self.assertEqual(self.text(self.rows[0][2]),'Soulcraft')
+        self.assertEqual(self.text(self.rows[0][2]),'BookTitle')
         self.assertEqual(bytes(self.cpu.mem_read(0x0300d6e0,2)),b'\x01\0')
         after=bytes(self.cpu.mem_read(0x03007d88,640))
         for x in range(128):
@@ -109,7 +109,7 @@ class BookScreenTests(unittest.TestCase):
         for event in (73,482):self.f.call(0x0306b040,event)
         self.f.call(0x0307ad14);self.f.call(0x0307adc8)
         self.rows=[];self.f.call('playback_book_screen')
-        self.assertEqual([text for _,text,_ in self.rows],['Soulcraft','The chapter title'])
+        self.assertEqual([text for _,text,_ in self.rows],['BookTitle','The chapter title'])
         self.assertEqual(self.rows[1][0],(0,12,86,23))
 
     def test_actual_native_heart_is_cleared_and_battery_preserved(self):

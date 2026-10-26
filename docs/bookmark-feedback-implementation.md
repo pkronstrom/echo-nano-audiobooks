@@ -62,7 +62,7 @@ acceptance remain unvalidated; no installation is authorized by this work.
 
 User clarified accelerated crackle was fixed; category menus still take about
 2s Audiobooks/3s Meditations and user considers this tolerable. Double Previous
-bookmark gesture on Ichigo showed a black screen for about a second. Whether
+bookmark gesture on Book B showed a black screen for about a second. Whether
 confirmation text appeared and bookmark persisted awaits clarification.
 
 feedback.c paint clears all640 framebuffer bytes, renders a confirmation and

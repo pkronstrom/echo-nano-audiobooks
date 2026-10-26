@@ -132,11 +132,11 @@ class BrowserSortAdapterTests(unittest.TestCase):
 
  def test_exfat_directory_selection_survives_native_alias_clock_change(self):
   self.real_native=True;self.directory(True)
-  self.entries=[*exfat_entry('The Gateway Experience',100,True),END]
+  self.entries=[*exfat_entry('Guided Meditations Set',100,True),END]
   self.w(0x0300d144,123)
   self.call('browser_sort_count',0x03005a5e,FOLDER,3)
   self.call('browser_sort_enumerate',0x03005a5e,NODE,FOLDER,0,3)
-  self.assertEqual(self.label(NODE),'The Gateway Experience')
+  self.assertEqual(self.label(NODE),'Guided Meditations Set')
   self.assertEqual(self.call('browser_sort_validate',NODE),1)
   self.w(0x0300d144,456)
   self.assertEqual(self.call('browser_sort_validate',NODE),1)
@@ -146,11 +146,11 @@ class BrowserSortAdapterTests(unittest.TestCase):
   for field in ('cluster','size','name','flags'):
    with self.subTest(field=field):
     self.directory(True)
-    self.entries=[*exfat_entry('The Gateway Experience',100,True),END]
+    self.entries=[*exfat_entry('Guided Meditations Set',100,True),END]
     self.call('browser_sort_count',0x03005a5e,FOLDER,3)
     self.call('browser_sort_enumerate',0x03005a5e,NODE,FOLDER,0,3)
     self.w(0x0300d144,456)
-    if field=='name':self.entries=[*exfat_entry('The Gateway Experiencf',100,True),END]
+    if field=='name':self.entries=[*exfat_entry('Guided Meditations Seu',100,True),END]
     else:
      e=bytearray(self.entries[1]);e[{'cluster':20,'size':8,'flags':1}[field]]^=1;self.entries[1]=bytes(e)
     self.assertEqual(self.call('browser_sort_validate',NODE),0)

@@ -63,7 +63,7 @@ attempted external design review failed to run; no approval is attributed to it.
 ## Device acceptance checklist
 
 - Observe first update boot before manual reset.
-- Open Soulcraft: book/title first row; chapter title second row; no heart or
+- Open Book C: book/title first row; chapter title second row; no heart or
   order arrow; verify long-title scrolling, time beyond one hour and speed.
 - Play a book long enough for the first valid save, restart, then open Audiobooks:
   Continue should name and reopen it at saved progress.
