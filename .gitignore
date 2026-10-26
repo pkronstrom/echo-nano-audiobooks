@@ -9,3 +9,6 @@ log/
 __pycache__/
 .direnv/
 .DS_Store
+# local planning notes (not published)
+docs/plans/
+MASTERPLAN.md
