@@ -2,10 +2,11 @@
 
 Run commands from the repository root.
 
-The installed firmware and tagged RC update existing state files; prepare new
-books on the computer for those versions. The post-RC candidate adds guarded
-automatic preparation for simple book folders, but is not yet hardware tested.
-See [automatic preparation](automatic-book-preparation.md) for its limits and
+The staged 20261110 firmware expects prepared M3U/RSM/BMK files. The newer local
+`phase4j-release-candidate` can create missing companions for supported simple
+book folders, but it is not installed or hardware-tested. Do not assume new
+books on the SD card were prepared automatically. See
+[automatic preparation](automatic-book-preparation.md) for its limits and
 fallback. The following host workflow remains supported for all versions.
 
 ## SD layout

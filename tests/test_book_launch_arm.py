@@ -9,6 +9,9 @@ class BookLaunchTests(unittest.TestCase):
         self.cpu.mem_write(0x20001000,'/LIST.M3U'.encode('utf-16le')+b'\0\0')
         self.f.call('book_preview_open',0x20001000)
         self.signature=self.f.call('book_preview_signature')
+        # The real menu captures the selected browser path before arming an
+        # override. It now shares that retained path with pending launch state.
+        self.cpu.mem_write(self.f.syms['playback_launch_buffer'],'/list.m3u\0'.encode('utf-16le'))
     def launch(self,chapter,ms,signature=None):
         self.f.call('playback_launch_override',chapter,ms,self.signature if signature is None else signature)
         self.assertEqual(self.f.call(0x0307acb6),1)

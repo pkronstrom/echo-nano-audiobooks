@@ -41,8 +41,8 @@ class AutomaticBookGateTests(unittest.TestCase):
         self.fail('fixture directory not present in live sectors')
 
     def fixture(self, fs='fat', marker=True, cached_kind=1, resident=False,
-                names=('CD2.mp3', 'CD1.mp3')):
-        disk, child = self.base.fixture(fs, names)
+                names=('CD2.mp3', 'CD1.mp3'), sectors_per_cluster=4):
+        disk, child = self.base.fixture(fs, names, sectors_per_cluster=sectors_per_cluster)
         disk.cpu.mem_write(B, bytes(0x210))
         disk.cpu.mem_write(C, bytes(0x100))
         disk.cpu.mem_write(0x0300d173, b'\0')
@@ -91,6 +91,15 @@ class AutomaticBookGateTests(unittest.TestCase):
 
     def event(self, disk, message=ENTER):
         return disk.call(self.symbols['browser_book_event'], message)
+
+    def test_large_exfat_cluster_keeps_existing_book_entry_without_failure_screen(self):
+        disk, _ = self.fixture('exfat', names=('BOOK.M3U', 'BOOK.RSM', 'BOOK.BMK', 'One.mp3'), sectors_per_cluster=512)
+        before = bytes(disk.sectors)
+        self.assertEqual(self.event(disk), 0)
+        self.assertEqual(self.dispatches, [ENTER])
+        self.assertFalse(self.posts)
+        self.assertFalse(disk.sector_writes)
+        self.assertEqual(bytes(disk.sectors), before)
 
     def test_negative_collection_and_ui_gates_do_not_write(self):
         for fs in ('fat', 'exfat'):

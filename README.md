@@ -1,8 +1,12 @@
 # FiiO Echo Nano custom firmware
 
-> **2026-10-14 hardware result:** P4a boot-looped. Stock recovery succeeded and
-> the user confirmed the normal menu. Do not reflash or publish this candidate.
-> Read [recovery lessons](docs/recovery-lessons-2026-10-14.md) before device work.
+> **Current status (2026-10-17):** The local `phase4j-release-candidate` at
+> `219d972` adds guarded audiobook preparation and is offline-tested, but is not
+> installed or hardware-accepted. The staged 20261110 image reached the menu
+> only after the user restarted it following a reported startup hang/loop. The
+> earlier P4a boot-looped; stock recovery succeeded. Read the current
+> [delivery status](MASTERPLAN.md) and [recovery lessons](docs/recovery-lessons-2026-10-14.md)
+> before device work.
 
 This workspace starts from NaniteCFW revision
 `ea4e6dc2cb386483093c7b045b6e85f26939ce2e`. The project requirements are in
@@ -11,12 +15,13 @@ and current delivery status is in [MASTERPLAN.md](MASTERPLAN.md).
 See [baseline validation and recovery](docs/baseline.md) before using a build.
 Local builds disable upstream's experimental power patches by default
 (`POWER_SAVE=0`). The upstream description below includes those optional patches.
-The newest test build, **P4a**, adds approved icons and marker-based Audiobooks/Meditation shortcuts, ordered M3U playback and independent
-per-book resume, with a preparation tool for chapter folders or single long
-files and optional MP3 conversion. It includes recursive `.nomusic`, `.audiobook` and `.meditation` exclusion
-and File Browser folder containment. See [audiobook setup, images and device
-checklist](docs/audiobooks.md). Build it with `make audiobook`; the default
-`make` retains P1b. These local changes are host/ARM-verified, but P4a failed its first hardware boot test.
+The firmware has marked Audiobooks and Meditations roots, ordered M3U playback,
+per-book resume/bookmarks, native folder sorting, and MP3-only adjustable speed.
+The latest local source tag adds guarded automatic preparation for supported
+book folders. Its candidate is not installed or hardware-accepted. See
+[current behavior and limits](docs/automatic-book-preparation.md),
+[audiobook setup](docs/audiobooks.md), and [delivery status](MASTERPLAN.md).
+The failed P4a image is historical; do not install it.
 
 The previous [quick start](docs/TEST-TOMORROW.md) is historical; follow the current recovery lessons before another device session.
 The [patch-only release format](docs/releases.md) lets users supply the official
@@ -35,8 +40,9 @@ on your computer.
 
 > **Use at your own risk.** This is experimental, unofficial firmware. Flashing
 > any firmware can leave a device unusable. Read [Recovery](#recovery) before you
-> start. Nothing here changes the boot loader, and so far a stock image has always
-> been able to replace a custom one, but there is no guarantee.
+> start. Current patches do not change the bootloader. Recovery from an
+> application boot failure is not guaranteed; the P4a failure required a
+> controlled USB Loader restore. Follow the project recovery record.
 
 ## Features
 
@@ -51,8 +57,10 @@ on your computer.
 | `CFWLOG.TXT` in the card's root after each refresh: timings and counters | tested on device |
 | **Power saving**: lower CPU clocks during playback (decode core 144-288 MHz instead of 350-450 MHz for MP3, AAC, WMA, WAV, OGG, FLAC and ALAC), the CPU sleeps between events with the screen on, and the scroll wheel is polled every 1 ms instead of every 0.4 ms | new in 6.0.5; battery gain not measured |
 
-About shows `P4a` for the audiobook build (`P1b` for the default build). The feature table above describes
-upstream testing; local changes have not yet been tested on a device.
+The About string depends on the image. The latest automatic-preparation
+candidate still reports P4e. Feature claims in the table above describe
+upstream testing; they do not imply that this project's later changes passed
+hardware acceptance.
 
 After flashing, run **Media Library → Media Library Refresh** once: Recent Albums
 and Artists need data the stock refresh doesn't write.
@@ -92,7 +100,8 @@ over this one, raise the date by a day each time (`make DATE=20260831`, ...).
 1. Connect the Echo Nano by USB and copy `out/NANOV170.IMG` to the root of its
    internal storage.
 2. Eject it and restart the player; it installs the update while it boots.
-3. Check **About**: P1b for this default build, P4a for the audiobook image.
+3. Check **About** and the image date against the build manifest. P4a is the
+   failed historical candidate and must not be installed.
 4. Run **Media Library Refresh** once.
 
 ## Recovery

@@ -9,5 +9,4 @@ int media_browser_directory(media_read_fn, void *, int exfat, const u8 *browser,
                             const u8 *node, u32 root_cluster, u16 *out);
 /* UI path assembly finishes before playlist loading. These synchronous
  * operations share scratch storage; neither may retain it across a call. */
-extern u16 playback_path_scratch[256];
 #endif

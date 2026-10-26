@@ -19,6 +19,7 @@ u32 navigation_icons[8], navigation_count;
 static u8 labels[64];
 static u8 last_error;
 extern void navigation_dispatch_bridge(void), navigation_strip_bridge(void), navigation_event_bridge(void);
+extern u32 navigation_native_dispatch(void);
 static __attribute__((noinline)) void branch(u32 address, void (*target)(void))
 {
     u32 off=((u32)target&~1u)-address-4, sign=(off>>24)&1;
@@ -42,13 +43,19 @@ static u32 scan(void)
 void navigation_menu_init(void)
 {
     chooser=pending_kind=0;book_menu_reset();
-    u32 kinds=scan();navigation_count=6;
-    __builtin_memcpy(labels,(void *)0x0300e6d8,48);
-    __builtin_memcpy(navigation_icons,(void *)0x03079504,24);
-    for(u32 kind=1;kind<=2;kind++)if(kinds&kind){
-        u32 n=navigation_count++;kind_at[n]=kind;
-        __builtin_memset(labels+n*8,0,8);H(labels+n*8+6)=kind==1?0x83:0x84;
-        navigation_icons[n]=(u32)(kind==1?navigation_book_icon:navigation_meditation_icon);
+    u32 kinds=scan();navigation_count=0;
+    static const u8 order[]={2,6,7,1,0,5,3,4};
+    for(u32 i=0;i<8;i++){
+        u32 item=order[i];
+        if(item>=6 && !(kinds&(1u<<(item-6))))continue;
+        u32 n=navigation_count++;kind_at[n]=item;
+        if(item<6){
+            __builtin_memcpy(labels+n*8,(const u8 *)0x0300e6d8+item*8,8);
+            navigation_icons[n]=((const u32 *)0x03079504)[item];
+        }else{
+            __builtin_memset(labels+n*8,0,8);H(labels+n*8+6)=item==6?0x83:0x84;
+            navigation_icons[n]=(u32)(item==6?navigation_book_icon:navigation_meditation_icon);
+        }
     }
     branch(0x03079b1e,navigation_dispatch_bridge);
     branch(0x030795b4,navigation_strip_bridge);
@@ -62,16 +69,16 @@ void navigation_menu_init(void)
 u32 navigation_menu_dispatch(void)
 {
     u32 selected=H(0x0300e708);
-    if(selected==2) {
-        u32 music=playback_music_request();
-        if(music==1){playback_music_launch();return 1;}
-        if(music==2){
-            /* Let the stock dispatch open its own Music Library route. */
-            H(0x0300e708)=1;return 0;
-        }
+    if(selected>=navigation_count)return 1;
+    u32 item=kind_at[selected];
+    if(item==2 && playback_active){window(3,0);return 1;}
+    if(item<6){
+        /* Native dispatch still uses its original slot IDs (including Shuffle).
+         * Restore the visible cursor after the native window request is queued. */
+        H(0x0300e708)=item;navigation_native_dispatch();
+        H(0x0300e708)=selected;return 1;
     }
-    if(selected<6||selected>=navigation_count)return 0;
-    u32 kind=kind_at[selected];
+    u32 kind=1u<<(item-6);
     if(!(scan()&kind)){navigation_menu_init();post(51);return 1;}
     pending_kind=kind;
     *(u8 *)0x030057f0=0;*(u8 *)0x0300d695=1;
@@ -125,7 +132,7 @@ static void chooser_draw(void)
         fw_lock();int ok=content_root_chain(read_entry,0,FS_TYPE==3,root,chain);
         if(ok==1){
             for(u32 level=0;level<root->depth;level++){
-                u16 *component=playback_path_scratch;struct media_ref ref;struct media_dir parent=chain[level].parent;
+                u16 component[256];struct media_ref ref;struct media_dir parent=chain[level].parent;
                 if(media_directory_name(read_entry,0,FS_TYPE==3,&parent,chain[level].cluster,component,&ref)!=1)break;
                 if(used<254)name[used++]='/';
                 for(u32 n=0;component[n]&&used<254;n++)name[used++]=component[n];
@@ -161,6 +168,7 @@ static void browse_roots(void)
 }
 void navigation_browser_init(void)
 {
+    u16 last_path[256];
     branch(0x0307b31a,navigation_event_bridge);H(0x0307b31e)=0xbf00;
     __asm volatile("dsb\nisb" ::: "memory");
     if(book_menu_browser_init())return;
@@ -182,8 +190,9 @@ void navigation_browser_init(void)
         return;
     }
     u32 kind=pending_kind;chooser_kind=kind;pending_kind=0;match_count=0;
+    if(kind==1)last_book_restore_roots(roots,root_count);
     /* The landing only validates the saved book; Browse scans fresh below. */
-    if(kind==1 && last_book_get(playback_path_scratch)){
+    if(kind==1 && last_book_get(last_path)){
         chooser=3;choice=0;last_error=0;landing_draw();return;
     }
     browse_roots();
@@ -193,23 +202,34 @@ static int same_root(const struct content_root *a,const struct content_root *b)
     for(u32 i=0;i<a->depth;i++)if(a->cluster[i]!=b->cluster[i]||a->index[i]!=b->index[i])return 0;
     return 1;
 }
-static int in_book_root(void)
+int navigation_content_kind(void)
 {
     u32 depth=H(B+0x1cc);if(depth>7)return 0;
+    u32 found=0;
     for(u32 n=0;n<root_count;n++){
         const struct content_root *root=roots+n;
-        if(!(root->kind&1)||depth<root->depth)continue;
+        if(depth<root->depth)continue;
         u32 level=0;
         while(level<root->depth && W(B+56*(level+1)+(FS_TYPE==3?24:20))==root->cluster[level])level++;
-        if(level==root->depth)return 1;
+        if(level==root->depth){
+            if(root->kind&2)return -1; /* meditation keeps normal track controls */
+            if((root->kind&1) && (u32)root->depth+1>found)found=root->depth+1;
+        }
     }
-    return 0;
+    return found;
 }
 u32 navigation_event(u32 message)
 {
     u32 book_event=book_menu_event(message);if(book_event)return book_event;
     if(!chooser){
-        if(message==0x40000040 && in_book_root() && book_menu_open_selected())return 1;
+        if(message==0x40000040){
+            int root=navigation_content_kind();
+            if(root>0){
+                u32 result=book_menu_open_audio(root-1);
+                if(result)return result;
+                if(book_menu_open_selected())return 1;
+            }
+        }
         return 0;
     }
     if(chooser==3){

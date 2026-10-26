@@ -151,7 +151,7 @@ class ReleaseTests(unittest.TestCase):
                 changed.modules[index][field] = value
                 with self.assertRaisesRegex(ValueError, 'layout'):
                     ar.compatible(base, changed)
-        header = 0x3c800 + 9308
+        header = 0x3d000 + 9308
         code_end = struct.unpack_from('<I', target.d, header + 8)[0]
         for offset, value in ((0, 0), (4, 0x0307b884), (4, 0x0307b875),
                               (4, code_end | 1), (8, code_end + 4),
@@ -167,7 +167,7 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'protected resource'):
             ar.compatible(base, changed)
         # The exception cannot be reused with a different purported stock image.
-        base.d[0x3c800] = 1
+        base.d[0x3d000] = 1
         with self.assertRaisesRegex(ValueError, 'layout'):
             ar.compatible(base, target)
 

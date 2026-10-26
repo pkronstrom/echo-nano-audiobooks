@@ -3,12 +3,9 @@
 #include "journal.h"
 #include "resume.h"
 static struct playlist_queue preview;
-/* Parser storage is dead once the queue has been built. The bookmark snapshot
- * and its metadata live until the next open. opened is cleared before parsing;
- * saved fields are reset after parsing, including an unsuccessful scan. The
- * parser busy word lies beyond saved and remains untouched by journal work. */
-static union {
-    struct m3u_workspace parser;
+/* Preview metadata persists; parser input lives only during the synchronous
+ * open. A separate guard prevents reentry from replacing the preview queue. */
+static struct {
     struct {
         struct media_ref mark_file;
         u32 mark_count,mark_generation,mark_slot,resume_chapter,resume_time;
@@ -17,8 +14,7 @@ static union {
         u32 marks[JOURNAL_BOOKMARK_CAPACITY][2];
     } saved;
 } workspace;
-_Static_assert(sizeof workspace.saved<=__builtin_offsetof(struct m3u_workspace,busy),
-               "preview snapshot must preserve parser recursion guard");
+static u32 parsing;
 #define marks workspace.saved.marks
 #define mark_file workspace.saved.mark_file
 #define mark_count workspace.saved.mark_count
@@ -28,11 +24,7 @@ _Static_assert(sizeof workspace.saved<=__builtin_offsetof(struct m3u_workspace,b
 #define resume_time workspace.saved.resume_time
 #define mark_ready workspace.saved.mark_ready
 #define rate workspace.saved.rate
-/* Base is consumed synchronously by queue parsing. Journal reads and deletion
- * start only after parsing returns; neither retains the base path. */
-static union { u16 base[256]; u32 sector[128]; } scratch;
-#define base scratch.base
-#define sector scratch.sector
+static u32 sector[128];
 static u32 opened;
 u32 book_preview_rate(void) { return rate; }
 void book_preview_set_rate(u32 q) { rate=q>=4 && q<=8?q:4; }
@@ -84,6 +76,9 @@ static void read_marks(const u16 *path)
 }
 int book_preview_open(const u16 *path)
 {
+    if(parsing)return -1;
+    struct m3u_workspace parser={0};
+    u16 base[256];
     opened=0;mark_ready=0;mark_count=0;resume_chapter=resume_time=0;rate=4;
     playlist_queue_clear(&preview);
     u32 length=0,slash=0;
@@ -96,7 +91,9 @@ int book_preview_open(const u16 *path)
     struct media_ref file;if(playback_lookup(path,&file)!=1)return -1;
     int h=playback_open(&file);if(h<0)return -1;
     struct m3u_stats stats;
-    int n=playlist_queue_build_with_workspace(&preview,&workspace.parser,read_file,lookup,&h,base,&stats);
+    parsing=1;
+    int n=playlist_queue_build_with_workspace(&preview,&parser,read_file,lookup,&h,base,&stats);
+    parsing=0;
     close_file(h);
     mark_ready=mark_count=0;resume_chapter=resume_time=0;rate=4;
     if(n<=0)return n;

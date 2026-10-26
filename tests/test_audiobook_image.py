@@ -18,7 +18,7 @@ class AudiobookImageTests(unittest.TestCase):
         for index,(actual,stock) in enumerate(zip(self.book.modules,self.stock.modules)):
             if index!=31:self.assertEqual(actual,stock)
             else:
-                expected=dict(stock);expected['code_load']=self.book.load_base+0x3c800-0x200
+                expected=dict(stock);expected['code_load']=self.book.load_base+0x3d000-0x200
                 expected['code_len']+=len((ROOT/'out/browser_sort/browser_sort.bin').read_bytes())
                 self.assertEqual(actual,expected)
         self.assertEqual(self.book.sections,self.stock.sections)
@@ -41,7 +41,9 @@ class AudiobookImageTests(unittest.TestCase):
         from rknano_fw import LANGS
         for language in range(len(LANGS)):
             expected.patch_lang(language,0x83,'Audiobooks\0'.encode('utf-16le'))
-            expected.patch_lang(language,0x84,'Meditation\0'.encode('utf-16le'))
+            expected.patch_lang(language,0x84,'Meditations\0'.encode('utf-16le'))
+        for sid,label in ((0,'Now Playing'),(1,'Playback Settings'),(3,'Folders'),(88,'Music Library')):
+            expected.patch_lang(LANGS.index('en'),sid,(label+'\0').encode('utf-16le'))
         for section in self.book.sections:
             a=section['offset'];b=a+section['length'];self.assertEqual(self.book.d[a:b],expected.d[a:b])
     def test_navigation_rejects_each_mismatched_runtime_base(self):

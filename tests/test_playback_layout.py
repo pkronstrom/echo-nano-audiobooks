@@ -33,8 +33,8 @@ class PlaybackLayoutTests(unittest.TestCase):
         expected.finalize()
         self.assertEqual(result.d,expected.d)
     def test_staging_room_is_in_unused_refresh_sort_buffer(self):
-        self.assertEqual((FLASH_START,FLASH_END),(0x36200,0x3c800))
-        self.assertEqual(FLASH_END-FLASH_START,26112)
+        self.assertEqual((FLASH_START,FLASH_END),(0x36200,0x3d000))
+        self.assertEqual(FLASH_END-FLASH_START,28160)
         image=Image(self.stock);module=image.modules[40]
         execution=module['code_exec']+FLASH_START-image.l2f(module['code_load'])
         self.assertGreaterEqual(execution,0x0307b674)
@@ -44,7 +44,7 @@ class PlaybackLayoutTests(unittest.TestCase):
     def test_sector_rounded_payload_stops_before_browser_backing(self):
         from playback_layout import BROWSER_SORT_FLASH_START
         self.assertEqual(FLASH_START+((len(self.payload)+511)&~511),BROWSER_SORT_FLASH_START)
-        changed=bytearray(self.payload)+bytes(26116-len(self.payload))
+        changed=bytearray(self.payload)+bytes(28164-len(self.payload))
         struct.pack_into('<I',changed,8,0x03092400+len(changed))
         with self.assertRaisesRegex(ValueError,'size'):
             stage(self.stock,self.input,changed,self.loader)

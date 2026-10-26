@@ -48,6 +48,26 @@ class ResumeTests(unittest.TestCase):
     def select(self,position):
         self.f.call('playback_playlist_step',0x0300d85c,0)
         for _ in range(position-1):self.f.call('playback_playlist_step',0x0300d85c,1)
+    def tick(self,n):
+        self.cpu.mem_write(0x0300d144,struct.pack('<I',n&0xffffffff))
+    def test_periodic_save_five_minutes_and_reload(self):
+        self.tick(100);self.load('/BOOK.M3U');self.select(2)
+        self.tick(30099);self.f.call('book_autosave');self.assertEqual(self.writes,[])
+        self.tick(30100);self.f.call('book_autosave');self.assertEqual(self.writes,[(91,512)])
+        self.tick(30101);self.f.call('book_autosave');self.assertEqual(len(self.writes),1)
+        self.f.call('playback_init');self.assertEqual(self.load('/BOOK.M3U'),(2,1234567))
+    def test_periodic_save_tick_wrap_and_failed_write_backoff(self):
+        self.tick(0xfffffff0);self.load('/BOOK.M3U');self.select(1)
+        self.short_write=True;self.tick(0xfffffff0+30000);self.f.call('book_autosave')
+        self.assertEqual(len(self.writes),1)
+        self.tick(0xfffffff0+30001);self.f.call('book_autosave');self.assertEqual(len(self.writes),1)
+        self.short_write=False;self.tick(0xfffffff0+60000);self.f.call('book_autosave')
+        self.assertEqual(len(self.writes),2)
+    def test_explicit_save_resets_periodic_deadline(self):
+        self.tick(0);self.load('/BOOK.M3U');self.select(1)
+        self.tick(20000);self.f.call('book_save')
+        self.tick(30000);self.f.call('book_autosave');self.assertEqual(len(self.writes),1)
+        self.tick(50000);self.f.call('book_autosave');self.assertEqual(len(self.writes),2)
     def test_book_a_music_book_b_and_restart_keep_independent_progress(self):
         self.assertEqual(self.load('/BOOK.M3U'),(0,0));self.select(2)
         self.f.call('book_save')

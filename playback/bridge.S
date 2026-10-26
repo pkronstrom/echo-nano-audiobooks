@@ -116,6 +116,10 @@ entry navigation_dispatch_bridge
     push {r4,r5,lr}
     ldr r1,=0x0300e708
     jump 0x03079b22
+entry navigation_native_dispatch
+    push {r4,r5,lr}
+    ldr r1,=0x0300e708
+    jump 0x03079b22
 entry navigation_strip_bridge
     push {r0-r6,lr}
     ldr r4,=0x03005a00

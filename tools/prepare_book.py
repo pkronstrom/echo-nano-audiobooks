@@ -2,6 +2,7 @@
 """Prepare an Echo Nano book without changing or renaming its audio files."""
 import argparse
 import json
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 import re
 import shutil
@@ -60,6 +61,35 @@ def require_copyable_audio(path):
     if not streams or streams[0].get('codec_name') not in ('aac','alac'):
         raise ValueError(f'M4A remux requires AAC or ALAC audio: {path}; use explicit MP3 conversion instead')
 
+def chapter_segments(path):
+    """Use chapter starts as cuts, retaining all audio from zero to EOF."""
+    if not shutil.which('ffprobe'):raise ValueError('ffprobe is required for chapter splitting')
+    try:
+        raw=subprocess.check_output(['ffprobe','-v','error','-show_chapters',
+            '-show_entries','format=duration:chapter=start_time,end_time:chapter_tags=title',
+            '-of','json',str(path)],timeout=30)
+    except subprocess.SubprocessError as exc:
+        raise ValueError('Could not inspect chapters with ffprobe') from exc
+    data=json.loads(raw)
+    try:
+        duration=Decimal(data['format']['duration'])
+        chapters=data['chapters']
+        if not duration.is_finite() or duration<=0 or not 1<=len(chapters)<=256:
+            raise ValueError('Need 1–256 valid embedded chapters')
+        starts=[]
+        for chapter in chapters:
+            start=Decimal(chapter['start_time']);end=Decimal(chapter['end_time'])
+            if not start.is_finite() or not end.is_finite() or not (0<=start<duration and start<end<=duration+Decimal('0.1')):
+                raise ValueError('Invalid chapter boundaries')
+            if starts and start<=starts[-1]:raise ValueError('Chapter starts must increase')
+            starts.append(start)
+        starts[0]=Decimal(0)
+        cuts=starts[1:]+[duration]
+        return [(str(start),str(end-start),chapter.get('tags',{}).get('title') or f'Chapter {i}')
+                for i,(start,end,chapter) in enumerate(zip(starts,cuts,chapters),1)]
+    except (KeyError,TypeError,InvalidOperation) as exc:
+        raise ValueError('Invalid or missing embedded chapter metadata') from exc
+
 def write_metadata(destination,stem,body,marker):
     playlist=destination/(stem+'.M3U');resume=destination/(stem+'.RSM')
     if not playlist.exists():
@@ -71,8 +101,9 @@ def write_metadata(destination,stem,body,marker):
         with bookmarks.open('xb') as f:f.write(bookmark_bytes())
     if marker:(destination/'.nomusic').touch(exist_ok=True)
 
-def prepare(source,write=False,output=None,convert=False,name=None,remux=False):
+def prepare(source,write=False,output=None,convert=False,name=None,remux=False,split_chapters=False):
     if convert and remux:raise ValueError('Choose either MP3 conversion or M4A remux')
+    if split_chapters and not convert:raise ValueError("Chapter splitting requires --convert-to mp3")
     transform=convert or remux
     source=Path(source)
     if source.is_symlink():raise ValueError('Source must not be a symlink')
@@ -112,6 +143,16 @@ def prepare(source,write=False,output=None,convert=False,name=None,remux=False):
     else:
         if output:raise ValueError('--output is only used with --convert-to or --remux-to')
         names=[p.relative_to(root) for p in audio]
+    segments=None
+    if split_chapters:
+        if len(audio)!=1:raise ValueError('Chapter splitting requires one source audio file')
+        segments=chapter_segments(audio[0])
+        names=[]
+        for i,(_,_,title) in enumerate(segments,1):
+            title=re.sub(r'[\x00-\x1f:*?"<>|/\\]', '_',str(title)).strip(' .')[:60] or 'Chapter'
+            names.append(Path(f'{i:03d} {title}.mp3'))
+        audio=audio*len(segments)
+        if name is None:stem='BOOK'
     lines=[checked_path(p) for p in names]
     lines=['./'+line if line.startswith('#') else line for line in lines]
     if any(len(line.encode('utf-8'))>1024 for line in lines):
@@ -142,9 +183,14 @@ def prepare(source,write=False,output=None,convert=False,name=None,remux=False):
             destination.parent.mkdir(parents=True,exist_ok=True)
             with tempfile.TemporaryDirectory(prefix='.nano-prepare-',dir=destination.parent) as tmp:
                 stage=Path(tmp)/'book';stage.mkdir()
-                for original,relative in zip(audio,names):
-                    codec=['-c:a','copy'] if remux else ['-c:a','libmp3lame','-q:a','2']
-                    subprocess.run(['ffmpeg','-nostdin','-v','error','-n','-i',str(original),'-map','0:a:0',
+                for index,(original,relative) in enumerate(zip(audio,names)):
+                    # Native MP3 seeking uses average bitrate rather than a VBR
+                    # seek table. Constant bitrate keeps ten-second seeks local.
+                    codec=['-c:a','copy'] if remux else ['-c:a','libmp3lame','-b:a','128k']
+                    # Decode from the beginning to retain AAC history at chapter cuts.
+                    seek=['-ss',segments[index][0]] if segments else []
+                    limit=['-t',segments[index][1]] if segments else []
+                    subprocess.run(['ffmpeg','-nostdin','-v','error','-n','-i',str(original),*seek,*limit,'-map','0:a:0',
                         '-map_metadata','0','-map_chapters','-1',*codec,str(stage/relative)],check=True)
                 write_metadata(stage,stem,body,True)
                 if destination.is_symlink():raise ValueError('Output must not be a symlink')
@@ -169,10 +215,11 @@ def main(argv=None):
     modes=parser.add_mutually_exclusive_group()
     modes.add_argument('--convert-to',choices=['mp3'],help='Re-encode audio using ffmpeg; originals remain untouched')
     modes.add_argument('--remux-to',choices=['m4a'],help='Copy AAC/ALAC audio without re-encoding using ffmpeg/ffprobe; Nano compatibility needs a device test')
+    parser.add_argument('--split-chapters',action='store_true',help='Encode embedded chapters as separate MP3s and an ordered BOOK playlist')
     parser.add_argument('--output',type=Path,help='Empty destination directory for processed files')
     parser.add_argument('--name',help='Playlist/resume filename stem (default BOOK for folders, file stem for one file)')
     args=parser.parse_args(argv)
-    try:result=prepare(args.source,args.write,args.output,bool(args.convert_to),args.name,bool(args.remux_to))
+    try:result=prepare(args.source,args.write,args.output,bool(args.convert_to),args.name,bool(args.remux_to),args.split_chapters)
     except (ValueError,OSError,subprocess.CalledProcessError) as exc:
         print(f'prepare-book: {exc}',file=sys.stderr);return 2
     print(json.dumps(result,ensure_ascii=False,indent=2));return 0

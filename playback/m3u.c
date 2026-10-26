@@ -68,7 +68,6 @@ int m3u_resolve(const u16 *base, const u8 *line, u32 len, u16 *out)
  * Keep the large scratch arrays off the stock service stack. */
 u32 playback_scratch[M3U_LINE_BYTES / sizeof(u32)];
 u32 playback_scratch_busy;
-static u16 scan_path[M3U_PATH_UNITS];
 
 struct scan {
     m3u_entry_fn entry;
@@ -132,6 +131,7 @@ static int scan_impl(m3u_read_fn read, m3u_entry_fn entry, void *ctx, const u16 
 int m3u_scan(m3u_read_fn read, m3u_entry_fn entry, void *ctx, const u16 *base,
              struct m3u_stats *stats)
 {
+    u16 scan_path[M3U_PATH_UNITS];
     if (playback_scratch_busy) return -3;
     playback_scratch_busy=1;
     int result=scan_impl(read,entry,ctx,base,stats,(u8 *)playback_scratch,scan_path);

@@ -154,4 +154,12 @@ class AutomaticBookPreparationTests(unittest.TestCase):
      self.assertEqual(self.invoke(disk),0)
      self.assertEqual(bytes(disk.sectors),before);self.assertFalse(disk.sector_writes)
 
+ def test_large_exfat_clusters_bypass_creation_and_keep_existing_playlist_readable(self):
+  disk,_=self.fixture('exfat',('BOOK.M3U','BOOK.RSM','BOOK.BMK','One.mp3'),sectors_per_cluster=512)
+  before=bytes(disk.sectors)
+  self.assertEqual(self.invoke(disk),0)
+  self.assertFalse(disk.sector_writes)
+  self.assertEqual(bytes(disk.sectors),before)
+  self.assertEqual(self.read_file(disk,'/Book/BOOK.M3U'),bytes(128))
+
 if __name__=='__main__':unittest.main()

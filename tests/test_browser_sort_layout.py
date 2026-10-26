@@ -6,7 +6,7 @@ from unicorn.arm_const import *
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'tools'))
 from rknano_fw import Image
 import playback_layout as layout
-START=0x0307b874;END=0x03080470;FLASH=0x3c800
+START=0x0307b874;END=0x03080470;FLASH=0x3d000
 class BrowserSortLayoutTests(unittest.TestCase):
  def setUp(self):
   self.stock=Image((ROOT/'NANOV170.IMG').read_bytes());self.image=Image((ROOT/'out/NANOV170.IMG').read_bytes())

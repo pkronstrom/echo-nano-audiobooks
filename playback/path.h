@@ -16,4 +16,6 @@ int media_resolve(media_read_fn read, void *ctx, int exfat,
 /* Recover a child directory name by physical identity. name has 256 u16 slots. */
 int media_directory_name(media_read_fn, void *, int exfat, struct media_dir *,
                           u32 child, u16 *name, struct media_ref *);
+int media_entry_name(media_read_fn, void *, int, struct media_dir *,
+                     u32 index, u16 *, struct media_ref *);
 #endif

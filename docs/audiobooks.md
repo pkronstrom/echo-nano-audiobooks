@@ -1,5 +1,12 @@
 # P4a audiobook device test
 
+> **Historical checklist.** P4a boot-looped and must not be installed. Current
+> candidate, installed-image status, and remaining device checks are summarized
+> in [MASTERPLAN.md](../MASTERPLAN.md) and
+> [the session learning audit](session-learnings-2026-10-12-to-16.md). Current
+> automatic preparation behavior and its hardware status are in
+> [automatic-book-preparation.md](automatic-book-preparation.md).
+
 > **2026-10-14 hardware result:** P4a boot-looped. Stock recovery succeeded and
 > the user confirmed the normal menu. Do not reflash or publish this candidate.
 > Read [recovery lessons](recovery-lessons-2026-10-14.md) before device work.
@@ -64,17 +71,19 @@ folders disappear from music and global Shuffle. Open **File Browser → your
 book folder → BOOK.M3U** (or `book.M3U`). Selecting an audio file directly uses
 ordinary folder playback; select the playlist for per-book resume.
 
-Normal playback advances in listed order and stops at the end. Manual
-next/previous wrap within the playlist. Missing entries are skipped. An M3U
-without a valid RSM companion can play but has no independent saved position.
-Progress is saved when the native player stops, including the usual browser
-handoff and normal shutdown path. Reopen the same M3U after restarting to restore
-its chapter and time; this build does not auto-reconstruct the book queue at boot.
-Stock seek rounds the restored time to the next second.
+Normal playback advances in listed order and stops at the end. Missing entries
+are skipped. In audiobook playback, Previous/Next seek ten seconds within the
+current chapter; holding repeats the seek. Use the book menu to choose chapters.
+Now Playing counts the audio files in the playlist, so chapter MP3s show 1/N.
 
-Hold previous/next for stock rewind/fast-forward, as described in
-[FiiO's Echo Nano controls](https://support.fiio.jp/hc/ja/articles/60876814334617-Snowsky-ECHO-NANO%E3%81%AE%E3%82%88%E3%81%8F%E3%81%82%E3%82%8B%E8%A8%AD%E5%AE%9A%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6).
-There is no new ±30-second mapping in this build.
+A valid RSM companion is required for independent saved position. Progress is
+saved on normal stop and, in the long-book candidate, about every five minutes
+while playing. Pauses and seek/relaunch transitions defer periodic saving.
+This updates Continue without adding manual bookmarks or a jump history.
+Reopen the same M3U after restarting to restore its chapter and time; the queue
+is not automatically reconstructed at boot. Stock seek rounds restored time.
+The long-book candidate displays hours once elapsed time reaches an hour.
+Hardware acceptance of these latest changes remains pending.
 
 ## Audiobooks and Meditation shortcuts
 
@@ -129,6 +138,17 @@ MP3 conversion. This re-encodes audio, unlike the M4A option:
 ```sh
 python3 tools/prepare_book.py '/path/to/Book.m4b' --convert-to mp3 --output '/path/to/MP3 Book' --write
 ```
+
+For one MP3 per embedded M4B chapter, add `--split-chapters`:
+
+```sh
+python3 tools/prepare_book.py '/path/to/Book.m4b' --convert-to mp3 --split-chapters --output '/path/to/MP3 Chapters' --write
+```
+
+This creates numbered chapter MP3s and ordered `BOOK.M3U`, `BOOK.RSM` and
+`BOOK.BMK` companions. MP3 conversion uses 128 kb/s constant bitrate because
+native seeking uses average bitrate. An M3U does not create timestamp chapters
+inside a single MP3. Existing exports and their saved positions are preserved.
 
 Chapter MP3 folders and long M4B files are common distribution shapes; see
 [LibriVox help](https://librivox.org/pages/help/) and
@@ -189,11 +209,14 @@ at 8–48 kHz. Other codecs retain their normal 1x playback. Music outside the
 book queue retains native playback. Bookmarks and resume positions use source
 time, rather than elapsed listening time multiplied by the selected speed.
 
-This feature is undergoing integration verification; it is not yet confirmed on
-the Nano. Read [the speed checkpoint](speed-integration-checkpoint.md) before
-building or installing an image. Hardware acceptance must include headphone
-listening at each preset, pause/resume and seek, the last chapter ending,
-bookmark reopening, and normal music playback afterward.
+The user reported that live Speed selection worked on Ichigo in the staged
+20261027 candidate. That is limited control-path feedback; it does not establish
+all-preset audio quality or the 20261110 candidate's per-book speed persistence.
+Read [the current speed test](speed-device-test.md) and
+[the speed checkpoint](speed-integration-checkpoint.md) before building or
+installing an image. Hardware acceptance still needs headphone listening at
+each preset, pause/resume and seek, the last chapter ending, bookmark reopening,
+and normal music playback afterward.
 
 ## Build
 
@@ -210,3 +233,9 @@ The Audiobooks landing row reads **Continue <book name>** for the current saved
 book, followed by Browse books. A generic `BOOK.M3U` uses its parent folder's
 name. This selection remains in RAM for the current firmware session; the
 per-book resume position and speed use their existing SD journal files.
+
+
+## 20261122 navigation/display follow-up
+
+See [current behavior and acceptance checks](content-navigation-followup.md). This supersedes the
+20261120 display implementation and previous-music return behavior. Offline only.

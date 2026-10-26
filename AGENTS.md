@@ -530,8 +530,194 @@ Atomic sector/stable media/exclusive writer assumptions and full IRQ-stack
 bounds remain unproved. Observed native entry stack3160B FAT/3184B exFAT is NOT
 a bound. Do not describe synthetic fixtures as complete mount/card acceptance.
 
+## Documentation checkpoint — 2026-10-17
+
+The retained 2026-10-12..16 project session is audited in
+`docs/session-learnings-2026-10-12-to-16.md`. Current summary: local
+`phase4j-release-candidate` (`219d972`) is offline-only and uninstalled;
+20261110 remains the latest staged image. After that update the user reported a
+startup hang/loop, then manually restarted and reached the menu with the named
+Continue row. Do not mark its first boot as clean or its speed persistence as
+hardware-accepted. New books previously copied to SD were found still needing
+preparation; their current card state is unknown. Read `MASTERPLAN.md` for
+current work and the incident record before any device operation.
+
 Archive:builds/phase4j-auto-preparation-20261016/reviewed/manifest.json.
 Custom20261114 SHA2569ed49a71ffafc11615e69165729e0378303d8211243bdff85c9b3d6bd9420792.
 Stock recovery20261115 SHA2565d6a3bacc87321b32087f75559d28e44a233b0bf08cf88ac636b3a6efb986039.
 About remainsP4e. phase4i-release-candidate stays atbac9473. No Nano access,
 update staging, hardware acceptance, push or publication for this iteration.
+
+
+## Long-audiobook offline RC — 2026-10-18
+
+Phase4k candidate20261116/recovery20261117 adds hours on Now Playing and
+best-effort five-minute existing-RSM Continue saving. Shared menu/launch path
+storage frees512B; guards and ownership regressions cover pending/return states.
+Payload26048text+29928BSS leaves328B below unchanged0309fff0; sector-rounded
+text reservation has64B spare. Browser13956text/5320BSS. Loader boundaries,
+bootloader and speed DSP unchanged. Isolated payload/image rebuilds match.
+
+593 firmware tests passed in553.952s; after host output-seeking correction,
+17 preparation/remux checks and120 BKZ tests pass. All four /revx reviewers
+returned; confirmed findings fixed, Codex follow-ups approved naming preservation
+and final seek commands. Sonnet reviewed the initial snapshot only; its rerun
+was blocked by automatic approval. See archived review reports and dispositions.
+Host exports use128kb/s CBR; embedded chapters become numbered MP3+BOOK.M3U.
+Legacy exports preserve65-character names and state. No SD content changed.
+
+Archive: builds/phase4k-long-books-20261018/reviewed/manifest.json.
+Custom SHA256:0902a40a9df68b8badc63273c0c6d512ab2aae374be731913e42ac502fbe2f97
+Recovery SHA256:004caf0875a3c3605f9e1dbd6733608544f5818493a90402091334867e91af0e
+Offline RC only; no installation, publication, commit or push. First-update boot
+anomaly and user-deferred Soulcraft full restart remain unresolved. Hardware
+clock legibility, autosave durability/audio timing and long-file seek acceptance
+remain pending. Read docs/long-audiobook-followup.md for evidence and limits.
+
+
+## Long-audiobook RC staged — 2026-10-18
+
+User authorized firmware transfer. Fresh normal USB071b:3203 identification
+linked internal disk6(262144000B) and SD disk7 to the same Nano. These disk
+identifiers are historical. No leftover NANOV170.IMG existed in either root.
+Archived custom20261116/recovery20261117 hashes, dates, duplicate headers and
+CRCs verified. Exclusive internal copy, flush/sync and full byte-for-byte
+readback succeeded:
+0902a40a9df68b8badc63273c0c6d512ab2aae374be731913e42ac502fbe2f97.
+Both volumes safely ejected. Evidence: builds/device-check/long-books-stage-20261018-135339/result.json.
+No SD content changes, raw flash or bootloader operations. Installation and
+first-post-update boot await user confirmation; hardware hours/autosave acceptance
+and the deferred Soulcraft full-restart issue remain open. Archived RC manifest
+is preserved as the pre-staging checkpoint. No commit, push or publication.
+
+
+## Verified preparation fallback correction — 2026-10-18
+
+User reported Prepare failed / Use host tool for all books on20261116.
+All11 inspected books retain M3U and CRC-valid RSM/BMK; all33 companions unchanged.
+Small-file256KiB allocation suggests512-sector exFAT clusters, but raw boot-sector
+reads were blocked by macOS even with approved administrator prompt. Do not claim
+physical geometry confirmed. Offline512-sector native ARM fixture reproduces
+preparation-1 while existing playlist lookup succeeds, with zero writes.
+
+Candidate20261118/recovery20261119 bypasses automatic creation for clusters above
+its scan bound and continues normal native/resident book entry. Guarded creation
+limits unchanged. A separate real resident-menu diagnostic reaches Continue
+with unchanged sectors.595 full tests passed in568.570s;18 focused tests and
+scoped independent Codex review pass. This is not a new revx panel. Resident
+26048text/29928BSS and browser13956text/5320BSS sizes unchanged; isolated paired
+images reproduce byte for byte. Hardware retest pending.
+Archive: builds/phase4k-long-books-20261018/prepare-fallback-reviewed/manifest.json.
+Custom SHA256:ddc5d4dfddaf3b3d8cb2530ce27342d02a3201efbd9c4ae8dd3c28e92b12ad94
+Recovery SHA256:42f989e92b443fb77b0cacd543c21770c33e82d92f32584edc444580a94edaf4
+Screen redesign is pending; no book regeneration or state reset performed.
+
+
+## Preparation fallback correction staged — 2026-10-18
+
+Corrected20261118/recovery20261119 passed595 full tests in568.570s,18 focused
+checks and scoped independent review. Fresh normal071b:3203 identification
+reconfirmed internal disk6(262144000B) and SD disk7 on one Nano. These IDs are
+historical. No leftover update existed. Both archived dates/hashes/CRC/header
+copies verified; exclusive internal update copy, flush/sync and complete
+byte-for-byte readback passed:
+ddc5d4dfddaf3b3d8cb2530ce27342d02a3201efbd9c4ae8dd3c28e92b12ad94.
+Both volumes safely ejected. Evidence: builds/device-check/prepare-fallback-stage-20261018-141657/result.json.
+All33 book companions matched initial read-only snapshots before staging.
+No SD content writes, raw flash or bootloader operations. Installation/boot and
+book-opening retest remain pending. Physical card cluster size remains inferred;
+user-approved raw geometry read was blocked by macOS. No hardware fix claimed.
+
+
+## Hardware follow-up and audiobook screen work — 2026-10-18
+
+User confirms 20261118 opens books and reports seeking beyond one hour seemed
+to work. This is positive feedback, not exhaustive seek/startup acceptance.
+The still-visible music icons and author row were expected in that candidate;
+its Continue cache lasted only for the running session. The new offline
+20261120/20261121 work addresses both: see
+[book screen and durable Continue](docs/book-screen-and-continue.md).
+No device operations or new installation occurred for this work.
+
+
+## Final offline checkpoint — 20261120
+
+All 611 regression tests passed in 616.628 seconds; 16 new focused checks also
+passed. Fresh resident/browser/custom/recovery rebuilds match byte for byte.
+Scoped independent rereview found no remaining concrete blocker after the two
+scan failure corrections. Candidate 20261120 and stock recovery 20261121 are
+archived at builds/phase4l-book-screen-20261018/reviewed/manifest.json.
+Resident text/BSS 28008/28048 bytes leaves 248 bytes below unchanged 0x0309fff0.
+No installation, commit or push; hardware UI/boot/Continue acceptance pending.
+Legacy books need one successful playback save to establish a durable hint.
+
+
+## Audiobook screen/Continue candidate staged — 2026-10-18
+
+User authorized installation and connected Nano. Fresh normal USB071b:3203
+linked internal disk6 (262144000B) and SD disk7 on the same device; identifiers
+are historical. Archived custom20261120/recovery20261121 hashes, dates, CRCs
+and duplicate headers verified. No existing update image in either root.
+Exclusive internal copy, flush/sync and full byte-for-byte readback succeeded:
+6efeeb926d1b41d77b33bbe5772052a7a90d39bb170aaf76ace53457c1308616.
+Both volumes safely ejected. Evidence:
+builds/device-check/book-screen-stage-20261018-1719/result.json.
+No SD content changes, raw flash or bootloader operations. Installation and
+first boot remain unconfirmed. Check book/chapter rows, removed heart/order
+glyphs, and Continue after playing once and restarting. Last confirmed working
+book opening remains20261118. Archive manifest retains its offline provenance.
+
+
+## 20261120 hardware UI feedback — 2026-10-18
+
+User photo IMG_5542 shows Soulcraft playing with hours displayed and the new
+book glyph, but stale author text and footer symbols. User confirms Continue
+Soulcraft works from the Audiobooks menu. This confirms the candidate ran;
+first-post-update boot timing and a separate restart durability check were not
+reported. The screen change is not accepted. Photo remains private/outside Git.
+
+Offline reproduction found two mistakes in the initial UI checks: native dirty
+events are consumed before the overlay runs; resource IDs were misidentified
+(heart158/159 atx95, mode80 atx87, battery65+ atx115). The prior clear removed
+the battery region instead of the heart. New checks use consuming native flags
+and actual resource bitmaps. Blank artist redraw also needs marquee retirement
+before the native blank paint. Work is combined with user-approved navigation
+consistency changes; see docs/plans/2026-10-18-consistent-content-navigation.md.
+No new device staging occurred during this correction.
+# Offline consistent content navigation — 2026-10-18
+
+Candidate20261122/recovery20261123 fixes the photographed stale author/footer
+display using native marquee ownership and actual resource positions. Chapter
+text starts at x0; the book glyph is revised; heart/mode pixels clear while
+battery remains. Menu order is Now Playing, Audiobooks, Meditations, Music
+Library, Folders, Shuffle, Playback Settings, System Settings (marked categories
+remain conditional). Now Playing opens current audio. Direct chapter selection
+under marked audiobook ancestry resolves unique membership in BOOK.M3U, bounded
+at the marked root; custom M3Us remain explicitly selectable. Meditation M3Us
+retain ordinary track behavior and do not replace audiobook Continue.
+
+All611 tests passed in619.562s plus72 focused checks. Scoped independent
+rereview found no remaining concrete blocker after handoff-return and blank
+artist lifecycle fixes. No new revx panel or hardware acceptance. Rebuilds were
+byte-identical; both images pass CRC/duplicate-header checks. Resident text/BSS
+27952/27952 leaves400B below the unchanged boundary; browser13960/5320 unchanged.
+See docs/content-navigation-followup.md for limits and device checklist.
+Archive: builds/phase4m-content-navigation-20261018/reviewed/manifest.json.
+Custom SHA256:84f78dea227b030734c34f2eae8398efe354040ca36f35592e1782bd63e74b67
+Recovery SHA256:650fde2891e65a11c9b5ce116a89e84fd61151cf523eb964f88d7b32a6927615
+No device staging, commit or push.20261120 is the last photographed running
+candidate; its Continue menu works but screen acceptance failed.
+
+## Content navigation candidate staged — 2026-10-18
+
+User authorized installation. Fresh normal USB071b:3203 identification linked
+internal disk5(262144000B) and SD disk6 to the same Nano; IDs are historical.
+Archived custom20261122/recovery20261123 passed hash/date/CRC/duplicate-header
+checks. Neither root contained an existing update image. Exclusive internal
+copy, flush/sync and complete byte-for-byte readback succeeded:
+84f78dea227b030734c34f2eae8398efe354040ca36f35592e1782bd63e74b67.
+Both volumes safely ejected. Evidence:
+builds/device-check/content-navigation-stage-20261018-193547/result.json.
+No SD content changes, raw flash or bootloader operations. Installation and
+first boot await user observation; screen/menu/folder acceptance is pending.
+20261120 remains the last photographed running candidate. No commit or push.

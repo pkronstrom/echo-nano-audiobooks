@@ -6,7 +6,7 @@ from hooks import encode_t32_branch
 STOCK_SHA256='54a45d233a23c3ce142d1da9c093cc40c46eba417aa91fe915ee867726f4a116'
 # Sector-aligned unused portion of module40's first 64 KiB sort buffer.
 # Refresh already stages its separate blob earlier in that same buffer.
-FLASH_START,FLASH_END=0x36200,0x3c800
+FLASH_START,FLASH_END=0x36200,0x3d000
 FIRMWARE_END=0xa58000
 RAM_START,RAM_END=0x03092400,0x0309fff0
 LOADER_ADDRESS=0x03072e28
@@ -140,6 +140,8 @@ HOOKS={
     'settings_row_update_old':(32,0x030798a2,4,None),
     'settings_row_text_full':(32,0x03079768,2,None),
     'settings_row_text_update':(32,0x030798ac,2,None),
+    'player_book_screen':(27,0x0307bc14,6,None),
+    'player_book_screen_guard':(27,0x0307b1f4,36,None),
     'player_speed_label_width':(27,0x0307ade8,6,None),
     'player_speed_label_width_guard':(27,0x0307a39c,56,None),
     'player_speed_label_paint':(27,0x0307ae22,4,0x03052fe4),
@@ -183,6 +185,8 @@ HOOKS={
     'feedback_stub':(27,0x0307a014,36,None),
     'feedback_epilogue':(27,0x0307a860,8,None),
     'bookmark_poll':(33,0x03082d4c,4,0x0306b05c),
+    'player_time_hours':(27,0x0307ab7e,222,None),
+    'player_chapter_counter_x':(27,0x0307a988,2,None),
     'bookmark_gesture':(0,0x03052d68,48,None),
     'browser_row_update':(31,0x0307a4c6,4,0x030521d4),
     'browser_row_full':(31,0x0307a640,4,0x030521d4),
@@ -293,6 +297,21 @@ def validate_player_speed_menu(image):
         off,_=image.region(32,address);expected=bytes.fromhex(value)
         if image.d[off:off+len(expected)]!=expected:
             raise ValueError(f'player speed menu base changed at {address:08x}')
+
+def player_book_screen_space(image):
+    checks={0x0307b1f4:b'MusicDispType = MUSIC_DISPLAY_NOR \r\n\0',
+            0x0307ae94:bytes.fromhex('d7a0f6f7c7ff'),
+            0x0307bc14:bytes.fromhex('0620d5f7adfc')}
+    for address,data in checks.items():
+        off,_=image.region(27,address)
+        if image.d[off:off+len(data)]!=data:raise ValueError('book screen base changed')
+    for module in (0,27,33):
+        m=image.modules[module]
+        for kind in ('code','data'):
+            off=image.l2f(m[kind+'_load']);data=bytes(image.d[off:off+m[kind+'_len']])
+            if any(struct.pack('<I',a) in data for a in range(0x0307b1f4,0x0307b218)):
+                raise ValueError('book screen diagnostic referenced')
+    image.patch(27,0x0307ae96,bytes.fromhex('00bf00bf'))
 
 def player_speed_label_space(image):
     checks={
@@ -448,7 +467,7 @@ def bookmark_gesture(image):
 
 # Audited zero backing: tail of refresh sort A plus first 3KiB of sort B.
 # Runtime browser bound is independent and remains below the active decoder.
-BROWSER_SORT_FLASH_START,BROWSER_SORT_FLASH_END=0x3c800,0x42348
+BROWSER_SORT_FLASH_START,BROWSER_SORT_FLASH_END=0x3d000,0x42b48
 BROWSER_SORT_START,BROWSER_SORT_END=0x0307b874,0x03080470
 
 BROWSER_SORT_HOOKS={
@@ -502,7 +521,7 @@ def relocate_browser_sort(stock,image,payload):
         raise ValueError('browser sort firmware layout changed')
     refresh=stock.modules[40]
     execution=refresh['code_exec']+start-stock.l2f(refresh['code_load'])
-    if start<FLASH_END or execution!=0x0308672c or execution+end-start!=0x0308c274:
+    if start<FLASH_END or execution!=0x03086f2c or execution+end-start!=0x0308ca74:
         raise ValueError('browser sort leaves verified refresh buffer')
     if any(x['offset']<end and x['offset']+x['length']>start for x in stock.sections):
         raise ValueError('browser sort overlaps resource')
@@ -537,6 +556,7 @@ def integrate(stock_data,input_data,directory,date,sort_directory=None):
     validate_settings_geometry(image)
     validate_player_speed_menu(image)
     player_speed_label_space(image)
+    player_book_screen_space(image)
     player_controls_space(image)
     startup_invalidation_space(image)
     validate_library_geometry(image)
@@ -569,7 +589,9 @@ def integrate(stock_data,input_data,directory,date,sort_directory=None):
     apply_icons(image,stock)
     for language in range(len(LANGS)):
         image.patch_lang(language,0x83,'Audiobooks\0'.encode('utf-16le'))
-        image.patch_lang(language,0x84,'Meditation\0'.encode('utf-16le'))
+        image.patch_lang(language,0x84,'Meditations\0'.encode('utf-16le'))
+    for sid,label in ((0,'Now Playing'),(1,'Playback Settings'),(3,'Folders'),(88,'Music Library')):
+        image.patch_lang(LANGS.index('en'),sid,(label+'\0').encode('utf-16le'))
     image.patch(32,0x0307cf14,'P4e\0'.encode('utf-16le'))
     apply_browser_sort(stock,image,sort_directory if sort_directory is not None else directory.parent/'browser_sort')
     image.set_date(date);image.finalize()

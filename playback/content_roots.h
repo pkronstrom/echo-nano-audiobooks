@@ -14,6 +14,8 @@ struct content_root {
 /* Physical DFS; root depth zero denotes the card root. Returns count, -1 on
  * capacity/work limit, -2 on I/O. Discard all output on error. */
 int content_scan(media_read_fn, void *, int exfat, struct content_root *, u32 capacity);
+typedef int (*content_visit_fn)(void *, const struct content_root *, const struct media_ref *);
+int content_walk(media_read_fn, void *, int, const struct content_root *, content_visit_fn, void *);
 /* Revalidate each ancestor by physical entry index and cluster. Returns 1 or
  * zero for stale/invalid ancestry, -2 on I/O. Caller rescans markers separately. */
 int content_root_chain(media_read_fn, void *, int exfat,

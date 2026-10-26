@@ -11,7 +11,7 @@
 /* Native browser has exactly two resident nodes. Save real identities before
  * substituting labels; synthetic nodes must never reach native file actions. */
 static u32 browser_saved[128],control_saved[8],nodes_saved[312];
-static u16 path[256];
+#define path playback_launch_buffer
 static u8 active,returning,view,selected_mark,direct_folder,path_launch;
 static u16 choice; /* Chapters can contain 256 entries. */
 enum { TOP, CHAPTERS, MARKS, MARK_ACTION, DELETE_CONFIRM, ERROR_VIEW, BOOK_ERROR, SPEED };
@@ -120,6 +120,9 @@ static void draw(void)
 void book_menu_reset(void) { active=returning=0; }
 int book_menu_open_selected(void)
 {
+    /* Only an idle menu may replace the shared launch path. launch() sets
+     * returning before synchronous native handoff; reentry retains that path
+     * until book_menu_browser_init consumes it. No writer runs in between. */
     if(active||returning)return 0;
     const u8 *selected=playback_browser_selected_m3u();
     direct_folder=0;
@@ -157,6 +160,52 @@ static int launch(u32 chapter,u32 ms)
         playback_launch_cancel();returning=0;active=1;view=TOP;choice=0;draw();return 0;
     }
     return 1;
+}
+/* Direct file selection keeps its enclosing book's queue/state. Never guess
+ * from genre or filename: require physical membership in a prepared playlist. */
+int book_menu_open_audio(u32 root_depth)
+{
+    const u8 *selected=playback_browser_selected_node();
+    if(active || returning || !selected || selected[0x4e]!=1 || H(C+8)!=3)return 0;
+    struct media_ref target,chapter;
+    u32 match=0;
+    if(!playback_browser_path(selected,path) || playback_lookup(path,&target)!=1 ||
+       target.cluster!=((u32)H(selected+0x63)<<16|H(selected+0x69)) ||
+       target.size!=W(selected+0x6b))goto error;
+    u32 depth=H(B+0x1cc),end=0;while(path[end])end++;
+    while(depth>=root_depth){
+        while(end && path[end-1]!='/')end--;
+        if(!end || end+8>=256)break;
+        const char *name="BOOK.M3U";
+        for(u32 i=0;i<=8;i++)path[end+i]=(u8)name[i];
+        int available=playback_lookup(path,&chapter);
+        if(available<0)goto error;
+        if(available){
+            if((chapter.attrs&16) || book_preview_open(path)<=0)goto error;
+            for(u32 i=0;i<book_preview_count();i++){
+                if(book_preview_ref(i,&chapter) && chapter.parent.cluster==target.parent.cluster &&
+                   chapter.index==target.index && chapter.cluster==target.cluster && chapter.size==target.size){
+                    if(match)goto error; /* repeated file is ambiguous */
+                    match=i+1;
+                }
+            }
+            if(!match)goto error;
+            break;
+        }
+        if(!depth)break;
+        end--;path[end]=0;depth--;
+    }
+    if(!match)goto error;
+    __builtin_memcpy(browser_saved,B,sizeof browser_saved);
+    __builtin_memcpy(control_saved,C,sizeof control_saved);
+    __builtin_memcpy(nodes_saved,node(0),sizeof nodes_saved);
+    direct_folder=0;path_launch=1;active=1;
+    return launch(match,0)?2:1;
+error:
+    __builtin_memcpy(browser_saved,B,sizeof browser_saved);
+    __builtin_memcpy(control_saved,C,sizeof control_saved);
+    __builtin_memcpy(nodes_saved,node(0),sizeof nodes_saved);
+    direct_folder=path_launch=0;active=1;view=BOOK_ERROR;choice=1;draw();return 1;
 }
 int book_menu_continue_last(void)
 {

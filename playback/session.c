@@ -6,21 +6,14 @@
 #include "last_book.h"
 #include "speed.h"
 #include "book_preview.h"
+#include "navigation.h"
 #define STATE ((u8 *)0x0300d85c)
 #define SERVICE ((u32 *)0x03039708)
 #define PLAYER ((u32 *)0x03023090)
-/* Indexed native music contexts contain no saved pointers or open handles.
- * Capture before browser launch clears the native resume fields. Library
- * modes need additional ancestry and are deliberately not reconstructed here. */
-static struct {
-    struct media_ref ref;
-    u8 record[32];
-    u32 valid, requested, restoring, failed, index, milliseconds;
-    u16 mode, scope, order;
-    u8 device, filesystem, play_mode;
-} music;
-static u16 pending_path[256];
-static u8 pending, path_armed, starting;
+/* Book menu retains this path through launch failure; publish only validated paths. */
+u16 playback_launch_buffer[256];
+#define pending_path playback_launch_buffer
+static u8 pending, path_armed, starting, meditation_pending;
 static u32 resume_position, resume_ms;
 static u8 override_armed, override_pending, starting_explicit, override_rate;
 void playback_launch_rate(u32 quarters) { override_rate=quarters; }
@@ -34,6 +27,7 @@ static struct {
     u32 signature, generation;
     u8 valid, device, filesystem;
 } current;
+u16 *playback_book_path(void) { return current.path; }
 static u32 rate_generation;
 static u16 rate_polls, rate_position;
 static u8 rate_quarters, rate_paused, rate_previous, rate_previous_actual;
@@ -50,50 +44,6 @@ static __attribute__((noipa)) int rate_fail(void)
 }
 static u16 half(const u8 *p) { return p[0] | (u16)p[1]<<8; }
 static u32 word(const u8 *p) { return half(p) | (u32)half(p+2)<<16; }
-static int music_record_matches(const u8 *record)
-{
-    for(u32 i=0;i<sizeof(music.record);i++)if(record[i]!=music.record[i])return 0;
-    return 1;
-}
-static void music_capture(void)
-{
-    if (playback_active) { if(playback_active==2)music.valid=0; return; }
-    music.valid=music.requested=music.restoring=music.failed=0;
-    u32 mode=half(STATE+0xf2), index=half(STATE+2), scope=half(STATE+10);
-    if (mode!=99 || !index || !half(STATE) ||
-        (scope!=2 && scope!=3) || half(STATE+12)>1 || !word(STATE+0x38)) return;
-    music.ref.parent=*(const struct media_dir *)(STATE+0x50);
-    music.ref.parent.cluster=word(STATE+0x34);
-    music.ref.index=word(STATE+0x38)-1;
-    music.ref.cluster=(u32)half(STATE+0x28)<<16|half(STATE+0x2e);
-    music.ref.size=word(STATE+0x30);
-    music.ref.attrs=STATE[0x1f];
-    __builtin_memcpy(music.record,STATE+0x14,sizeof(music.record));
-    if (!music.ref.cluster) return;
-    if (scope==2) index=FW(0x0305e64c,u32,u32,u32,const char *,u32)
-        (index,music.ref.parent.cluster,(const char *)0x03005ab4,3);
-    if (!index || index>8192) return;
-    music.index=index;music.mode=mode;music.scope=scope;music.order=half(STATE+12);
-    music.milliseconds=word((const u8 *)0x0300d1cc);
-    if (*(const volatile u32 *)0x03039714==0x03023090 && PLAYER[0])
-        music.milliseconds=PLAYER[1]>PLAYER[0]?PLAYER[0]:PLAYER[1];
-    music.device=*(const u8 *)0x0300d173;music.filesystem=FS_TYPE;
-    music.play_mode=*(const u8 *)0x0300d1d1;
-    music.valid=1;
-}
-/* 0 keeps native Now Playing; 1 requests validated indexed Music restoration;
- * 2 asks navigation to open the native Music Library without touching the book. */
-u32 playback_music_request(void)
-{
-    if (playback_active==2) return 0;
-    if (music.failed) return 2;
-    if (playback_active!=1) return 0;
-    u8 checked[96]={0};
-    if (!music.valid || music.device!=*(const u8 *)0x0300d173 ||
-        music.filesystem!=FS_TYPE || playback_select_ref(&music.ref,checked,1,1) ||
-        !music_record_matches(checked+0x14)) return 2;
-    music.requested=1;return 1;
-}
 static void player_stop(void)
 {
     /* Match the native browser handoff, not Now Playing's reuse-existing-
@@ -113,10 +63,6 @@ static void player_open(void)
     FW(0x0306b26a,void,u32,const void *)(3,&argument);
 }
 static void player_relaunch(void) { player_stop();player_open(); }
-void playback_music_launch(void)
-{
-    if(music.requested)player_relaunch();
-}
 /* No browser pointer survives this synchronous stop/save/copy transaction. */
 int playback_folder_launch(const struct playlist_queue *queue,u32 position)
 {
@@ -174,16 +120,27 @@ u32 playback_browser_select(u8 *extensions)
     __builtin_memcpy(extensions,(const void *)0x03005ab4,43);
     extensions[43]=0;
     if (path_armed) {
-        path_armed=0;music_capture();pending=1;override_pending=requested;
+        path_armed=0;pending=1;override_pending=requested;meditation_pending=0;
         return 1; /* Existing launch bridge does not dereference this sentinel. */
     }
     const u8 *node=selected_node();if(!node)return 0;
     u32 address=(u32)node;
     if(playback_browser_selected_m3u()==node){
         pending=0;
-        if (!playback_browser_path(node,pending_path)) return 0;
-        music_capture();
-        pending=1;override_pending=requested;
+        if (playback_scratch_busy) return 0;
+        playback_scratch_busy=1;
+        u16 *candidate=(u16 *)playback_scratch;
+        int valid=playback_browser_path(node,candidate);
+        u32 n=0;
+        if(valid && requested){
+            while(candidate[n] && candidate[n]==pending_path[n])n++;
+            valid=candidate[n]==pending_path[n];
+        }
+        if(valid)__builtin_memcpy(pending_path,candidate,sizeof pending_path);
+        playback_scratch_busy=0;
+        if(!valid)return 0;
+
+        pending=1;override_pending=requested;meditation_pending=navigation_content_kind()<0;
         return address|1;
     }
     if (node[0x4e]) pending=override_rate=0; /* a deliberate ordinary-file selection */
@@ -201,30 +158,22 @@ int playback_launch_path(const u16 *path,u32 chapter,u32 milliseconds,u32 signat
     if (!path || path[0]!='/') return 0;
     u32 n=0;while(n<256 && path[n])n++;
     if (n<2 || n>=256 || path[n-1]=='/') return 0;
-    __builtin_memcpy(pending_path,path,(n+1)*2);
+    if(path!=pending_path)__builtin_memcpy(pending_path,path,(n+1)*2);
     playback_launch_override(chapter,milliseconds,signature);path_armed=1;
     return 1;
 }
 void playback_launch_cancel(void) { override_armed=path_armed=override_rate=0; }
 void playback_begin(const u16 *argument)
 {
-    u32 requested=music.requested;
-    music.requested=music.restoring=0; /* A fresh entry cannot inherit an aborted restore. */
-    if (requested && !pending) {
-        music.requested=0;music.restoring=1;music.failed=1;
-        playback_active=0;book_clear();
-        *(u16 *)(STATE+0xf2)=music.mode;
-    }
-    if (argument && !pending && !music.restoring) music.failed=0;
     /* Null means reopening current context; non-null launches a selection. */
     if (!pending && (argument || half(STATE+0xf2)!=99)) { playback_active=0; book_clear(); }
 }
 int playback_prepare(u32 mode)
 {
-    if (music.restoring) return 0;
     if (pending==2) { pending=0;return folder_changed(); }
     if (pending) {
         struct m3u_stats stats;
+        u32 meditation=meditation_pending;meditation_pending=0;
         pending=0; playback_active=0;book_clear();
         int count=playback_load_playlist(pending_path,&stats);
         u32 explicit=override_pending;override_pending=0;starting_explicit=0;
@@ -233,6 +182,12 @@ int playback_prepare(u32 mode)
             if(rate_status==2)rate_fail();
             FW(0x0306b040,void,u32)(245);
             return 1;
+        }
+        if(meditation){
+            current.valid=0;current.generation++;
+            current.device=*(const u8 *)0x0300d173;current.filesystem=FS_TYPE;
+            override_rate=0;resume_position=1;resume_ms=0;
+            playback_active=2;starting=1;return 0;
         }
         resume_position=book_load(pending_path,&resume_ms);
         if(explicit && override_chapter){resume_position=override_chapter;resume_ms=override_ms;starting_explicit=1;}
@@ -249,7 +204,7 @@ int playback_prepare(u32 mode)
         playback_speed_launch();
         if(rate_status==2 && jump_mark)playback_speed_set(rate_previous);
         playback_active=1; starting=1;
-        if(explicit)last_book_remember(pending_path);
+        if(explicit && rate_status!=2)last_book_remember(pending_path);
     }
     if (playback_active) return 0;
     return FW(0x03082732,int,u32)(mode);
@@ -264,21 +219,6 @@ void playback_force_mode(void)
 int playback_queue_init(u8 *state,u32 index,u32 scope,u32 order,const char *extensions)
 {
     if(folder_changed())return 19;
-    if (music.restoring) {
-        music.restoring=0;
-        *(volatile u32 *)0x0300d1cc=0;*(volatile u8 *)0x0300d1d0=0;
-        int result=FW(0x030603d0,int,u8 *,u32,u32,u32,const char *)
-            (state,music.index,music.scope,music.order,extensions);
-        if (result || !music_record_matches(state+0x14) ||
-            word(state+0x34)!=music.ref.parent.cluster ||
-            word(state+0x38)!=music.ref.index+1 ||
-            ((u32)half(state+0x28)<<16|half(state+0x2e))!=music.ref.cluster) return 19;
-        music.failed=0;
-        PLAYER[7]=music.play_mode;PLAYER[8]=music.order;PLAYER[9]=music.scope;
-        *(volatile u32 *)0x0300d1cc=music.milliseconds;
-        *(volatile u8 *)0x0300d1d0=1;
-        return 0;
-    }
     if (!playback_active) {
         FW(0x030603d0,int,u8 *,u32,u32,u32,const char *)(state,index,scope,order,extensions);
         return 0; /* stock caller ignores its original status */
@@ -360,6 +300,8 @@ int playback_request_bookmark(void)
 }
 u32 playback_bookmark_poll(u32 message)
 {
+    if(playback_active==1 && current.valid && rate_status!=1 && rate_status!=2 &&
+       !playback_scratch_busy && *(volatile u16 *)0x0300d81a==0)book_autosave();
     if (bookmark_pending && !playback_scratch_busy) {
         __asm__ volatile ("" ::: "memory");
         u32 position=bookmark_chapter,ms=bookmark_ms,token=bookmark_token,notice=bookmark_feedback_token;

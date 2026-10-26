@@ -40,8 +40,8 @@ class NativeDisk:
         if filesystem not in ('fat', 'exfat'):
             raise ValueError('fixture supports FAT32 and exFAT')
         self.filesystem = filesystem
-        if sectors_per_cluster not in (1,2,4,8,16,32,64,128,256):
-            raise ValueError('fixture cluster size must be a power of two up to 256 sectors')
+        if sectors_per_cluster not in (1,2,4,8,16,32,64,128,256) and not (filesystem == 'exfat' and sectors_per_cluster == 512):
+            raise ValueError('fixture cluster size must be a power of two up to 256 sectors (512 for exFAT read-only fallback checks)')
         self.SPC = sectors_per_cluster
         self.CLUSTERS = clusters
         self.DATA_LBA = max(4, 2 + (clusters + 129)//128)

@@ -103,4 +103,49 @@ class PrepareBookTests(unittest.TestCase):
         self.assertTrue((output/'000 Long.mp3').stat().st_size)
         self.assertTrue(book.valid_resume((output/'Long.RSM').read_bytes()))
 
+class EmbeddedChapterExportTests(unittest.TestCase):
+    def test_chapter_boundaries_cover_entire_source_and_reject_bad_starts(self):
+        import json
+        from unittest.mock import patch
+        data={'format':{'duration':'12'},'chapters':[
+            {'start_time':'0.2','end_time':'5','tags':{'title':'Intro'}},
+            {'start_time':'5','end_time':'11','tags':{'title':'Two'}}]}
+        with patch.object(book.shutil,'which',return_value='/ffprobe'),patch.object(book.subprocess,'check_output',return_value=json.dumps(data).encode()):
+            self.assertEqual(book.chapter_segments(Path('book.m4b')),[('0','5','Intro'),('5','7','Two')])
+        data['chapters'][1]['start_time']='0.1'
+        with patch.object(book.shutil,'which',return_value='/ffprobe'),patch.object(book.subprocess,'check_output',return_value=json.dumps(data).encode()):
+            with self.assertRaises(ValueError):book.chapter_segments(Path('book.m4b'))
+    @unittest.skipUnless(shutil.which('ffmpeg') and shutil.which('ffprobe'),'ffmpeg/ffprobe required')
+    def test_real_m4b_exports_ordered_chapter_audio_and_valid_companions(self):
+        import json
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);(root/'source').mkdir();source=root/'source/original.m4b';meta=root/'chapters.txt'
+            meta.write_text(';FFMETADATA1\n[CHAPTER]\nTIMEBASE=1/1000\nSTART=0\nEND=1000\ntitle=One\n[CHAPTER]\nTIMEBASE=1/1000\nSTART=1000\nEND=2000\ntitle=Two\n')
+            subprocess.run(['ffmpeg','-v','error','-f','lavfi','-i','sine=frequency=440:duration=2','-i',str(meta),'-map_metadata','1','-c:a','aac',str(source)],check=True)
+            original=source.read_bytes();output=root/'export'
+            from unittest.mock import patch
+            with patch.object(book.subprocess, 'run', wraps=book.subprocess.run) as run:
+                result=book.prepare(source,write=True,output=output,convert=True,split_chapters=True)
+            commands=[call.args[0] for call in run.call_args_list if '-ss' in call.args[0]]
+            self.assertEqual(len(commands),2)
+            for command in commands:
+                self.assertGreater(command.index('-ss'), command.index('-i'))
+            self.assertEqual(result['tracks'],['001 One.mp3','002 Two.mp3'])
+            self.assertEqual((output/'BOOK.M3U').read_text(),'#EXTM3U\n001 One.mp3\n002 Two.mp3\n')
+            self.assertTrue(book.valid_resume((output/'BOOK.RSM').read_bytes()))
+            self.assertTrue(book.valid_bookmarks((output/'BOOK.BMK').read_bytes()))
+            for name in result['tracks']:
+                probe=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','json',str(output/name)]))
+                self.assertAlmostEqual(float(probe['format']['duration']),1,delta=.15)
+            self.assertEqual(source.read_bytes(),original)
+            with self.assertRaisesRegex(ValueError,'empty directory'):
+                book.prepare(source,write=True,output=output,convert=True,split_chapters=True)
+
+    def test_probe_timeout_is_a_clear_preparation_error(self):
+        from unittest.mock import patch
+        with patch.object(book.shutil, 'which', return_value='/ffprobe'), patch.object(
+                book.subprocess, 'check_output', side_effect=subprocess.TimeoutExpired('ffprobe', 30)):
+            with self.assertRaisesRegex(ValueError, 'Could not inspect chapters'):
+                book.chapter_segments(Path('book.m4b'))
+
 if __name__=='__main__':unittest.main()

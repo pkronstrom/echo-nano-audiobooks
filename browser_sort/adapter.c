@@ -328,7 +328,10 @@ int browser_prepare_book(const u8 parent[42],const u16 *path,u32 native_device,u
     PREP.path[length]='/';PREP.path[length+1]=0;PREP.prefix=length+1;
     fs=FS_TYPE;device=DEVICE;zero(folder,56);W(folder+8)=W(parent);copy(folder+12,parent,42);
     u32 limit=W((u8 *)0x03076b34)*16;
-    if(!limit || limit>4096 || PREP.prefix>247)goto done;
+    if(!limit || PREP.prefix>247)goto done;
+    /* Large clusters are outside creation's bound, not outside playback's.
+     * Keep the existing playlist/native folder route, as for large directories. */
+    if(limit>4096){result=0;goto done;}
     fw_lock();
     /* Generation only scans a single cluster. A larger directory must reach
      * existing native playlist handling unchanged, even when its BOOK/custom

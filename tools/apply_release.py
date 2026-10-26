@@ -92,14 +92,14 @@ def compatible_modules(base, target):
                     data_len=128, bss_exec=0x0300e73c, bss_len=2150)
     moved = target.modules[31]
     length = moved['code_len'] - 9308
-    expected = dict(original, code_load=0x0308c600, code_len=moved['code_len'])
+    expected = dict(original, code_load=0x0308ce00, code_len=moved['code_len'])
     if (base.modules[31] != original or moved != expected or
             any(a != b for i, (a, b) in enumerate(zip(base.modules, target.modules)) if i != 31) or
             not 16 <= length <= 14060 or length % 4 or
-            base.l2f(moved['code_load']) != 0x3c800 or
-            any(base.d[0x3c800:0x42348])):
+            base.l2f(moved['code_load']) != 0x3d000 or
+            any(base.d[0x3d000:0x42b48])):
         return False
-    magic, entry, code_end, bss_end = struct.unpack_from('<4I', target.d, 0x3c800 + 9308)
+    magic, entry, code_end, bss_end = struct.unpack_from('<4I', target.d, 0x3d000 + 9308)
     return (magic == 0x314f5342 and entry & 1 and
             0x0307b884 <= (entry & ~1) < code_end and
             code_end == 0x0307b874 + length and

@@ -84,26 +84,38 @@ static int next(struct reader *r, struct media_dir *d, u32 *pos,
     ref->parent=*d; ref->index=index; ref->filesystem=r->fs?3:2;
     return 1;
 }
-int content_scan(media_read_fn read, void *ctx, int fs, struct content_root *roots,u32 cap)
+static int walk(media_read_fn read, void *ctx, int fs, struct content_root *roots,u32 cap,
+                const struct content_root *start,content_visit_fn visit,void *visit_ctx)
 {
     struct reader r={read,ctx,65536,fs};
     struct media_dir dirs[8]={{0}};
     u32 positions[8]={0}; u8 kinds[8]={0};
     struct content_root path={0};
     u32 count=0, visited=1, depth=0;
+    if(start){
+        struct media_ref chain[7];
+        if(content_root_chain(read,ctx,fs,start,chain)!=1)return -2;
+        path=*start;depth=start->depth;
+        for(u32 i=0;i<depth;i++)dirs[i+1]=(struct media_dir){chain[i].cluster,chain[i].size,0,chain[i].flags};
+    }
     for(;;) {
         struct media_ref ref; u8 marker;
         int v=next(&r,&dirs[depth],&positions[depth],&ref,&marker);
         if(v<0) return v;
         if(!v) {
-            if(kinds[depth]) {
+            if(roots && kinds[depth]) {
                 if(count>=cap || count>=CONTENT_ROOT_MAX) return -1;
                 path.depth=depth; path.kind=kinds[depth]; roots[count++]=path;
             }
-            if(!depth) return count;
+            if(depth==(start?start->depth:0)) return start?kinds[depth]:(int)count;
             depth--; continue;
         }
         kinds[depth]|=marker;
+        if(visit && ref.cluster>=2 && !(ref.attrs&24)){
+            path.depth=depth;
+            int result=visit(visit_ctx,&path,&ref);
+            if(result<0)return result;
+        }
         if((ref.attrs&0x1e)!=16 || ref.cluster<2 || ref.cluster>=CLUSTER_BAD || depth==7) continue;
         int cycle=0;
         for(u32 j=0;j<=depth;j++) if(dirs[j].cluster==ref.cluster) cycle=1;
@@ -114,6 +126,10 @@ int content_scan(media_read_fn read, void *ctx, int fs, struct content_root *roo
         positions[depth]=0; kinds[depth]=0;
     }
 }
+int content_scan(media_read_fn read,void *ctx,int fs,struct content_root *roots,u32 cap)
+{ return walk(read,ctx,fs,roots,cap,0,0,0); }
+int content_walk(media_read_fn read,void *ctx,int fs,const struct content_root *start,content_visit_fn visit,void *visit_ctx)
+{ return walk(read,ctx,fs,0,0,start,visit,visit_ctx); }
 int content_root_chain(media_read_fn read,void *ctx,int fs,
                        const struct content_root *root,struct media_ref out[7])
 {

@@ -118,3 +118,22 @@ Offline regressions run actual native module/window loading and restoration,
 verify exact code bytes through the actual stock byte reader in both slots,
 and retain the refresh/stub/resident-reload checks. These do not establish
 undocumented runtime ownership, complete IRQ stack bounds or hardware safety.
+
+
+## 20261120 offline screen/Continue layout
+
+Resident text/BSS is 28008/28048 bytes, 248 bytes below the unchanged upper
+boundary. Flash reservation expands to 0x36200..0x3d000; browser backing shifts
+to checked-zero 0x3d000..0x42b48. Browser runtime and decoder boundary stay fixed.
+See [screen/Continue evidence](book-screen-and-continue.md) for stack measurements
+and limits; host measurements do not establish hardware safety.
+
+
+## 20261122 offline navigation/display correction
+
+Resident27952 text +27952 BSS =55904 bytes,400B below0x0309fff0.
+Browser13960 text +5320 BSS remains within prior decoder boundary.
+The20261120 flash reservation and backing relocation are unchanged. Removing
+previous-music restoration makes room for direct book chapter association and
+menu mapping. Direct audio at seven FAT levels measured3680B stack; native
+caller/IRQ/driver stack remains unmeasured. No new device validation implied.

@@ -578,6 +578,22 @@ operations. Evidence: builds/device-check/startup-speed-stage-20261016-095039/re
 Installation/first-post-update boot await user observation before any manual
 reset. Also pending: per-book speed save/switch/reopen/restart acceptance.
 
+## Startup/speed candidate result — 2026-10-16
+
+User reported the first startup after the 20261110 update felt like a boot loop.
+After manually restarting, the Nano reached the normal menu. The user then
+observed the named Continue row. The report does not establish whether the first
+attempt showed repeated logo animation, a static logo, or an update screen, and
+it is not a clean first-boot pass. Keep the retained-RAM fix classified as a
+reproduced offline hazard with unresolved hardware causality. The durable
+per-book speed behavior was not accepted in this test.
+
+The later 20261114 / recovery20261115 phase4j pair is an offline candidate only;
+it was not staged or installed during this session. See
+[automatic preparation](automatic-book-preparation.md) and its exact manifest
+before treating that image as a test candidate. No new device operations,
+hardware acceptance, push or publication were recorded after the 20261110 stage.
+
 ## Offline named Continue row — 2026-10-16
 
 Candidate20261112/recovery20261113 changes Audiobooks landing to
@@ -601,3 +617,115 @@ Recovery SHA256:145613bd8c21dbe9fc1aa13f932144de35e4b1091dd686355d21ef2061fc43be
 No device staging, commit or push for this change. Latest staged20261110; the user
 observed the last-book landing, but first-post-update boot sequence and durable
 per-book rate acceptance remain unconfirmed. See docs/named-continue-label.md.
+
+
+## Long-audiobook RC staged — 2026-10-18
+
+User authorized firmware transfer. Fresh normal USB071b:3203 identification
+linked internal disk6(262144000B) and SD disk7 to the same Nano. These disk
+identifiers are historical. No leftover NANOV170.IMG existed in either root.
+Archived custom20261116/recovery20261117 hashes, dates, duplicate headers and
+CRCs verified. Exclusive internal copy, flush/sync and full byte-for-byte
+readback succeeded:
+0902a40a9df68b8badc63273c0c6d512ab2aae374be731913e42ac502fbe2f97.
+Both volumes safely ejected. Evidence: builds/device-check/long-books-stage-20261018-135339/result.json.
+No SD content changes, raw flash or bootloader operations. Installation and
+first-post-update boot await user confirmation; hardware hours/autosave acceptance
+and the deferred Soulcraft full-restart issue remain open. Archived RC manifest
+is preserved as the pre-staging checkpoint. No commit, push or publication.
+
+
+## Hardware preparation regression — 2026-10-18
+
+After staging20261116, user reached Audiobooks and reports all books display
+Prepare failed / Use host tool. Do not treat book-opening acceptance as passed.
+Fresh normal USB071b:3203 links internal disk6 and SD disk7 (historical IDs).
+Read-only inspection found all11 books have M3U and1024-byte RSM/BMK with both
+sector CRCs valid. No BOOK.TMP files observed. Existing Nano diagnostic log has
+no preparation result codes. Update image has been consumed; exact installed
+application bytes and first-update boot sequence were not independently read.
+
+Small companion allocation is262144B each, suggesting512-sector exFAT clusters.
+Raw boot-sector access remains macOS-blocked even after user-approved admin
+prompt; do not claim confirmed physical geometry. Offline512-sector native ARM
+fixture reproduces preparation-1 despite readable BOOK.M3U and zero writes.
+Narrow source correction treats clusters outside preparation's bound as a
+no-write bypass to normal book/native entry. Creation limits remain unchanged.
+18 focused checks pass; full checks/review in progress. New offline pair
+20261118/19 not staged. Device audio/state unchanged during investigation.
+Evidence: builds/device-check/prepare-failure-20261018-140137/investigation.json.
+
+
+## Preparation fallback correction staged — 2026-10-18
+
+Corrected20261118/recovery20261119 passed595 full tests in568.570s,18 focused
+checks and scoped independent review. Fresh normal071b:3203 identification
+reconfirmed internal disk6(262144000B) and SD disk7 on one Nano. These IDs are
+historical. No leftover update existed. Both archived dates/hashes/CRC/header
+copies verified; exclusive internal update copy, flush/sync and complete
+byte-for-byte readback passed:
+ddc5d4dfddaf3b3d8cb2530ce27342d02a3201efbd9c4ae8dd3c28e92b12ad94.
+Both volumes safely ejected. Evidence: builds/device-check/prepare-fallback-stage-20261018-141657/result.json.
+All33 book companions matched initial read-only snapshots before staging.
+No SD content writes, raw flash or bootloader operations. Installation/boot and
+book-opening retest remain pending. Physical card cluster size remains inferred;
+user-approved raw geometry read was blocked by macOS. No hardware fix claimed.
+
+
+## Hardware follow-up and audiobook screen work — 2026-10-18
+
+User confirms 20261118 opens books and reports seeking beyond one hour seemed
+to work. This is positive feedback, not exhaustive seek/startup acceptance.
+The still-visible music icons and author row were expected in that candidate;
+its Continue cache lasted only for the running session. The new offline
+20261120/20261121 work addresses both: see
+[book screen and durable Continue](book-screen-and-continue.md).
+No device operations or new installation occurred for this work.
+
+
+## Audiobook screen/Continue candidate staged — 2026-10-18
+
+User authorized installation and connected Nano. Fresh normal USB071b:3203
+linked internal disk6 (262144000B) and SD disk7 on the same device; identifiers
+are historical. Archived custom20261120/recovery20261121 hashes, dates, CRCs
+and duplicate headers verified. No existing update image in either root.
+Exclusive internal copy, flush/sync and full byte-for-byte readback succeeded:
+6efeeb926d1b41d77b33bbe5772052a7a90d39bb170aaf76ace53457c1308616.
+Both volumes safely ejected. Evidence:
+builds/device-check/book-screen-stage-20261018-1719/result.json.
+No SD content changes, raw flash or bootloader operations. Installation and
+first boot remain unconfirmed. Check book/chapter rows, removed heart/order
+glyphs, and Continue after playing once and restarting. Last confirmed working
+book opening remains20261118. Archive manifest retains its offline provenance.
+
+
+## 20261120 hardware UI feedback — 2026-10-18
+
+User photo IMG_5542 shows Soulcraft playing with hours displayed and the new
+book glyph, but stale author text and footer symbols. User confirms Continue
+Soulcraft works from the Audiobooks menu. This confirms the candidate ran;
+first-post-update boot timing and a separate restart durability check were not
+reported. The screen change is not accepted. Photo remains private/outside Git.
+
+Offline reproduction found two mistakes in the initial UI checks: native dirty
+events are consumed before the overlay runs; resource IDs were misidentified
+(heart158/159 atx95, mode80 atx87, battery65+ atx115). The prior clear removed
+the battery region instead of the heart. New checks use consuming native flags
+and actual resource bitmaps. Blank artist redraw also needs marquee retirement
+before the native blank paint. Work is combined with user-approved navigation
+consistency changes; see docs/plans/2026-10-18-consistent-content-navigation.md.
+No new device staging occurred during this correction.
+
+## Content navigation candidate staged — 2026-10-18
+
+User authorized installation. Fresh normal USB071b:3203 identification linked
+internal disk5(262144000B) and SD disk6 to the same Nano; IDs are historical.
+Archived custom20261122/recovery20261123 passed hash/date/CRC/duplicate-header
+checks. Neither root contained an existing update image. Exclusive internal
+copy, flush/sync and complete byte-for-byte readback succeeded:
+84f78dea227b030734c34f2eae8398efe354040ca36f35592e1782bd63e74b67.
+Both volumes safely ejected. Evidence:
+builds/device-check/content-navigation-stage-20261018-193547/result.json.
+No SD content changes, raw flash or bootloader operations. Installation and
+first boot await user observation; screen/menu/folder acceptance is pending.
+20261120 remains the last photographed running candidate. No commit or push.

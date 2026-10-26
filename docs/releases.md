@@ -4,11 +4,23 @@
 > the user confirmed the normal menu. Do not reflash or publish this candidate.
 > Read [recovery lessons](recovery-lessons-2026-10-14.md) before device work.
 
-This package produces custom firmware from your own official FiiO Echo Nano
-V1.7.0 firmware. It contains changed bytes and Python scripts, not a complete
-FiiO firmware image. The current P4a build is a device-test candidate; successful
-host tests do not establish device compatibility. Public release publication
-remains pending recorded device acceptance.
+This package format produces custom firmware from your own official FiiO Echo
+Nano V1.7.0 firmware. The current local candidate is phase4k long-audiobook
+follow-up: 20261118 custom / 20261119 stock recovery. It is an uncommitted source
+checkpoint on top of `219d972`, archived with exact source snapshots and hashes
+in `builds/phase4k-long-books-20261018/prepare-fallback-reviewed/manifest.json`.
+
+The firmware suite passed 595 checks; chapter-export fixes also passed 17 host
+checks and all 120 BKZ tests. The `/revx` findings and scoped follow-up reviews
+are retained in the archive. This is an **offline RC**, not hardware acceptance
+or a published release. This corrected pair has not yet received hardware acceptance. The previous
+20261116 pair was installed and showed a book-preparation regression; the new
+pair adds the narrowly reviewed large-cluster fallback correction.
+
+Includes hours on Now Playing, best-effort five-minute Continue saving, and host
+chapter export with constant-bitrate MP3. The Soulcraft full-restart report is
+still unresolved; existing SD audio and saved state have not been replaced.
+See [long-audiobook follow-up](long-audiobook-followup.md) for limits and evidence.
 
 ## For users
 
@@ -115,3 +127,21 @@ before creating the draft with `--verify-tag`. An existing tag is rejected, so a
 new build cannot silently be attached to an older source tag. If creation stops
 after the tag was made, inspect that partial draft/tag and choose a new candidate
 tag or clean it up deliberately before rerunning.
+
+
+## 2026-10-18 follow-up
+
+User confirmed 20261118 opens books; seeking beyond one hour seemed to work.
+Candidate 20261120/recovery 20261121 adds the audiobook screen and durable
+Continue described in [the checkpoint](book-screen-and-continue.md). It is an
+offline candidate, not installed or published; prior archives remain historical.
+
+
+## 20261122 content navigation/display candidate
+
+Supersedes20261120's incomplete screen. The user confirmed Continue Soulcraft
+works, but the photo showed stale author/footer symbols. Corrected candidate
+20261122/recovery20261123 also adds the approved menu order, current-context
+Now Playing and direct chapter context through Folders. See
+[behavior and hardware checks](content-navigation-followup.md). No new staging
+or publication; the20261120 archive remains historical evidence.

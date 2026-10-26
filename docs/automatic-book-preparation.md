@@ -1,8 +1,13 @@
 # Automatic book preparation
 
-Post-RC implementation; all578 tests pass (498.928s), with scoped and final
-independent review giving limited offline approval. It is not installed or
-hardware accepted. The local `phase4i-release-candidate` tag remains unchanged.
+Local `phase4j-release-candidate` at `219d972` (candidate date20261114, stock
+recovery date20261115). All578 tests passed in498.928s; scoped and final
+independent reviews gave limited offline approval. Reproducible paired images
+are archived in `builds/phase4j-auto-preparation-20261016/reviewed/manifest.json`.
+This candidate is not staged, installed or hardware-accepted. The earlier local
+`phase4i-release-candidate` at `bac9473` remains preserved. Neither tag is
+pushed or published. The hardware-installed/staged image and its startup
+observations are tracked separately in [the incident record](device-test-and-restore.md).
 
 ## Using it
 
@@ -87,3 +92,23 @@ Paired candidate20261114 / stock recovery20261115 and exact hashes are archived
 locally in `builds/phase4j-auto-preparation-20261016/reviewed/manifest.json`.
 Isolated payload rebuilds reproduce both complete images byte-for-byte. The
 source remains on `feature/automatic-book-preparation`; no push or staging.
+
+
+## Large-cluster fallback correction — 2026-10-18
+
+Hardware feedback for20261116 reported Prepare failed for every prepared book.
+All11 inspected book folders had playlists and CRC-valid resume/bookmark files.
+A512-sector exFAT fixture reproduced the refusal before checking existing files;
+resident playlist lookup still succeeded. Source correction bypasses automatic
+preparation when cluster geometry exceeds its4096-entry scan bound, allowing
+the existing native/resident book-entry route. This matches the existing behavior
+for multi-cluster directories. It does not enable file creation on that geometry.
+
+The real card's256KiB allocations suggest this geometry, but direct boot-sector
+reads were OS-blocked even after administrator authorization. Keep that device
+attribution provisional until hardware retest. The corrected ARM path reaches
+Continue without any sector writes. Device contents were not regenerated.
+Candidate20261118/recovery20261119 passes595 full checks in568.570s,18 focused
+checks and scoped independent review. Isolated images reproduce byte for byte.
+Archive: `builds/phase4k-long-books-20261018/prepare-fallback-reviewed/manifest.json`.
+Hardware retest remains pending; see the incident log.

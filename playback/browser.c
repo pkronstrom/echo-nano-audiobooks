@@ -1,8 +1,6 @@
 #include "browser.h"
 static u16 half(const u8 *p) { return p[0] | (u16)p[1] << 8; }
 static u32 word(const u8 *p) { return half(p) | (u32)half(p+2) << 16; }
-u16 playback_path_scratch[256];
-#define component playback_path_scratch
 static int append(u16 *out, u32 *used, const u16 *name)
 {
     u32 n = 0;
@@ -26,6 +24,7 @@ static int append(u16 *out, u32 *used, const u16 *name)
 static int browser_path(media_read_fn read, void *ctx, int exfat, const u8 *browser,
                         const u8 *node, u32 root_cluster, u16 *out, int directory)
 {
+    u16 component[256];
     out[0] = 0;
     u32 depth = half(browser+0x1cc);
     if (depth > 7) return 0;

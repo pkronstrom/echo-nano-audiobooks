@@ -5,6 +5,12 @@ then reaches the menu after Power/reset. Similar reports occurred with20261027
 andlaterbuilds. This symptom differs from the originalP4a sector-reader corruption.
 The precise latest screen behavior remains unconfirmed.
 
+Follow-up on the staged20261110 image: the user reported a startup hang/loop,
+then manually restarted and reached the normal menu, where the named Continue
+row appeared. No clean first automatic boot was confirmed. This observation
+does not establish that the reproduced retained-RAM hazard was the device
+symptom's full cause; keep first-boot acceptance open.
+
 ## Reproduced failure
 
 The resident payload loader accepts any RAM header beginning ENP2. Archived

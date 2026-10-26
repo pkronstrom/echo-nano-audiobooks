@@ -233,7 +233,7 @@ class BookMenuTests(unittest.TestCase):
                 off=image.l2f(m[kind+'_load'])
                 self.cpu.mem_write(m[kind+'_exec'],bytes(image.d[off:off+m[kind+'_len']]))
         module(21);self.call('navigation_menu_init')
-        self.cpu.mem_write(0x0300e708,struct.pack('<H',6))
+        self.cpu.mem_write(0x0300e708,struct.pack('<H',1))
         self.assertEqual(self.call('navigation_menu_dispatch'),1)
         module(31)
         self.cpu.mem_write(B+0x1f4,struct.pack('<I',0x0300e6e4))

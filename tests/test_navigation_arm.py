@@ -68,7 +68,7 @@ class NavigationTests(unittest.TestCase):
         self.w(B,0x0300e73c);self.w(0x0300e73c+4,0x0300e9ac);self.w(0x0300e9ac+4,0x0300e73c)
         self.w(B+0x1f4,0x20008000);self.w(0x20008004,0x03005a5e)
         self.call('navigation_browser_init')
-    def select(self,index=6):
+    def select(self,index=1):
         self.h(0x0300e708,index)
         self.assertEqual(self.call(0x03079b1e),1)
     def test_browser_audio_handoff_reenumerates_with_playlists_visible(self):
@@ -125,7 +125,7 @@ class NavigationTests(unittest.TestCase):
             self.call('navigation_menu_init')
             self.assertEqual(self.word(self.syms['navigation_count']),8)
             table=self.word(0x0307a24c)
-            self.assertEqual([self.h(table+8*i+6) for i in (6,7)],[0x83,0x84])
+            self.assertEqual([self.h(table+8*i+6) for i in (1,2)],[0x83,0x84])
             self.assertEqual(bytes(self.cpu.mem_read(0x03079f70,1)),b'\x07')
             self.assertEqual(bytes(self.cpu.mem_read(0x03079f5e,2)),b'\x07\x20')
             self.dirs={2 if fs else 0:[END]}
@@ -133,7 +133,7 @@ class NavigationTests(unittest.TestCase):
             self.assertEqual(self.word(self.syms['navigation_count']),6)
     def test_category_browser_scans_unrelated_subtree_once(self):
         for fs in (False,True):
-            for category in (6,7):
+            for category in (1,2):
                 with self.subTest(exfat=fs,category=category):
                     self.setUp();self.tree(fs,both=True)
                     self.call('navigation_menu_init');self.select(category)
@@ -141,7 +141,7 @@ class NavigationTests(unittest.TestCase):
                     # The empty Before directory is visited only by a root
                     # scan, never by installation of Books or Meditations.
                     self.assertEqual([r for r in self.directory_reads if r[0]==11],[(11,0)])
-                    expected=20 if category==6 else 30
+                    expected=20 if category==1 else 30
                     self.assertEqual(self.word(B+self.h(B+0x1cc)*56+20),expected)
 
     def test_last_book_landing_only_validates_identity_then_browse_rescans(self):
@@ -292,5 +292,44 @@ class NavigationTests(unittest.TestCase):
         self.w(B+56+20,999)
         self.assertEqual(self.call('navigation_event',0x40000040),0)
         self.assertEqual(len(calls),1)
+
+    def test_labels_icons_and_native_dispatch_share_visible_order(self):
+        from unicorn import UC_HOOK_CODE
+        self.tree(False,both=True);self.call('navigation_menu_init')
+        order=[2,6,7,1,0,5,3,4]
+        table=self.word(0x0307a24c);icons=self.word(0x0307a4d8)
+        self.assertEqual([self.h(table+8*i+6) for i in range(8)],[0,0x83,0x84,88,3,130,1,236])
+        mapped=[]
+        def native(cpu,address,size,user):
+            if address!=self.syms['navigation_native_dispatch']:return
+            mapped.append(self.h(0x0300e708));cpu.reg_write(UC_ARM_REG_R0,0);cpu.reg_write(UC_ARM_REG_PC,cpu.reg_read(UC_ARM_REG_LR))
+        self.cpu.hook_add(UC_HOOK_CODE,native)
+        for visible,item in enumerate(order):
+            if item>=6:continue
+            self.assertEqual(self.word(icons+visible*4),self.word(0x03079504+item*4))
+            self.h(0x0300e708,visible);self.assertEqual(self.call('navigation_menu_dispatch'),1)
+            self.assertEqual(mapped[-1],item);self.assertEqual(self.h(0x0300e708),visible)
+
+    def test_no_markers_keeps_all_six_native_actions_in_new_order(self):
+        self.call('navigation_menu_init');table=self.word(0x0307a24c)
+        self.assertEqual([self.h(table+8*i+6) for i in range(6)],[0,88,3,130,1,236])
+
+    def test_actual_native_dispatch_matches_original_actions_after_reordering(self):
+        from unicorn import UC_HOOK_CODE
+        def hardware(cpu,address,size,user):
+            if address in (0x030656b8,0x0306b0a0,0x030595b4,0x0305ad76):
+                cpu.reg_write(UC_ARM_REG_R0,0);cpu.reg_write(UC_ARM_REG_PC,cpu.reg_read(UC_ARM_REG_LR))
+        for visible,item in ((0,2),(3,1),(4,0),(5,5),(6,3),(7,4)):
+            observations=[]
+            for mapped in (False,True):
+                self.setUp();self.module(0);self.tree(False,both=True);self.call('navigation_menu_init')
+                self.cpu.hook_add(UC_HOOK_CODE,hardware)
+                self.h(0x0300e708,visible if mapped else item)
+                self.call('navigation_menu_dispatch' if mapped else 'navigation_native_dispatch')
+                # Native ordinary routes initialize only their u16 argument;
+                # unused copied stack tail is not part of the action contract.
+                observations.append(([(w,a[:2] if a else None) for w,a in self.windows],self.events))
+                if mapped:self.assertEqual(self.h(0x0300e708),visible)
+            with self.subTest(native=item):self.assertEqual(observations[0],observations[1])
 
 if __name__=='__main__':unittest.main()

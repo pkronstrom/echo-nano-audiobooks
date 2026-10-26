@@ -19,5 +19,5 @@ SECTIONS {
     } > RAM
     /DISCARD/ : { *(.ARM.exidx*) *(.ARM.attributes) *(.comment) *(.note*) }
 }
-ASSERT(SIZEOF(.text) <= 0x6600, "playback code exceeds verified refresh staging buffer")
+ASSERT(SIZEOF(.text) <= 0x6e00, "playback code exceeds verified refresh staging buffer")
 ASSERT(__play_bss_end <= 0x0309fff0, "playback code/state exceeds reserved RAM")

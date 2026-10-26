@@ -43,12 +43,14 @@ class FolderSessionTests(unittest.TestCase):
         self.assertEqual(struct.unpack('<I',self.cpu.mem_read(self.f.syms['playback_active'],4))[0],2)
         self.window=[];self.launch()
         self.assertEqual(struct.unpack('<I',self.cpu.mem_read(self.f.syms['playback_active'],4))[0],1)
-    def test_folder_to_book_music_return_falls_back_to_library(self):
+    def test_folder_to_book_now_playing_keeps_current_context(self):
         music_resume.MusicResumeTests.music_context(self)
         self.launch();self.folder()
-        self.assertEqual(self.f.call('playback_music_request'),0)
+        self.f.call('playback_begin',0)
+        self.assertEqual(struct.unpack('<I',self.cpu.mem_read(self.f.syms['playback_active'],4))[0],2)
         self.window=[];self.launch()
-        self.assertEqual(self.f.call('playback_music_request'),2)
+        self.f.call('playback_begin',0)
+        self.assertEqual(struct.unpack('<I',self.cpu.mem_read(self.f.syms['playback_active'],4))[0],1)
     def test_folder_device_change_rejects_advance(self):
         self.folder()
         self.cpu.mem_write(0x0300d173,b'\x01')
@@ -129,6 +131,7 @@ class FolderSessionTests(unittest.TestCase):
         self.assertEqual(self.codec_closes,1)
         self.f.call('book_save')
         self.assertEqual(self.writes,[(91,512)])
-        self.assertEqual(self.f.call('playback_music_request'),0)
+        self.f.call('playback_begin',0)
+        self.assertEqual(struct.unpack('<I',self.cpu.mem_read(self.f.syms['playback_active'],4))[0],2)
 
 if __name__=='__main__':unittest.main()

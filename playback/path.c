@@ -36,7 +36,7 @@ static int short_match(const u8 *e, const u16 *wanted, u32 length)
     u16 name[13];
     return short_name(e, name) == length && same(name, wanted, length);
 }
-struct query { const u16 *wanted; u32 length, cluster; u16 *name; };
+struct query { const u16 *wanted; u32 length, cluster; u16 *name; u32 index; };
 static int find_fat(media_read_fn read, void *ctx, struct media_dir *parent,
                     const struct query *q, struct media_ref *out)
 {
@@ -69,7 +69,7 @@ static int find_fat(media_read_fn read, void *ctx, struct media_dir *parent,
         int long_name = pending && !expected && checksum(e) == sum;
         int match = wanted ? ((long_name && same(name, wanted, length)) ||
                                short_match(e, wanted, length)) :
-                              ((e[11] & 16) && cluster == q->cluster);
+                              (q->cluster ? ((e[11] & 16) && cluster == q->cluster) : i == q->index);
         if (!(e[11] & 8) && e[0] != '.' && match) {
             if (!wanted) {
                 length = 0;
@@ -115,7 +115,7 @@ static int find_exfat(media_read_fn read, void *ctx, struct media_dir *parent,
         if (stream[0] != 0xc0 || !length || stream[3] != length ||
             secondaries < 1 + (length+14)/15 || le32(stream+28) ||
             le32(stream+12) || le32(stream+8) > le32(stream+24)) continue;
-        if (!wanted && (!(attrs & 16) || le32(stream+20) != q->cluster)) continue;
+        if (!wanted && (q->cluster ? (!(attrs & 16) || le32(stream+20) != q->cluster) : i != q->index)) continue;
         int match = 1;
         for (u32 j = 0; j < length; j++) {
             if (!(j % 15) && read(ctx, 1, parent, i+2+j/15, e)) return -2;
@@ -176,4 +176,13 @@ int media_directory_name(media_read_fn read, void *ctx, int exfat,
                     find_fat(read, ctx, parent, &q, out);
     if (r != 1) name[0] = 0;
     return r;
+}
+
+int media_entry_name(media_read_fn read, void *ctx, int exfat,
+                     struct media_dir *parent, u32 index, u16 *name,
+                     struct media_ref *out)
+{
+    struct query q = {.index=index, .name=name};
+    name[0]=0;
+    return exfat ? find_exfat(read,ctx,parent,&q,out) : find_fat(read,ctx,parent,&q,out);
 }

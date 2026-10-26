@@ -1,4 +1,10 @@
-# Next Nano test — current status, 2026-10-15
+# Historical Nano test checklist — 2026-10-15
+
+This page records the October 15 device plan and is not the current checklist.
+For present image status, open [MASTERPLAN.md](../MASTERPLAN.md),
+[the device incident record](device-test-and-restore.md), and the exact test
+guide for the candidate under consideration. The latest phase4j preparation
+candidate is not installed or hardware-accepted.
 
 **Do not install an old P3a/P4a artifact from historical notes.** The original
 P4a boot-looped; its menu-bypass diagnostic later froze. The20261017 loader-fix

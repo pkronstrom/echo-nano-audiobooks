@@ -24,3 +24,10 @@ Parent review and full build/test evidence are archived in
 No new independent review or device installation has been performed.
 Resident text25864+BSS30440 fills the56304-byte static reservation exactly;
 its upper boundary and reboot marker are unchanged.
+
+
+## Superseding offline implementation — 2026-10-18
+
+Candidate 20261120 adds durable selection hints to the existing RSM journal and
+read-only cold discovery. The earlier RAM-lifetime limitation remains true of
+the old candidate. See [current behavior](book-screen-and-continue.md).

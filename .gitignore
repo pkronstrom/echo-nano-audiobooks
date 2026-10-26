@@ -1,6 +1,8 @@
 # build output
 out/
 builds/
+# local flashing-tool logs
+log/
 # firmware images: never commit FiiO's firmware
 *.IMG
 *.img

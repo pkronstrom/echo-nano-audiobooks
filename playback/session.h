@@ -1,13 +1,14 @@
 #ifndef ECHO_PLAYBACK_SESSION_H
 #define ECHO_PLAYBACK_SESSION_H
 #include "runtime.h"
+extern u16 playback_launch_buffer[256];
+u16 *playback_book_path(void);
 extern u32 playback_active; /* 1 book, 2 sorted folder */
 struct playlist_queue;
 int playback_folder_launch(const struct playlist_queue *,u32 position);
-u32 playback_music_request(void);
-void playback_music_launch(void);
 const u8 *playback_browser_selected_m3u(void);
 const u8 *playback_browser_selected_node(void);
+/* Browser/menu caller must retain the selected path in playback_launch_buffer. */
 void playback_launch_override(u32 chapter,u32 milliseconds,u32 signature);
 int playback_launch_path(const u16 *path,u32 chapter,u32 milliseconds,u32 signature);
 void playback_launch_cancel(void);

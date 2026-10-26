@@ -10,9 +10,14 @@
     ldr r0,=playback_active
     ldr r0,[r0]
     cmp r0,#1
-    ite eq
-    moveq r0,#86
-    movne r0,#107
+    bne stock
+    @ A blank native artist clears pixels without replacing its marquee.
+    @ Retire that marquee before the native step; the book overlay reclaims it.
+    ldr r1,=0x03005f0c
+    movs r0,#0
+    strb r0,[r1]
+    str r0,[r1,#12]
+    movs r0,#86
     b done
 stock:
     movs r0,#107
