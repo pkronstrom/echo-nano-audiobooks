@@ -129,6 +129,7 @@ class BookmarkGestureTests(base.BookmarkSessionTests):
         from pathlib import Path
         root=Path(__file__).resolve().parents[1]
         nm=root/'builds/tools/arm-gnu-toolchain-13.2.Rel1-darwin-arm64-arm-none-eabi/bin/arm-none-eabi-nm'
+        if not nm.exists():nm='arm-none-eabi-nm'
         symbols=subprocess.check_output([str(nm),str(root/'out/playback/playback.elf')],text=True)
         address=next(int(line.split()[0],16) for line in symbols.splitlines() if line.endswith(' bookmark_pending'))
         self.cpu.mem_write(address,struct.pack('<I',1))

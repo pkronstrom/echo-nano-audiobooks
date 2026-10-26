@@ -237,6 +237,8 @@ class AutomaticBookGateTests(unittest.TestCase):
         disk, _ = self.fixture(marker=False)
         payload = (ROOT / 'out/browser_sort/browser_sort.bin').read_bytes()
         tool = ROOT / 'builds/tools/arm-gnu-toolchain-13.2.Rel1-darwin-arm64-arm-none-eabi/bin/arm-none-eabi-nm'
+        if not tool.exists():
+            tool = 'arm-none-eabi-nm'
         table = subprocess.check_output([str(tool), str(ROOT / 'out/browser_sort/browser_sort.elf')], text=True)
         locals_ = {name: int(value, 16) for value, kind, name in (line.split() for line in table.splitlines())}
         for name in ('preparing', 'preparation_error'):
