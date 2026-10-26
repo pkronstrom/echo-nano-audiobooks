@@ -1,34 +1,39 @@
 # FiiO Echo Nano custom firmware
 
-> **Current status (2026-10-17):** The local `phase4j-release-candidate` at
-> `219d972` adds guarded audiobook preparation and is offline-tested, but is not
-> installed or hardware-accepted. The staged 20261110 image reached the menu
-> only after the user restarted it following a reported startup hang/loop. The
-> earlier P4a boot-looped; stock recovery succeeded. Read the current
-> [delivery status](MASTERPLAN.md) and [recovery lessons](docs/recovery-lessons-2026-10-14.md)
-> before device work.
+Audiobook and meditation features for the FiiO Echo Nano, built on
+[NaniteCFW](https://github.com/maaraneasi/nanitecfw) by Marek Pleskac
+(forked at `ea4e6dc`). Like upstream, this repository contains only patches and
+build tools, not FiiO's firmware.
 
-This workspace starts from NaniteCFW revision
-`ea4e6dc2cb386483093c7b045b6e85f26939ce2e`. The project requirements are in
-[the imported specification](docs/specs/Echo-Nano-Agent-Specification.md),
-and current delivery status is in [MASTERPLAN.md](MASTERPLAN.md).
-See [baseline validation and recovery](docs/baseline.md) before using a build.
-Local builds disable upstream's experimental power patches by default
-(`POWER_SAVE=0`). The upstream description below includes those optional patches.
-The firmware has marked Audiobooks and Meditations roots, ordered M3U playback,
-per-book resume/bookmarks, native folder sorting, and MP3-only adjustable speed.
-The latest local source tag adds guarded automatic preparation for supported
-book folders. Its candidate is not installed or hardware-accepted. See
-[current behavior and limits](docs/automatic-book-preparation.md),
-[audiobook setup](docs/audiobooks.md), and [delivery status](MASTERPLAN.md).
-The failed P4a image is historical; do not install it.
+> **Status: experimental.** Individual features have worked on the author's
+> device, but no build has passed full hardware acceptance. After some updates
+> the player hung or looped at startup until it was restarted by hand; the cause
+> is not confirmed. An earlier candidate (P4a) boot-looped and needed a USB
+> Loader restore. Read the [recovery lessons](docs/recovery-lessons-2026-10-14.md)
+> before flashing.
 
-The previous [quick start](docs/TEST-TOMORROW.md) is historical; follow the current recovery lessons before another device session.
-The [patch-only release format](docs/releases.md) lets users supply the official
-image and generate custom/recovery images with Python alone. Public release is
-pending device validation. Review proposed icons in the [offline feedback page](docs/icon-review.html).
-The [community patch review](docs/community-patches.md) records performance
-improvements and why experimental power changes stay disabled.
+This fork adds:
+
+- **Audiobooks** and **Meditations** main-menu entries for folders marked with
+  an empty `.audiobook` or `.meditation` file.
+- **Book playback** in `BOOK.M3U` order, with per-book resume, Continue,
+  chapters and bookmarks.
+- **Speed control** for MP3 books, about 1×–2×, remembered per book.
+- **Book controls**: ten-second seek, hours on Now Playing, and book and
+  chapter titles on the player screen.
+- **Natural folder sorting** (CD1, CD2, … CD10) in browser lists and folder
+  playback.
+- **Book preparation**: the player creates missing playlist and state files for
+  simple book folders on supported cards; `tools/prepare_book.py` prepares books
+  on a computer.
+
+See [audiobook setup](docs/audiobooks.md),
+[automatic preparation](docs/automatic-book-preparation.md),
+[baseline validation and recovery](docs/baseline.md) and the
+[patch-only release format](docs/releases.md). Builds disable upstream's
+experimental power patches by default (`POWER_SAVE=0`); the
+[community patch review](docs/community-patches.md) explains why. The rest of
+this README is upstream's description of the base firmware.
 
 Not affiliated with or endorsed by FiiO. FiiO and Echo Nano are trademarks of their owners.
 

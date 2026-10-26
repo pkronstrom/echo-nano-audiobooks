@@ -2,8 +2,7 @@
 
 > **Historical checklist.** P4a boot-looped and must not be installed. Current
 > candidate, installed-image status, and remaining device checks are summarized
-> in [MASTERPLAN.md](../MASTERPLAN.md) and
-> [the session learning audit](session-learnings-2026-10-12-to-16.md). Current
+> in [the session learning audit](session-learnings-2026-10-12-to-16.md). Current
 > automatic preparation behavior and its hardware status are in
 > [automatic-book-preparation.md](automatic-book-preparation.md).
 
@@ -45,8 +44,8 @@ The host workflow below remains supported. Keep each book in its own directory.
 Run from this repository, replacing the example path with your book's path:
 
 ```sh
-python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/ThinkAndGrowRich'
-python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/ThinkAndGrowRich' --write
+python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/My Book'
+python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/My Book' --write
 ```
 
 The first command previews JSON. The second creates `BOOK.M3U`, a 1024-byte
@@ -209,7 +208,7 @@ at 8–48 kHz. Other codecs retain their normal 1x playback. Music outside the
 book queue retains native playback. Bookmarks and resume positions use source
 time, rather than elapsed listening time multiplied by the selected speed.
 
-The user reported that live Speed selection worked on Ichigo in the staged
+The user reported that live Speed selection worked on Book B in the staged
 20261027 candidate. That is limited control-path feedback; it does not establish
 all-preset audio quality or the 20261110 candidate's per-book speed persistence.
 Read [the current speed test](speed-device-test.md) and
