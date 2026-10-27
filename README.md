@@ -27,6 +27,14 @@ their owners.
 **Tested on:** Echo Nano hardware 1.0.0 with the official firmware **V1.7.0**
 only. The build refuses any other stock image.
 
+<p>
+  <img src="docs/images/main-menu.jpg" width="400" alt="Main menu with Audiobooks selected, between Music and Meditations">
+  <img src="docs/images/now-playing-book.jpg" width="400" alt="An audiobook playing: chapter and book titles, speed 1x, elapsed time and chapter 1 of 1">
+</p>
+
+The main menu with the new Audiobooks entry, and an audiobook playing (photos
+from the author's device).
+
 ## Features
 
 ### Added by this fork
