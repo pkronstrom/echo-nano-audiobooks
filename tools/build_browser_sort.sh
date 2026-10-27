@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Browser overlay extension only; no firmware staging or device operations.
 set -euo pipefail
+# Globs set the link order, so the image must not depend on the locale.
+export LC_ALL=C
 out=${1:-out/browser_sort}
 mkdir -p "$out/obj"
 python3 - "$out" <<'BIND'

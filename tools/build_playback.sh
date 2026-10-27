@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Playback payload and native hooks, included by the separate audiobook target.
 set -euo pipefail
+# Globs set the link order, so the image must not depend on the locale.
+export LC_ALL=C
 out=${1:-out/playback}
 mkdir -p "$out/obj"
 python3 - "$out" <<'ICONS'

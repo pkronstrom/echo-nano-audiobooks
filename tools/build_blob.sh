@@ -7,6 +7,8 @@
 #   OUT/syms.inc                  .equ for every global blob symbol, for patches/*.S
 # Usage: tools/build_blob.sh OUTDIR STOCK_IMG
 set -euo pipefail
+# Globs set the link order, so the image must not depend on the locale.
+export LC_ALL=C
 out=$1 fw=$2
 mkdir -p "$out/obj"
 
