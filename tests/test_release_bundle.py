@@ -179,7 +179,7 @@ class ReleaseTests(unittest.TestCase):
             # Freeze bundle inputs while other contributors may edit the workspace.
             snapshot = root / 'source'
             for name in ('tools/apply_release.py', 'tools/rknano_fw.py', 'tools/prepare_book.py',
-                         'LICENSE', 'docs/releases.md', 'docs/audiobooks.md', 'docs/automatic-book-preparation.md', 'docs/approved-icons.json',
+                         'LICENSE', 'docs/releases.md', 'docs/audiobooks.md', 'docs/approved-icons.json',
                          'docs/icon-library-assets/tabler/LICENSE', 'docs/icon-library-assets/lucide/LICENSE',
                          'docs/icon-library-assets/bootstrap/LICENSE'):
                 dest = snapshot / name
@@ -198,9 +198,10 @@ class ReleaseTests(unittest.TestCase):
                 self.assertIn('python3 prepare_book.py', guide)
                 self.assertNotIn('builds/phase3a', guide)
                 self.assertNotIn('tools/prepare_book.py', guide)
-                automatic_guide=archive.read('automatic-book-preparation.md').decode()
-                self.assertIn('BOOK.M3U',automatic_guide)
-                self.assertNotIn('tools/prepare_book.py',automatic_guide)
+                self.assertNotIn('For maintainers', guide)
+                readme = archive.read('README.md').decode()
+                self.assertIn('apply_release.py --input', readme)
+                self.assertNotIn('For maintainers', readme)
                 archive.extractall(root / 'bundle')
             run = subprocess.run([sys.executable, str(root / 'bundle/apply_release.py'), '--input', str(ROOT / 'NANOV170.IMG'), '--output', str(root / 'ready')], capture_output=True, text=True)
             self.assertEqual(run.returncode, 0, run.stderr)

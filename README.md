@@ -12,8 +12,8 @@
 Audiobook and meditation features for the FiiO Echo Nano, built on
 [NaniteCFW](https://github.com/maaraneasi/nanitecfw) by Marek Pleskac. This
 repository contains only patches and build tools. It does **not** contain FiiO's
-firmware: you download the official image yourself and build the custom image on
-your computer.
+firmware: you download the official image yourself and turn it into the custom
+image on your computer.
 
 Not affiliated with or endorsed by FiiO. FiiO and Echo Nano are trademarks of
 their owners.
@@ -69,6 +69,26 @@ from the author's device).
 
 The upstream status is upstream's own testing. Upstream changes after 6.0.5
 (commit `ea4e6dc`) are not included.
+
+## Download a release
+
+The quickest way needs only Python 3.10 or newer:
+
+1. Download the official V1.7.0 `NANOV170.IMG` from
+   [FiiO's firmware page](https://forum.fiio.com/note/showNoteContent.do?id=202605161533005115232).
+2. Download the patch ZIP from
+   [Releases](https://github.com/pkronstrom/echo-nano-audiobooks/releases) and
+   check it against the SHA-256 listed there.
+3. In the extracted folder, run:
+   ```sh
+   python3 apply_release.py --input /path/to/NANOV170.IMG --output ./nano-ready
+   ```
+   This writes the custom firmware to `nano-ready/custom/NANOV170.IMG` and the
+   recovery image to `nano-ready/recovery/NANOV170.IMG`.
+
+The ZIP contains only the changed bytes, not FiiO's firmware, and the script
+refuses any other stock file. The README in the ZIP explains how to choose a
+build date. Then continue with [Install](#install).
 
 ## Build your own firmware
 
@@ -131,15 +151,13 @@ Plain `make` builds `out/NANOV170.IMG` with upstream's features and this fork's
 Music Library separation, but without the audiobook features. Its date is `DATE`
 (default `20260829`), and `make recovery` builds the matching stock image.
 
-No prebuilt release is published yet. Releases are planned as patch ZIPs that
-turn your own stock image into the custom and recovery images with Python alone;
-see [patch-only releases](docs/releases.md).
-
 ## Install
 
-1. Build both images first, and keep the recovery image on your computer.
-2. Connect the Echo Nano by USB and copy `out/audiobook/NANOV170.IMG` to the root
-   of its **internal** storage, not the SD card.
+1. Get both images from a release or your own build, and keep the recovery image
+   on your computer.
+2. Connect the Echo Nano by USB and copy the custom `NANOV170.IMG`
+   (`nano-ready/custom/` from a release, `out/audiobook/` from a build) to the
+   root of its **internal** storage, not the SD card.
 3. Eject it safely and restart the player. It shows an update screen while it
    installs, then the menu.
 4. Check that **About** shows P4e.
@@ -150,12 +168,13 @@ see [patch-only releases](docs/releases.md).
 
 ## Recovery
 
-**If the player still boots**, copy `out/audiobook/recovery/NANOV170.IMG` to its
-internal storage the same way and restart. It is FiiO's code with a newer date,
-because the player ignores the original file while a newer custom build is
-installed. If you have flashed an image dated later than that recovery image,
-build a newer one first: `make recovery DATE=YYYYMMDD` writes
-`out/recovery/NANOV170.IMG`.
+**If the player still boots**, copy the recovery `NANOV170.IMG`
+(`nano-ready/recovery/` or `out/audiobook/recovery/`) to its internal storage the
+same way and restart. It is FiiO's code with a newer date, because the player
+ignores the original file while a newer custom build is installed. If you have
+flashed an image dated later than that recovery image, make a newer one first:
+run `apply_release.py` again with a later `--date`, or run
+`make recovery DATE=YYYYMMDD`, which writes `out/recovery/NANOV170.IMG`.
 
 **If it does not boot**, copying a file will probably not help. Installing the
 custom image replaces both firmware copies on the player, so there is no

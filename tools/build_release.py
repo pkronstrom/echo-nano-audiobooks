@@ -49,15 +49,14 @@ def build(stock_path, target_path, output, icons=None, allow_dirty=False):
     for name in ("apply_release.py", "rknano_fw.py", "prepare_book.py"):
         files[name] = (ROOT / "tools" / name).read_bytes()
     files["LICENSE"] = (ROOT / "LICENSE").read_bytes()
-    files["README.md"] = (ROOT / "docs/releases.md").read_bytes()
+    # Keep the end-user docs independent of repository-only maintainer notes.
+    readme = (ROOT / "docs/releases.md").read_text(encoding="utf-8")
+    files["README.md"] = readme[:readme.index("## For maintainers\n")].encode()
     book_guide = (ROOT / "docs/audiobooks.md").read_text(encoding="utf-8")
-    # Keep the end-user guide independent of repository-only maintainer notes.
     book_guide = book_guide[:book_guide.index("## For maintainers\n")]
     book_guide = book_guide.replace("Run from this repository", "Run from the extracted patch folder")
     book_guide = book_guide.replace("python3 tools/prepare_book.py", "python3 prepare_book.py")
     files["audiobooks.md"] = book_guide.encode()
-    automatic_guide=(ROOT / "docs/automatic-book-preparation.md").read_text(encoding="utf-8")
-    files["automatic-book-preparation.md"]=automatic_guide.replace("python3 tools/prepare_book.py", "python3 prepare_book.py").encode()
     files["approved-icons.json"] = (ROOT / "docs/approved-icons.json").read_bytes()
     for library in ("tabler", "lucide", "bootstrap"):
         files[f"licenses/{library}.txt"] = (ROOT / "docs/icon-library-assets" / library / "LICENSE").read_bytes()
@@ -82,7 +81,7 @@ def build(stock_path, target_path, output, icons=None, allow_dirty=False):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__, epilog="Example: python3 tools/build_release.py --output builds/release/echo-nano-p3a.zip --icons docs/icon-review.html. Requires a locally built target; end users need only Python to apply the ZIP.")
+    parser = argparse.ArgumentParser(description=__doc__, epilog="Example: python3 tools/build_release.py --output builds/release/echo-nano-audiobooks-v0.1.0.zip. Requires a locally built target; end users need only Python to apply the ZIP.")
     parser.add_argument("--stock", type=Path, default=ROOT / "NANOV170.IMG")
     parser.add_argument("--target", type=Path, default=ROOT / "out/audiobook/NANOV170.IMG")
     parser.add_argument("--output", required=True, type=Path)

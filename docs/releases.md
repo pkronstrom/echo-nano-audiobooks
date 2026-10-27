@@ -1,101 +1,117 @@
-# Echo Nano patch release
+# Echo Nano audiobook firmware: patch release
 
-> **2026-10-14 hardware result:** P4a boot-looped. Stock recovery succeeded and
-> the user confirmed the normal menu. Do not reflash or publish this candidate.
-> Read [recovery lessons](recovery-lessons-2026-10-14.md) before device work.
+> [!CAUTION]
+> **Use at your own risk. I take no responsibility for what happens to your
+> device.** This is unofficial, experimental firmware. Flashing or using it can
+> brick your Echo Nano, lose the data on it, void its warranty, etc. A firmware
+> that does not boot may not be recoverable. If you go ahead, you accept all of
+> the risk. The software is provided "as is", without warranty of any kind; see
+> `LICENSE`.
 
-This package format produces custom firmware from your own official FiiO Echo
-Nano V1.7.0 firmware. The current local candidate is phase4k long-audiobook
-follow-up: 20261118 custom / 20261119 stock recovery. It is an uncommitted source
-checkpoint on top of `219d972`, archived with exact source snapshots and hashes
-in `builds/phase4k-long-books-20261018/prepare-fallback-reviewed/manifest.json`.
+This patch turns your own copy of FiiO's official Echo Nano **V1.7.0** firmware
+into two images: the custom firmware with the audiobook features, and a recovery
+image with FiiO's unmodified code. The ZIP contains only the changed bytes, not
+FiiO's firmware. You need Python 3.10 or newer, and no compiler, packages or
+Internet connection.
 
-The firmware suite passed 595 checks; chapter-export fixes also passed 17 host
-checks and all 120 BKZ tests. The `/revx` findings and scoped follow-up reviews
-are retained in the archive. This is an **offline RC**, not hardware acceptance
-or a published release. This corrected pair has not yet received hardware acceptance. The previous
-20261116 pair was installed and showed a book-preparation regression; the new
-pair adds the narrowly reviewed large-cluster fallback correction.
-
-Includes hours on Now Playing, best-effort five-minute Continue saving, and host
-chapter export with constant-bitrate MP3. The Book C full-restart report is
-still unresolved; existing SD audio and saved state have not been replaced.
-See [long-audiobook follow-up](long-audiobook-followup.md) for limits and evidence.
+**Tested on:** Echo Nano hardware 1.0.0 with the official firmware V1.7.0 only.
+Features, known issues and the source code:
+<https://github.com/pkronstrom/echo-nano-audiobooks>
 
 ## For users
 
-1. Download and extract the patch ZIP from the project's GitHub release.
-2. Obtain the original official `NANOV170.IMG` for V1.7.0 from
-   [FiiO firmware downloads](https://forum.fiio.com/note/showNoteContent.do?id=202605161533005115232). Only this
-   SHA-256 is supported:
+1. Check the ZIP against the SHA-256 published with the release.
+2. Download the official V1.7.0 `NANOV170.IMG` from
+   [FiiO's firmware page](https://forum.fiio.com/note/showNoteContent.do?id=202605161533005115232).
+   The patch accepts only this file, SHA-256
    `54a45d233a23c3ce142d1da9c093cc40c46eba417aa91fe915ee867726f4a116`.
-3. Install Python 3.10 or later. Open a terminal in the extracted patch folder.
-4. Generate both images into a new directory:
+3. Open a terminal in the extracted folder and run:
 
    ```sh
-   python3 apply_release.py --input /path/to/original/NANOV170.IMG --output ./nano-ready
+   python3 apply_release.py --input /path/to/NANOV170.IMG --output ./nano-ready
    ```
 
-   On Windows, use `py -3` instead of `python3` if that is your Python command.
-   No ARM compiler, Python packages or Internet connection are needed to apply
-   the patch. Input firmware is never modified. Existing output is rejected;
-   choose a new directory for a retry.
+   On Windows, use `py -3` if `python3` does not work. The script never changes
+   the input file and refuses an output folder that already exists.
+4. Copy `nano-ready/custom/NANOV170.IMG` to the root of the player's
+   **internal** storage, not the SD card. Eject it safely and restart the
+   player. It shows an update screen while it installs, then the menu.
+   **About** shows P4e.
+5. Set up your card as described in `audiobooks.md`, then run
+   **Media Library → Media Library Refresh** once.
 
-The default custom firmware date is recorded in `patch.json`. The bootloader
-selects the newer valid firmware copy. If the default is not newer than the
-firmware already installed, explicitly choose a later calendar date:
+The script writes:
+
+- `nano-ready/custom/NANOV170.IMG`: the custom firmware.
+- `nano-ready/recovery/NANOV170.IMG`: FiiO's unmodified code, dated one day
+  later. Keep it on your computer.
+- `nano-ready/checksums.json`: the dates, the source commit and the image hashes.
+
+### Dates
+
+The player installs the image with the **newest** build date. The default date
+is `default_date` in `patch.json`, which is newer than stock V1.7.0. If your
+player already has a custom build with the same or a newer date, choose a later
+date:
 
 ```sh
-python3 apply_release.py --input /path/to/original/NANOV170.IMG --output ./nano-ready-new --date 20261014
+python3 apply_release.py --input /path/to/NANOV170.IMG --output ./nano-ready-2 --date 20261201
 ```
 
-Use a date newer than both your installed custom and any recovery firmware you
-have installed. The script cannot detect the installed date. Avoid unnecessarily
-far-future dates. The stock recovery is always stamped one day after the custom
-image, with matching header copies and recalculated firmware CRC.
+The recovery image is always dated one day after the custom image. Don't pick a
+date far in the future: an official FiiO update dated earlier than your custom
+image would be ignored.
 
-Outputs:
+### Recovery
 
-- `nano-ready/custom/NANOV170.IMG`: custom firmware for the normal FiiO update procedure.
-- `nano-ready/recovery/NANOV170.IMG`: stock behavior, later date, for recovery.
-- `nano-ready/checksums.json`: generated dates, source revision and exact image hashes.
+**If the player still boots**, copy `nano-ready/recovery/NANOV170.IMG` to its
+internal storage the same way and restart. That puts FiiO's code back. If you
+have installed a custom image dated later than that recovery image, run the
+script again with a later `--date` and use the new recovery image.
 
-Keep the recovery image on your computer. Copy only the desired `NANOV170.IMG`
-to the device when following FiiO's firmware update instructions; the script does
-not copy to, update or flash a device. Read `audiobooks.md` for card setup
-and book preparation. In this extracted bundle run `python3 prepare_book.py`
-instead of the repository's `python3 tools/prepare_book.py`. FFmpeg is optional
-and needed only for explicitly requested conversion/remuxing.
+**If it does not boot**, copying a file will probably not help. Read the
+Recovery section on the project page before you try anything. Holding Power for
+about 10 seconds forces a restart; it does not switch the player off.
 
-`SHA256SUMS` covers the archive members except itself. The downloaded ZIP should
-also be checked against the release's separately supplied SHA-256. Checksums
-identify accidental damage; obtain the ZIP and checksums from a trusted release.
-No unapproved icons are installed; optional `icon-review.html` is for feedback.
+### Files
+
+- `apply_release.py`, `rknano_fw.py`: create the images from `patch.json`. The
+  script checks the stock hash, the result hash, the CRC and the header copies
+  before it writes anything.
+- `prepare_book.py`: prepares audiobook folders on a computer; see
+  `audiobooks.md`.
+- `SHA256SUMS`: hashes of the other files in the ZIP.
+- `approved-icons.json` and `licenses/`: sources and licenses of the menu icons.
+- `LICENSE`.
 
 ## For maintainers
 
-Build and test the firmware using the repository's documented ARM toolchain,
-then build a patch bundle:
+The release builder copies this file into the ZIP as `README.md`, up to this
+heading.
+
+Build from a clean checkout, then build the ZIP:
 
 ```sh
-python3 tools/build_release.py --stock NANOV170.IMG --target out/audiobook/NANOV170.IMG --output builds/release/echo-nano-p3a.zip --icons docs/icon-review.html
+make clean
+make test AUDIOBOOK_DATE=YYYYMMDD
+python3 tools/build_release.py --output builds/release/echo-nano-audiobooks-vX.Y.Z.zip
 ```
 
-Omit `--icons` if the review HTML is unavailable. The builder records the current
-Git commit and whether the source tree is dirty. Dirty trees are rejected unless
-`--allow-dirty` explicitly marks a local candidate. Build public releases from a
-clean, tagged revision after device acceptance. It verifies exact stock identity,
-CRC/header copies, unchanged module/section layout, and unchanged graphics,
-fonts and other protected resource sections. Language changes are allowed.
-The applier verifies ranges, base SHA-256, reconstructed target SHA-256, CRC,
-header copies and layout **before** optional restamping.
+`--icons docs/icon-review.html` adds the optional icon review page for feedback
+builds. The builder records the current Git commit and whether the source tree is
+dirty. Dirty trees are rejected unless `--allow-dirty` explicitly marks a local
+candidate. It verifies exact stock identity, CRC/header copies, unchanged
+module/section layout, and unchanged graphics, fonts and other protected
+resource sections. Language changes are allowed. The applier verifies ranges,
+base SHA-256, reconstructed target SHA-256, CRC, header copies and layout
+**before** optional restamping.
 
 ZIP ordering, timestamps and permissions are fixed; identical files, source
-metadata and compression environment produce identical archives. Bundle the
-latest preparation script and docs. Publish the ZIP plus its SHA-256 only;
-never upload complete custom/recovery firmware or the original stock image.
-The builder prints machine-readable JSON, including `archive`, `sha256`,
-`target_sha256`, `source_commit`, `source_dirty` and range count. CI can run
+metadata and compression environment produce identical archives. Publish the ZIP
+plus its SHA-256 only; never upload complete custom/recovery firmware or the
+original stock image. The builder prints machine-readable JSON, including
+`archive`, `sha256`, `target_sha256`, `source_commit`, `source_dirty` and range
+count. CI can run
 `python3 -m unittest discover -s tests -p test_release_bundle.py` without stock;
 real-stock integration cases explicitly skip when firmware is unavailable.
 
@@ -104,7 +120,12 @@ hex, exact supported base/target SHA-256 values, image size, default date and
 source metadata. Ranges reconstruct only the validated target from the exact
 stock file; a checksum cannot be bypassed with a command-line override.
 
-## GitHub draft workflow
+The recorded Git commit is provenance metadata, not proof that an arbitrary
+existing `out/audiobook/NANOV170.IMG` was built from that commit. The builder
+validates the image and patch but cannot reconstruct its build history. Do not
+treat successful tests or CI as device acceptance.
+
+### GitHub draft workflow
 
 `.github/workflows/draft-release.yml` provides a manually dispatched draft build.
 Supply an HTTPS URL to the raw official V1.7.0 IMG, a build date, and a new
@@ -114,34 +135,8 @@ patch ZIP. Only that ZIP and its checksum are attached to a **draft prerelease**
 It does not publish the release. This GitHub workflow has not yet been executed;
 its first hosted run remains a release acceptance step.
 
-For a local formal release, start from a clean checkout of the intended tag,
-run `make clean`, `make test`, and a reproducibility check before invoking the
-builder. The recorded Git commit is provenance metadata, not proof that an
-arbitrary existing `out/audiobook/NANOV170.IMG` was built from that commit. The
-builder validates the image and patch but cannot reconstruct its build history.
-After checking the draft assets and recording device acceptance, the maintainer
-can publish the draft explicitly. Do not treat successful CI as device acceptance.
-
 The draft workflow creates a new tag at the exact checked-out source commit
 before creating the draft with `--verify-tag`. An existing tag is rejected, so a
 new build cannot silently be attached to an older source tag. If creation stops
 after the tag was made, inspect that partial draft/tag and choose a new candidate
 tag or clean it up deliberately before rerunning.
-
-
-## 2026-10-18 follow-up
-
-User confirmed 20261118 opens books; seeking beyond one hour seemed to work.
-Candidate 20261120/recovery 20261121 adds the audiobook screen and durable
-Continue described in [the checkpoint](book-screen-and-continue.md). It is an
-offline candidate, not installed or published; prior archives remain historical.
-
-
-## 20261122 content navigation/display candidate
-
-Supersedes20261120's incomplete screen. The user confirmed Continue Book C
-works, but the photo showed stale author/footer symbols. Corrected candidate
-20261122/recovery20261123 also adds the approved menu order, current-context
-Now Playing and direct chapter context through Folders. See
-[behavior and hardware checks](content-navigation-followup.md). No new staging
-or publication; the20261120 archive remains historical evidence.
