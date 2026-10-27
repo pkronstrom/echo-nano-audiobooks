@@ -1,240 +1,302 @@
-# P4a audiobook device test
+# Audiobooks and meditations
 
-> **Historical checklist.** P4a boot-looped and must not be installed. Current
-> candidate, installed-image status, and remaining device checks are summarized
-> in [the session learning audit](session-learnings-2026-10-12-to-16.md). Current
-> automatic preparation behavior and its hardware status are in
-> [automatic-book-preparation.md](automatic-book-preparation.md).
+This guide covers the card side of the custom firmware: how to arrange and mark
+folders, how book playlists are made, which M3U files work, how to convert
+audiobooks, and how to use them on the player. Install the firmware first.
+Several features are not yet confirmed on hardware; the project's README lists
+their status.
 
-> **2026-10-14 hardware result:** P4a boot-looped. Stock recovery succeeded and
-> the user confirmed the normal menu. Do not reflash or publish this candidate.
-> Read [recovery lessons](recovery-lessons-2026-10-14.md) before device work.
+## Quick start
 
-P4a adds the approved icons and conditional marked-root shortcuts, retaining File Browser M3U playback in listed order and a separate saved chapter
-and time for each prepared book. It includes P1b music exclusion and folder
-containment. Host/ARM checks pass; boot, decoding and storage durability still
-need device validation. Nothing has been flashed automatically.
+1. On the card, make an `Audiobooks` folder and a `Meditations` folder next to
+   your music, and put an empty marker file in each:
+   `Audiobooks/.audiobook` and `Meditations/.meditation`.
+2. Copy each book into its own folder inside `Audiobooks`.
+3. Prepare each book on your computer with `prepare_book.py` (see
+   [Prepare books on a computer](#prepare-books-on-a-computer)). The player can
+   also prepare simple book folders itself.
+4. Eject the player from your computer, then run **Media Library → Media Library
+   Refresh** once, so marked folders leave the Music Library and Shuffle.
+5. Open **Audiobooks** in the main menu.
 
-## Images and installation
+## Folder layout
 
-Local artifacts (excluded from Git):
-
-- Custom: `builds/phase4a/custom/NANOV170.IMG`, About **P4a**, date **20261013**.
-- Stock recovery: `builds/phase4a/recovery/NANOV170.IMG`, date **20261014**.
-- Source checkpoint: `phase4a-marked-roots-test`.
-- Checksums, source revision and test results: `builds/phase4a/manifest.json`.
-
-The player selects the newest dated valid firmware. These dates must be newer
-than what is installed. After using this recovery, rebuild subsequent custom
-images with `AUDIOBOOK_DATE=20261015` or a suitably later date.
-Copy the **custom** image to the root of the player's internal storage, eject
-and restart. Check About for P4a. Keep the recovery image on the computer; to
-restore stock, copy that image instead, eject and restart. See
-[baseline installation and recovery](baseline.md#installation-and-recovery-pending-device-checkpoint).
-
-## Prepare a book
-
-The tagged RC and installed versions require host preparation for each new book.
-The post-RC candidate adds guarded automatic `BOOK.M3U` / RSM / BMK creation
-when entering a simple book folder through Audiobooks. It preserves existing
-files and custom playlists. Hardware acceptance is pending; supported card/layout
-limits and fallback are in [automatic preparation](automatic-book-preparation.md).
-The host workflow below remains supported. Keep each book in its own directory.
-
-Run from this repository, replacing the example path with your book's path:
-
-```sh
-python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/My Book'
-python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/My Book' --write
+```
+Music/                         ordinary music, unchanged
+Audiobooks/
+├── .audiobook                 marker: adds Audiobooks to the main menu
+├── The First Book/            one folder per book
+│   ├── 01 Opening.mp3
+│   ├── 02 Chapter One.mp3
+│   ├── 10 Chapter Nine.mp3
+│   ├── BOOK.M3U               created by the player or by prepare_book.py
+│   ├── BOOK.RSM
+│   └── BOOK.BMK
+├── Some Author/               grouping folders are fine
+│   └── Another Book/
+│       └── ...
+└── Book On Discs/             disc folders: prepare on a computer
+    ├── CD1/01 Track.mp3 ...
+    ├── CD2/01 Track.mp3 ...
+    └── BOOK.M3U ...
+Meditations/
+├── .meditation                marker: adds Meditations to the main menu
+└── Morning Series/
+    ├── 01 Breathing.mp3
+    └── 02 Body Scan.mp3
 ```
 
-The first command previews JSON. The second creates `BOOK.M3U`, a 1024-byte
-`BOOK.RSM` resume companion, a 1024-byte `BOOK.BMK` bookmark companion, and `.nomusic`. Tracks sort naturally by relative
-path: `00 Introduction`, `01 Chapter 1`, `02 Chapter 2`, …; numbered disc folders
-also sort numerically. Metadata tags are not used for ordering. Open the M3U in
-a text editor if you need a different order. Rerunning preparation preserves an
-existing playlist and valid resume/bookmark files. Use one book directory at a time.
+- **One folder per book.** The folder name becomes the book name on the player.
+- **Order comes from file names, not tags.** Names sort naturally, so
+  `2 Chapter` comes before `10 Chapter`. Leading track numbers are the safest
+  choice. Edit the playlist if you need another order.
+- **Chapter files directly inside the book folder** can be prepared by the
+  player or the computer. **Disc subfolders** (`CD1`, `CD2`, …) need the
+  computer.
+- **Keep paths short:** at most seven folder levels below the card root, file
+  names up to 127 characters, and full paths up to 255 characters.
+- **Meditations** can use any folder layout. Tracks play in natural name order
+  within their folder, or in playlist order when you select an M3U.
 
-A single long file works too:
+## Mark the folders
 
-```sh
-python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/My Book/book.mp3' --write
-```
-
-This creates `book.M3U`, `book.RSM` and `book.BMK` beside it. Single-file preparation does
-not exclude its entire parent from music. Put books in their own directory and
-prepare that directory, or add an empty `.nomusic` to your audiobook root.
-
-After copying/preparing books, run **Media Library Refresh** so excluded book
-folders disappear from music and global Shuffle. Open **File Browser → your
-book folder → BOOK.M3U** (or `book.M3U`). Selecting an audio file directly uses
-ordinary folder playback; select the playlist for per-book resume.
-
-Normal playback advances in listed order and stops at the end. Missing entries
-are skipped. In audiobook playback, Previous/Next seek ten seconds within the
-current chapter; holding repeats the seek. Use the book menu to choose chapters.
-Now Playing counts the audio files in the playlist, so chapter MP3s show 1/N.
-
-A valid RSM companion is required for independent saved position. Progress is
-saved on normal stop and, in the long-book candidate, about every five minutes
-while playing. Pauses and seek/relaunch transitions defer periodic saving.
-This updates Continue without adding manual bookmarks or a jump history.
-Reopen the same M3U after restarting to restore its chapter and time; the queue
-is not automatically reconstructed at boot. Stock seek rounds restored time.
-The long-book candidate displays hours once elapsed time reaches an hour.
-Hardware acceptance of these latest changes remains pending.
-
-## Audiobooks and Meditation shortcuts
-
-Put an empty `.audiobook` file inside your audiobook collection root, and an
-empty `.meditation` file inside your meditation root. Folder names are free.
-For example, after replacing the volume name with your Nano's mounted name:
+A marker is an **empty file inside the folder**, not a renamed folder. Replace
+`/Volumes/NANO` with the name your card mounts as:
 
 ```sh
 touch '/Volumes/NANO/Audiobooks/.audiobook'
 touch '/Volumes/NANO/Meditations/.meditation'
 ```
 
-These are **files inside folders**, not renamed folders. A category appears in
-the main menu only when its marker is found. One root opens directly; multiple
-roots show a chooser with their paths. Back follows the real folder ancestry.
-The menu rescans when opened and checks roots again before entry. Reopen the
-main menu after changing media. Scan limits are eight roots total, seven folder
-levels, 2,048 directories and 65,536 directory-entry reads; exceeding a work or
-root limit hides both shortcuts rather than showing an incomplete collection.
+On Windows, in Command Prompt (replace `E:` with your card's drive letter):
 
-Both markers recursively exclude their roots from Music and global Shuffle
-following **Media Library Refresh**. Existing `.nomusic` continues to exclude
-music without adding a shortcut. Book preparation still creates `.nomusic`;
-add `.audiobook` once at the collection root to show the menu. The Meditation
-shortcut uses ordinary contained folder playback; it adds no new timer.
+```bat
+type nul > E:\Audiobooks\.audiobook
+type nul > E:\Meditations\.meditation
+```
 
-## M4B: try audio-preserving M4A first
+Names starting with a dot are hidden by default. In macOS Finder, press
+Shift-Command-Period to show them.
 
-The native extension list recognizes M4A/MP4 but omits M4B. This does not prove
-its decoder cannot play the audio inside. For an unprotected AAC/ALAC M4B, the
-preparation tool can copy the audio into M4A without re-encoding. It requires
-installed `ffmpeg` and `ffprobe`, and an empty destination outside the source
-book directory:
+- Audiobooks and Meditations appear in the main menu only when their marker is
+  found. Reopen the main menu after you change the card.
+- You can have up to eight marked folders. With more than one Audiobooks or
+  Meditations folder, the menu shows a chooser.
+- The marker search covers seven folder levels and up to 2,048 folders. If the
+  card exceeds that, both entries are hidden rather than showing an incomplete
+  list.
+- Marked folders are excluded from the Music Library and Shuffle after a Media
+  Library Refresh. An empty `.nomusic` file does the same without adding a menu
+  entry.
+
+## Playlists and state files
+
+Each prepared book has three files with the same name stem:
+
+| File | Purpose |
+|---|---|
+| `BOOK.M3U` | Chapter order. A plain text playlist you may edit |
+| `BOOK.RSM` | Saved chapter, time and speed (1024 bytes). Don't edit it |
+| `BOOK.BMK` | Bookmarks (1024 bytes). Don't edit it |
+
+Without `BOOK.RSM` the book cannot remember its position, speed or Continue
+entry. Without `BOOK.BMK` bookmarks cannot be saved. Don't create these files by
+hand: an empty or corrupt file is left alone and doesn't work.
+`prepare_book.py --write` also adds an empty `.nomusic`.
+
+### When playlists are created
+
+**On the player.** When you open a book folder from **Audiobooks**, the player
+checks whether it can prepare the folder. If the folder has 1–256 audio files
+directly inside it and no playlist, the player creates the missing `BOOK.M3U`,
+`BOOK.RSM` and `BOOK.BMK`, with the files in natural name order, and opens the
+book menu. Existing files are never overwritten: if only some are missing, only
+those are created.
+
+The player skips automatic preparation:
+
+- for folders with only subfolders, such as disc folders or author folders;
+- for folders that already contain a differently named `.M3U`;
+- for very large folders, and inside Meditations or Music;
+- on card layouts it does not support, such as clusters larger than 128 KiB.
+
+Unsupported folders open as ordinary folders, or the player shows **Prepare
+failed / Use host tool**. Press Enter or Back to dismiss the message, then
+prepare that book on a computer. M4B files are never converted on the player.
+Automatic preparation is not yet confirmed on hardware; preparing on a computer
+is the reliable route.
+
+**On a computer.** `prepare_book.py` works for every layout above, including
+disc folders and single long files. See the next section.
+
+**Neither route regenerates an existing playlist.** If you add or rename chapter
+files later, edit `BOOK.M3U`, or delete it and prepare the book again. A new
+playlist can reset the saved position.
+
+### Write your own M3U
+
+Any `.M3U` file works as long as it follows these rules:
+
+- Plain text in UTF-8; a byte-order mark is optional. Any line endings work.
+- The file name must end in `.m3u` (any case). `.m3u8` is not recognized.
+- One file per line, relative to the playlist's folder. Both `/` and `\` work,
+  and `..` may go up to the card root. Absolute paths, drive letters and URLs
+  are rejected.
+- Lines starting with `#` are ignored, so `#EXTM3U` and `#EXTINF` are fine.
+- Listed order is kept, including duplicates. Missing and non-audio entries are
+  skipped.
+- ASCII letters match in any case; other characters must match the file name
+  exactly.
+- Limits: 256 tracks, 512 non-comment lines, 1 MiB per file, 1,024 bytes per
+  line and 255 characters per resolved path.
+
+```
+#EXTM3U
+01 Opening.mp3
+CD1/02 Chapter One.mp3
+CD2/01 Chapter Two.mp3
+```
+
+What the playlist's name and location change:
+
+- **`BOOK.M3U` in a book folder** is the standard. The book name is the folder
+  name. Selecting a chapter file in that folder starts the book from that
+  chapter, and automatic preparation recognizes it.
+- **Any other name inside Audiobooks**, such as `Part Two.M3U`, works when you
+  select the playlist itself. The book name is the file name, and the state files
+  must share its stem: `Part Two.RSM` and `Part Two.BMK`. `prepare_book.py --name
+  'Part Two'` creates them. Selecting a chapter file directly works only with
+  `BOOK.M3U`.
+- **Inside Meditations**, a playlist plays in listed order with normal track
+  controls, without bookmarks or speed.
+
+## Prepare books on a computer
+
+`prepare_book.py` needs Python 3.10 or newer. Converting or remuxing also needs
+FFmpeg with `ffprobe`. Original audio files are never changed or renamed. On
+Windows, use `py -3` instead of `python3`.
+
+Run from this repository, replacing the example paths with your own. The first
+command previews what would be written as JSON; add `--write` to write it:
 
 ```sh
-python3 tools/prepare_book.py '/path/to/Book.m4b' --remux-to m4a --output '/path/to/Prepared Book'
+python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/My Book'
+python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/My Book' --write
+```
+
+Prepare one book folder at a time. Rerunning keeps an existing playlist and
+valid state files. A single long file works too, and its state files are named
+after the file:
+
+```sh
+python3 tools/prepare_book.py '/Volumes/NANO/Audiobooks/My Book/book.mp3' --write
+```
+
+### Which command to use
+
+| You have | Do this |
+|---|---|
+| A folder of MP3 files | Prepare it as above, or let the player do it |
+| MP3 files in `CD1`, `CD2`, … subfolders | Prepare the book folder; numbered disc folders sort numerically |
+| An M4B, M4A or other non-MP3 book, and you want speed control | Convert to MP3: `--convert-to mp3 --split-chapters` |
+| An M4B with AAC or ALAC audio, and you want to keep the original audio | Remux to M4A: `--remux-to m4a` |
+| A long variable-bitrate MP3 with imprecise seeking | Convert it to constant-bitrate MP3: `--convert-to mp3` |
+| A DRM-protected book | Not supported; the tool does not remove DRM |
+
+**Convert to MP3** when you want speed control, which works only with MP3. With
+`--split-chapters`, each embedded chapter becomes its own numbered MP3, listed in
+`BOOK.M3U`:
+
+```sh
+python3 tools/prepare_book.py '/path/to/Book.m4b' --convert-to mp3 --split-chapters --output '/Volumes/NANO/Audiobooks/Book' --write
+```
+
+Conversion re-encodes to 128 kb/s constant-bitrate MP3, because the player seeks
+using the average bitrate. Without `--split-chapters` the result is one long
+file; an M3U cannot add chapter marks inside a single MP3.
+
+**Remux to M4A** to keep the original AAC or ALAC audio without re-encoding.
+The player does not list `.m4b` files, but it does list `.m4a`. The result is
+one long file without the embedded chapter list, and speed control is not
+available. Playback of remuxed books on the player is not yet confirmed.
+
+```sh
 python3 tools/prepare_book.py '/path/to/Book.m4b' --remux-to m4a --output '/path/to/Prepared Book' --write
 ```
 
-The first command previews and checks the codec; the second writes a prepared
-book. Tests verify identical AAC and ALAC audio packet hashes before/after.
-**Nano decoding, long-file seeking and resume still require the device test.**
-Embedded chapter tables are omitted; a long M4B remains one long audio file.
-Sources stay untouched. [FFmpeg stream-copy documentation](https://ffmpeg.org/ffmpeg.html#Streamcopy)
-explains the mechanism.
+`--output` must be a new or empty folder outside the source book. The whole
+result is staged first, so a failed conversion leaves no partial book behind.
+Copy the complete output folder to the card if you didn't write it there
+directly.
 
-## Optional MP3 fallback
+## Use it on the player
 
-If the original codec is incompatible or M4A fails on the device, use explicit
-MP3 conversion. This re-encodes audio, unlike the M4A option:
+**Main menu:** Now Playing, Audiobooks, Meditations, Music Library, Folders,
+Shuffle, Playback Settings, System Settings. Now Playing returns to whatever is
+playing.
 
-```sh
-python3 tools/prepare_book.py '/path/to/Book.m4b' --convert-to mp3 --output '/path/to/MP3 Book' --write
-```
+**Audiobooks** opens with **Continue *book name*** for the book you last played,
+then **Browse books**. Continue survives a restart once you have played the book
+with this firmware.
 
-For one MP3 per embedded M4B chapter, add `--split-chapters`:
+**Book menu**, when you open a prepared book: **Continue**, **Chapters**,
+**Bookmarks** and **MP3 speed**. The speed you choose here applies when you
+start playback from this menu.
 
-```sh
-python3 tools/prepare_book.py '/path/to/Book.m4b' --convert-to mp3 --split-chapters --output '/path/to/MP3 Chapters' --write
-```
+**While a book plays:**
 
-This creates numbered chapter MP3s and ordered `BOOK.M3U`, `BOOK.RSM` and
-`BOOK.BMK` companions. MP3 conversion uses 128 kb/s constant bitrate because
-native seeking uses average bitrate. An M3U does not create timestamp chapters
-inside a single MP3. Existing exports and their saved positions are preserved.
+- Previous and Next seek ten seconds back or forward within the chapter. Hold
+  to repeat.
+- Press Previous twice quickly to save a bookmark.
+- Double-click the main button for the player menu. **Speed** changes the speed
+  immediately (MP3 only). **Bookmarks** starts with **Add bookmark**, followed
+  by your saved bookmarks; select one to jump there.
+- Speeds are 1×, 1.25×, 1.5×, 1.75× and 2×. Each book remembers its own speed.
+- The position is saved when you stop and about every five minutes while
+  playing.
 
-Chapter MP3 folders and long M4B files are common distribution shapes; see
-[LibriVox help](https://librivox.org/pages/help/) and
-[Audiobookshelf directory conventions](https://audiobookshelf.org/docs/documentation/libraries/book-library/directory-structure/).
-Existing native MP3 files need no conversion. A folder is processed one file at
-a time. Copy the complete output directory to the player. Processing stages the
-whole result before publishing it; an FFmpeg failure leaves no partial prepared
-book in the destination. Neither path removes DRM or modifies originals.
+**Meditations** open like ordinary folders. Select a track to play its folder in
+natural name order with normal controls. Meditations have no Continue,
+bookmarks or speed.
 
-## Device acceptance checklist
+## Limits and troubleshooting
 
-- [ ] Check main-menu/shortcut scan latency with a realistically full card.
-- [ ] With no category markers, both optional menu entries are absent.
-- [ ] Add each marker, reopen the main menu, and verify the corresponding shortcut.
-- [ ] Try two roots, select either, and check Back returns through real parents.
-- [ ] Remove a selected root/marker and verify no stale folder opens.
+- **Book unavailable:** the playlist is missing or malformed, the selected
+  chapter file is not listed exactly once in `BOOK.M3U`, or files changed after
+  preparation. Check the playlist or prepare the book again.
+- **Prepare failed / Use host tool:** prepare that book on a computer.
+- **No Speed in the menu:** the book is not MP3. Convert it.
+- **Start a book over:** delete its `BOOK.RSM` and prepare the book again.
+- **Position after a power cut:** progress is saved about every five minutes,
+  so a sudden reset can return to an earlier point.
+- Up to 60 bookmarks per book. Folder playback holds up to 256 audio files.
+  After a restart, select a folder track again to restore natural order.
+
+## For maintainers
+
+Implementation details and evidence:
+[automatic preparation](automatic-book-preparation.md),
+[playlist parser](playlists.md), [per-book speed](per-book-speed.md),
+[book screen and Continue](book-screen-and-continue.md),
+[player controls](audiobook-player-controls.md) and
+[content navigation](content-navigation-followup.md).
+
+The release builder copies this guide into the patch ZIP up to this heading and
+rewrites its `prepare_book.py` commands for the bundle.
+
+Device acceptance checklist:
+
+- [ ] Main-menu and Audiobooks scan latency with a realistically full card.
+- [ ] With no markers, both optional menu entries are absent.
+- [ ] Add each marker, reopen the main menu, and verify the matching entry.
+- [ ] With two roots, select either, and check Back returns through real parents.
+- [ ] Remove a selected root or marker and verify no stale folder opens.
 - [ ] The approved icons render correctly, including the music note.
-- [ ] The current reviewed candidate boots and a prepared book's M3U opens with audible playback. Never install the failed P4a image.
+- [ ] A prepared book's M3U opens with audible playback.
 - [ ] Numbered chapters play in order, even with music Shuffle enabled.
-- [ ] Next/previous and automatic end-of-book stay within that book.
+- [ ] Next/Previous and the end of the book stay within that book.
 - [ ] Seek within a long file; stop, reopen and verify the approximate time.
 - [ ] Book A → music → book B → book A restores A's chapter and time.
-- [ ] Normal shutdown/restart, then reopening each M3U, restores both books.
-- [ ] Refresh the library, then reopen a book; music Shuffle excludes marked trees.
-- [ ] Meditation folders remain contained; ordinary music playback still works.
-
-## Current limits
-
-256 queued tracks, 512 candidate lines, 1 MiB M3U input, 1024 bytes per line and
-255 UTF-16 units per resolved path. The preparation tool limits basenames to
-127 UTF-16 units for stock exFAT safety. Deep paths can exceed limits after being
-copied to the player. Keep book paths short and within the browser's seven levels.
-
-Resume uses two CRC-protected sectors in a pre-created file. Power loss during
-writing can fall back to the older record in emulation; physical flash/card
-behavior is unverified. Replacing audio in place while preserving filesystem
-indices/clusters can retain a stale position. To deliberately reset a book,
-remove its RSM companion and rerun preparation. Do not edit RSM contents.
-
-Manual bookmarks use a valid `.BMK` companion. The post-RC automatic-preparation
-candidate can create a missing BOOK.BMK in its supported scope; installed/tagged
-versions still require host preparation. Embedded chapters and completed-book
-tracking remain unsupported. Upstream experimental power patches remain disabled.
-
-## Experimental MP3 speed control
-
-P4e source adds an **MP3 speed** row below Continue, Chapters and Bookmarks.
-Choose 1x, 1.25x, 1.5x, 1.75x or 2x, then launch Continue, a chapter or a
-bookmark. The 20261110 candidate stores each book's launched speed in its existing RSM
-resume companion during normal progress saving/stopping. It restores on reopening
-and restart; legacy or missing values default to 1x. See [per-book speed](per-book-speed.md). Changing
-it does not change a book that is already playing, including through seek,
-pause/resume or automatic chapter changes. Explicitly launch Continue, a chapter
-or a bookmark to apply the newly selected speed.
-
-The speedups use approximate pitch-preserving processing for native 16-bit MP3
-at 8–48 kHz. Other codecs retain their normal 1x playback. Music outside the
-book queue retains native playback. Bookmarks and resume positions use source
-time, rather than elapsed listening time multiplied by the selected speed.
-
-The user reported that live Speed selection worked on Book B in the staged
-20261027 candidate. That is limited control-path feedback; it does not establish
-all-preset audio quality or the 20261110 candidate's per-book speed persistence.
-Read [the current speed test](speed-device-test.md) and
-[the speed checkpoint](speed-integration-checkpoint.md) before building or
-installing an image. Hardware acceptance still needs headphone listening at
-each preset, pause/resume and seek, the last chapter ending, bookmark reopening,
-and normal music playback afterward.
-
-## Build
-
-```sh
-make audiobook AUDIOBOOK_DATE=20261013
-make test PY=path/to/python-with-unicorn
-```
-
-GNU make 4.3+ and the Arm GNU toolchain are required. The image outputs are
-`out/audiobook/NANOV170.IMG` and `out/audiobook/recovery/NANOV170.IMG`.
-The default `make` still produces the separate P1b image.
-
-The Audiobooks landing row reads **Continue <book name>** for the current saved
-book, followed by Browse books. A generic `BOOK.M3U` uses its parent folder's
-name. This selection remains in RAM for the current firmware session; the
-per-book resume position and speed use their existing SD journal files.
-
-
-## 20261122 navigation/display follow-up
-
-See [current behavior and acceptance checks](content-navigation-followup.md). This supersedes the
-20261120 display implementation and previous-music return behavior. Offline only.
+- [ ] Normal shutdown and restart, then Continue and each book, restore position.
+- [ ] Refresh the library; music Shuffle excludes marked trees.
+- [ ] Meditation folders stay contained; ordinary music playback still works.

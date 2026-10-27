@@ -62,7 +62,7 @@ Outputs:
 
 Keep the recovery image on your computer. Copy only the desired `NANOV170.IMG`
 to the device when following FiiO's firmware update instructions; the script does
-not copy to, update or flash a device. Read `audiobooks.md` for the device checklist
+not copy to, update or flash a device. Read `audiobooks.md` for card setup
 and book preparation. In this extracted bundle run `python3 prepare_book.py`
 instead of the repository's `python3 tools/prepare_book.py`. FFmpeg is optional
 and needed only for explicitly requested conversion/remuxing.

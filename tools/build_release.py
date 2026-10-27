@@ -51,12 +51,11 @@ def build(stock_path, target_path, output, icons=None, allow_dirty=False):
     files["LICENSE"] = (ROOT / "LICENSE").read_bytes()
     files["README.md"] = (ROOT / "docs/releases.md").read_bytes()
     book_guide = (ROOT / "docs/audiobooks.md").read_text(encoding="utf-8")
-    # Keep the end-user guide independent of repository-only artifact paths,
-    # historical build dates and compiler commands.
-    book_guide = book_guide[book_guide.index("## Prepare a book"):book_guide.index("## Build\n")]
+    # Keep the end-user guide independent of repository-only maintainer notes.
+    book_guide = book_guide[:book_guide.index("## For maintainers\n")]
     book_guide = book_guide.replace("Run from this repository", "Run from the extracted patch folder")
     book_guide = book_guide.replace("python3 tools/prepare_book.py", "python3 prepare_book.py")
-    files["audiobooks.md"] = ("# Book preparation and device checks\n\n" + book_guide).encode()
+    files["audiobooks.md"] = book_guide.encode()
     automatic_guide=(ROOT / "docs/automatic-book-preparation.md").read_text(encoding="utf-8")
     files["automatic-book-preparation.md"]=automatic_guide.replace("python3 tools/prepare_book.py", "python3 prepare_book.py").encode()
     files["approved-icons.json"] = (ROOT / "docs/approved-icons.json").read_bytes()

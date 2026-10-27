@@ -42,7 +42,7 @@ only. The build refuses any other stock image.
 | **Long books**: hours on Now Playing; progress saved every five minutes | hours work; autosave not yet confirmed |
 | **Book screen**: book and chapter titles on Now Playing | not yet confirmed |
 | **Natural folder sorting** (CD1, CD2 … CD10) in browser lists and folder playback | list order works; playback order not yet confirmed |
-| **Automatic book preparation**: the player creates missing playlist and state files for simple book folders | not yet confirmed; [`tools/prepare_book.py`](docs/audiobooks.md#prepare-a-book) does it on a computer |
+| **Automatic book preparation**: the player creates missing playlist and state files for simple book folders | not yet confirmed; [`tools/prepare_book.py`](docs/audiobooks.md#prepare-books-on-a-computer) does it on a computer |
 | **Music Library** leaves out marked book and meditation folders; File Browser playback stays inside the selected folder | not separately confirmed |
 | Shorter Back and Home holds; full-width lists and settings menus | not separately confirmed |
 
