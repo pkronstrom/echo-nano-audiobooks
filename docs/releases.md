@@ -36,7 +36,8 @@ Features, known issues and the source code:
 4. Copy `nano-ready/custom/NANOV170.IMG` to the root of the player's
    **internal** storage, not the SD card. Eject it safely and restart the
    player. It shows an update screen while it installs, then the menu.
-   **About** shows P4e.
+   **About** shows P4e. If the first start after the update hangs or loops,
+   hold Power for about 10 seconds to restart.
 5. Set up your card as described in `audiobooks.md`, then run
    **Media Library → Media Library Refresh** once.
 

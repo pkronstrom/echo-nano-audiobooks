@@ -18,11 +18,9 @@ image on your computer.
 Not affiliated with or endorsed by FiiO. FiiO and Echo Nano are trademarks of
 their owners.
 
-> **Status: experimental.** Individual features have worked on the author's
-> device, but no build has passed full hardware acceptance. After some updates
-> the player hung or looped at startup until it was restarted by hand; the cause
-> is not confirmed. An earlier candidate (P4a) boot-looped and needed a USB
-> Loader restore. Read [Recovery](#recovery) before flashing.
+> **Status: experimental.** Features have worked on the author's device, but no
+> build has passed full hardware acceptance. Read [Recovery](#recovery) before
+> flashing.
 
 **Tested on:** Echo Nano hardware 1.0.0 with the official firmware **V1.7.0**
 only. The build refuses any other stock image.
@@ -190,8 +188,9 @@ The patches do not change the bootloader.
 
 ### This fork
 
-- After some updates the player hung or looped at startup until it was
-  restarted by hand. The cause is not confirmed.
+- The first start after installing an update can hang or loop. Hold Power for
+  about 10 seconds to restart; on the author's device it then started normally.
+  The cause is not confirmed.
 - Speed control works only with MP3. Other formats play at normal speed;
   `tools/prepare_book.py` can convert a book to MP3.
 - Automatic preparation handles only simple book folders on some card layouts;
